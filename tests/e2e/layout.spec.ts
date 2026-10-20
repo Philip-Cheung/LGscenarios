@@ -73,10 +73,10 @@ test('guided screens stay usable at 200% text size on a 320px screen', async ({ 
 test('the role screen is keyboard reachable with a visible focus indicator', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
   await page.getByRole('button', { name: 'Start a practice' }).click()
-  await expect(page.getByRole('radio', { name: /Latter-day Saint missionary$/ })).toBeChecked()
+  await expect(page.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
   await page.keyboard.press('Tab')
   const focused = page.locator(':focus-visible')
-  await expect(focused).toHaveAccessibleName(/Latter-day Saint missionary$/)
+  await expect(focused).toHaveAccessibleName(/Mormon$/)
   // The radio's card draws the ring around the whole choice.
   const outline = await focused.evaluate((el) => getComputedStyle(el.closest('label') ?? el).outlineStyle)
   expect(outline).not.toBe('none')

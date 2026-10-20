@@ -27,7 +27,8 @@ describe('RoleSelect', () => {
     const onCreate = vi.fn()
     render(<RoleSelect scenario={sampleDoorstep} busy={false} error={null} onCreate={onCreate} onBack={() => {}} />)
     expect(screen.getByRole('heading', { level: 1, name: 'Which role will you practise?' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: /Latter-day Saint missionary$/ })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
+    expect(screen.getByText('THIS WEEK’S SCENARIO')).toBeInTheDocument()
     expect(screen.getByText(sampleDoorstep.title)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Get a pairing code' }))

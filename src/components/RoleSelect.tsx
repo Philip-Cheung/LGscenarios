@@ -3,7 +3,7 @@ import type { ScenarioContent } from '../lib/content'
 import type { Role } from '../sessions/types'
 import { AppScreen, PairingMeta } from './AppScreen'
 import { Icon } from './art'
-import { ROLE_CAPTIONS } from './roles'
+import { ROLE_CAPTIONS, ROLE_SHORT_LABELS } from './roles'
 import { Button, StatusMessage } from './ui'
 import styles from './screens.module.css'
 
@@ -57,7 +57,7 @@ export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, 
           <label key={value} className={styles.choice}>
             <span>
               <small>{ROLE_CAPTIONS[value]}</small>
-              <strong>{scenario.roles[value].label}</strong>
+              <strong>{ROLE_SHORT_LABELS[value]}</strong>
             </span>
             <input type="radio" name="role" value={value} checked={role === value} onChange={() => setRole(value)} />
           </label>
@@ -66,7 +66,7 @@ export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, 
       <div className={styles.goal}>
         <Icon kind="goal" />
         <div>
-          <small>YOUR CONVERSATION</small>
+          <small>THIS WEEK’S SCENARIO</small>
           <p>{scenario.title}</p>
         </div>
       </div>
