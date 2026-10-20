@@ -153,7 +153,7 @@ function Paired({ scenario, snapshot, frame, viewKey, canAct, pending, headingRe
       <p>You’ll take turns speaking and listening. There’s no need to get every word right.</p>
       <PairSummary
         rows={[
-          ['You’re practicing', scenario.roles[snapshot.myRole].label],
+          ['You’re practising', scenario.roles[snapshot.myRole].label],
           ['Your partner', scenario.roles[otherRole(snapshot.myRole)].label],
           ['Conversation', scenario.title],
         ]}
@@ -272,33 +272,43 @@ function Opening({ scenario, frame, viewKey, canAct, pending, headingRef, onSend
   )
 }
 
-function Questions({ scenario, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+function Questions({ scenario, snapshot, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
   // The choice stays on the missionary's phone until the question is asked aloud.
   const [selected, setSelected] = useState<string | null>(null)
+  const answered = new Set(snapshot.answeredQuestionIds)
+  const allAnswered = scenario.questions.every((question) => answered.has(question.id))
+  const choice = selected && !answered.has(selected) ? selected : null
+  const moveToClosing = (
+    <Button
+      variant={allAnswered ? 'primary' : 'text'}
+      disabled={!canAct}
+      loading={pending === 'move_to_closing'}
+      onClick={() => onSend('move_to_closing')}
+    >
+      Move to closing
+    </Button>
+  )
   return (
     <AppScreen
       {...frame}
       viewKey={viewKey}
       actions={
-        <>
-          <Button
-            disabled={!canAct || !selected}
-            loading={pending === 'ask_question'}
-            onClick={() => {
-              if (selected) onSend('ask_question', selected)
-            }}
-          >
-            I’ve asked it
-          </Button>
-          <Button
-            variant="text"
-            disabled={!canAct}
-            loading={pending === 'move_to_closing'}
-            onClick={() => onSend('move_to_closing')}
-          >
-            Move to closing
-          </Button>
-        </>
+        allAnswered ? (
+          moveToClosing
+        ) : (
+          <>
+            <Button
+              disabled={!canAct || !choice}
+              loading={pending === 'ask_question'}
+              onClick={() => {
+                if (choice) onSend('ask_question', choice)
+              }}
+            >
+              I’ve asked it
+            </Button>
+            {moveToClosing}
+          </>
+        )
       }
     >
       <TurnTag>Your turn · Questions</TurnTag>
@@ -308,26 +318,37 @@ function Questions({ scenario, frame, viewKey, canAct, pending, headingRef, onSe
       <p>Choose a topic that feels natural.</p>
       <fieldset className={styles.choices}>
         <legend className={styles.srOnly}>Choose a question</legend>
-        {scenario.questions.map((question) => (
-          <label key={question.id} className={styles.choice}>
-            <span className={styles.optionIcon}>
-              <Icon kind={question.icon ?? 'chat'} />
-            </span>
-            <span>
-              <small>{question.topic}</small>
-              <strong>{question.prompt}</strong>
-            </span>
-            <input
-              type="radio"
-              name="question"
-              value={question.id}
-              checked={selected === question.id}
-              onChange={() => setSelected(question.id)}
-            />
-          </label>
-        ))}
+        {scenario.questions.map((question) => {
+          const done = answered.has(question.id)
+          return (
+            <label key={question.id} className={done ? `${styles.choice} ${styles.choiceAnswered}` : styles.choice}>
+              <span className={styles.optionIcon}>
+                <Icon kind={done ? 'check' : (question.icon ?? 'chat')} />
+              </span>
+              <span>
+                <small>
+                  {question.topic}
+                  {done ? ' · Answered' : null}
+                </small>
+                <strong>{question.prompt}</strong>
+              </span>
+              <input
+                type="radio"
+                name="question"
+                value={question.id}
+                disabled={done}
+                checked={choice === question.id}
+                onChange={() => setSelected(question.id)}
+              />
+            </label>
+          )
+        })}
       </fieldset>
-      <p className={styles.hint}>Say your question aloud, then continue.</p>
+      <p className={styles.hint}>
+        {allAnswered
+          ? 'You’ve asked every question. Move to closing when you’re ready.'
+          : 'Say your question aloud, then continue.'}
+      </p>
     </AppScreen>
   )
 }
@@ -346,7 +367,7 @@ function Response({ scenario, snapshot, frame, viewKey, canAct, pending, heading
     >
       <TurnTag>Your turn · Response</TurnTag>
       <h1 ref={headingRef} tabIndex={-1}>
-        Share what comes to mind.
+        Respond in your own words.
       </h1>
       {question ? (
         <div className={styles.conversation}>
@@ -354,7 +375,7 @@ function Response({ scenario, snapshot, frame, viewKey, canAct, pending, heading
           <blockquote>“{question.prompt}”</blockquote>
         </div>
       ) : null}
-      <p>There’s no set answer. Speak from your own experience.</p>
+      <p>Explain what you believe. If you need a starting point, you can reveal an example below.</p>
       {question ? <ExampleAnswer question={question} /> : null}
     </AppScreen>
   )
@@ -368,8 +389,8 @@ function ExampleAnswer({ question }: { question: ScenarioQuestion }) {
   const id = useId()
   const [revealed, setRevealed] = useState(false)
   return (
-    <aside className={styles.exampleAnswer} aria-label="Optional example answer">
-      <div className={styles.exampleHeading}>Need a starting point?</div>
+    <aside className={styles.exampleAnswer} aria-label="Example Christian response">
+      <div className={styles.exampleHeading}>Example Christian response</div>
       <p className={styles.hint}>One possible response. Make it your own.</p>
       <p className={styles.exampleBlur} aria-hidden="true" hidden={revealed}>
         “{question.exampleAnswer}”

@@ -23,6 +23,7 @@ const state = {
   my_ready: false,
   partner_ready: false,
   active_question_id: null,
+  answered_question_ids: [],
   partner_fresh: null,
   expires_at: '2026-10-20T12:00:00Z',
   pair_code: '482716',
@@ -80,6 +81,7 @@ describe('snapshotFromRealtimeRow', () => {
     missionary_ready: true,
     christian_ready: false,
     active_question_id: 'nature-of-god',
+    answered_question_ids: ['hope'],
     expires_at: '2026-10-20T12:00:00Z',
   }
 
@@ -90,6 +92,7 @@ describe('snapshotFromRealtimeRow', () => {
       revision: 7,
       stage: 'response',
       activeQuestionId: 'nature-of-god',
+      answeredQuestionIds: ['hope'],
       partnerJoined: true,
     })
     expect(snapshot?.pairCode).toBeUndefined()

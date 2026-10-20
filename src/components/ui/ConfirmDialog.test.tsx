@@ -34,7 +34,7 @@ describe('ConfirmDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Exit' }))
     const dialog = screen.getByRole('dialog', { name: 'End this session?' })
     expect(dialog).toHaveAccessibleDescription(/both players/)
-    expect(screen.getByRole('button', { name: 'Keep practicing' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Keep practising' })).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

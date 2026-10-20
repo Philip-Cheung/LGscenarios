@@ -1,9 +1,9 @@
 import { expect, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test'
 
 export const SCENARIO_PATH = '/s/sample-doorstep'
-/** Copy from content/scenarios/sample-doorstep.v4.json, the published scenario the tests pair on. */
+/** Copy from content/scenarios/sample-doorstep.v5.json, the published scenario the tests pair on. */
 export const DOORSTEP = {
-  sceneTitle: 'A conversation at the door',
+  sceneTitle: 'A Mormon missionary at your door',
   opening: 'Hello. May I ask you one short question?',
   questions: {
     hope: {
@@ -18,24 +18,30 @@ export const DOORSTEP = {
     },
   },
   closing: 'Thank you for sharing. I’m glad we had a chance to talk.',
-  reflection: 'What helped the conversation feel welcoming?',
+  reflection: 'What helped you explain your beliefs clearly and keep the conversation respectful?',
 } as const
 
 /** Headings shared by every scenario. */
 export const SCREENS = {
-  welcome: 'Make room for a conversation.',
-  chooseRole: 'Which side will you practice?',
+  welcome: 'Practice talking with Mormon missionaries.',
+  chooseRole: 'Which role will you practise?',
   invite: 'Good conversations start with two.',
   paired: 'A little practice, together.',
   readyTogether: 'A moment to settle in.',
   opening: 'Start with a hello',
   partnerTurn: 'Your partner’s turn',
   questions: 'What would you like to ask?',
-  response: 'Share what comes to mind.',
+  response: 'Respond in your own words.',
   listening: 'Make room to listen',
   closing: 'End with a little kindness.',
   wrapUp: 'A moment to wrap up',
-  complete: 'A conversation worth having.',
+  complete: 'Take a moment to reflect.',
+} as const
+
+/** Accessible names of the role radios; each ends with the role's full label. */
+export const ROLE_NAMES = {
+  Missionary: /Latter-day Saint missionary$/,
+  Christian: /Christian$/,
 } as const
 
 export const PARTNER_CHOOSING = 'They’re choosing a question.'
@@ -69,9 +75,9 @@ export async function readPairCode(page: Page): Promise<string> {
 
 /** From the welcome screen, creates a practice in the chosen role and returns its code. */
 export async function createPractice(page: Page, role: 'Missionary' | 'Christian' = 'Missionary'): Promise<string> {
-  await page.getByRole('button', { name: 'Create a practice' }).click()
+  await page.getByRole('button', { name: 'Start a practice' }).click()
   await expect(heading(page, SCREENS.chooseRole)).toBeVisible()
-  await page.getByRole('radio', { name: new RegExp(`${role}$`) }).check()
+  await page.getByRole('radio', { name: ROLE_NAMES[role] }).check()
   await page.getByRole('button', { name: 'Get a pairing code' }).click()
   await expect(heading(page, SCREENS.invite)).toBeVisible()
   return readPairCode(page)
@@ -79,7 +85,7 @@ export async function createPractice(page: Page, role: 'Missionary' | 'Christian
 
 /** From the welcome screen, or the code form after an error, joins with a code. */
 export async function joinPractice(page: Page, code: string) {
-  const join = page.getByRole('button', { name: 'Join a practice' })
+  const join = page.getByRole('button', { name: 'Join your partner' })
   const field = page.getByLabel('Pairing code')
   await expect(join.or(field)).toBeVisible()
   if (await join.isVisible()) await join.click()

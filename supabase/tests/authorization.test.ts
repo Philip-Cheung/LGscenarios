@@ -210,6 +210,7 @@ describe('role permissions', () => {
     const [m, c] = await h.usersN(2)
     let state = await h.finishRound(m, c, await h.activePair(m, c))
     expect(state.status).toBe('completed')
+    expect(state.answered_question_ids).toEqual([QUESTION_ID])
 
     // Only the Christian can answer a swap request, and only the missionary can make one.
     expectError(
@@ -225,6 +226,7 @@ describe('role permissions', () => {
       my_role: 'missionary',
       status: 'ready',
       stage: 'paired',
+      answered_question_ids: [],
       my_ready: false,
       partner_ready: false,
       active_question_id: null,

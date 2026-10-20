@@ -141,13 +141,23 @@ describe('guided transitions', () => {
     const seen = expectOk(await rpc(christian, 'get_session', { p_session_id: choosing.id }))
     expect(seen).toMatchObject({ stage: 'response', active_question_id: QUESTION_ID })
 
+    expect(choosing.answered_question_ids).toEqual([])
+    expect(asked.answered_question_ids).toEqual([])
+
     const back = expectOk(await guided(christian, asked, 'share_complete'))
-    expect(back).toMatchObject({ stage: 'question_selection', active_question_id: null })
+    expect(back).toMatchObject({
+      stage: 'question_selection',
+      active_question_id: null,
+      answered_question_ids: [QUESTION_ID],
+    })
+    const forMissionary = expectOk(await rpc(missionary, 'get_session', { p_session_id: choosing.id }))
+    expect(forMissionary.answered_question_ids).toEqual([QUESTION_ID])
 
     const next = expectOk(await guided(missionary, back, 'ask_question', OTHER_QUESTION_ID))
     const again = expectOk(await guided(christian, next, 'share_complete'))
+    expect(again.answered_question_ids).toEqual([QUESTION_ID, OTHER_QUESTION_ID])
     const closing = expectOk(await guided(missionary, again, 'move_to_closing'))
-    expect(closing).toMatchObject({ status: 'active', stage: 'closing' })
+    expect(closing).toMatchObject({ status: 'active', stage: 'closing', answered_question_ids: [QUESTION_ID, OTHER_QUESTION_ID] })
     const done = expectOk(await guided(missionary, closing, 'finish'))
     expect(done).toMatchObject({ status: 'completed', stage: 'conclusion', active_question_id: null })
     expectError(await guided(missionary, done, 'ask_question', QUESTION_ID), 'invalid_state')

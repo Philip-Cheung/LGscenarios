@@ -12,8 +12,8 @@ import { expect } from 'vitest'
 import { assertDisposableTarget } from './target'
 
 export const SCENARIO_ID = 'sample-doorstep'
-export const SCENARIO_VERSION = 4
-/** Ids from content/scenarios/sample-doorstep.v4.json. */
+export const SCENARIO_VERSION = 5
+/** Ids from content/scenarios/sample-doorstep.v5.json. */
 export const QUESTION_ID = 'hope'
 export const OTHER_QUESTION_ID = 'faith'
 
@@ -37,6 +37,7 @@ export interface SessionState {
   my_ready: boolean
   partner_ready: boolean
   active_question_id: string | null
+  answered_question_ids: string[]
   partner_fresh: boolean | null
   pair_code: string | null
   code_expires_at: string | null

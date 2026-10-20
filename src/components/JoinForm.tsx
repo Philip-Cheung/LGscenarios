@@ -58,7 +58,7 @@ export function JoinForm({ initialValue = '', busy, error, onJoin, onBack }: Joi
     >
       <span className={styles.turn}>
         <Icon />
-        Join a practice
+        Join your partner
       </span>
       <h1 tabIndex={-1}>Find your practice partner.</h1>
       <p>Enter the six-digit code on your partner’s screen.</p>

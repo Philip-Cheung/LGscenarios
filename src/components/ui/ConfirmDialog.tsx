@@ -22,7 +22,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Keep practicing',
+  cancelLabel = 'Keep practising',
   pending = false,
   error = null,
   onConfirm,

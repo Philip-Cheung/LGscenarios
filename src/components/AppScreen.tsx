@@ -60,7 +60,7 @@ const PRACTICE_STEPS: readonly { stage: GuidedStage; name: string }[] = [
   { stage: 'closing', name: 'Closing' },
 ]
 
-/** "Practicing: Christian · 2 of 6 · Ready together" with six segments. */
+/** "Practising: Christian · 2 of 6 · Ready together" with six segments. */
 export function ProgressMeta({ roleLabel, stage }: { roleLabel: string; stage: GuidedStage }) {
   const complete = stage === 'conclusion'
   const index = PRACTICE_STEPS.findIndex((step) => step.stage === stage)
@@ -70,7 +70,7 @@ export function ProgressMeta({ roleLabel, stage }: { roleLabel: string; stage: G
     <>
       <div className={styles.sessionMeta}>
         <span>
-          Practicing: <b>{roleLabel}</b>
+          Practising: <b>{roleLabel}</b>
         </span>
         <span>{complete ? 'Complete' : `${step} of ${PRACTICE_STEPS.length} · ${name}`}</span>
       </div>
