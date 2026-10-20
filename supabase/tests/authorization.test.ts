@@ -25,7 +25,7 @@ async function watch(client: SupabaseClient, sessionId: string) {
   let channel: RealtimeChannel | null = null
   const status = await new Promise<string>((resolve) => {
     channel = client
-      .channel(`auth-test-${randomUUID()}`)
+      .channel(`auth-test-${randomUUID()}`, { config: { postgres_changes_options: { wait: true } } })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` }, (payload) =>
         events.push(payload.new),
       )
@@ -108,6 +108,7 @@ describe('unrelated signed-in users', () => {
 
 describe('direct table access', () => {
   it('rejects direct writes to sessions even by participants', async () => {
+    const before = await h.sql('select prompt_index from public.sessions where id = $1', [session.id])
     const update = await missionary.client.from('sessions').update({ prompt_index: 2 }).eq('id', session.id).select()
     expect(update.error).not.toBeNull()
 
@@ -125,7 +126,7 @@ describe('direct table access', () => {
     expect(registry.error).not.toBeNull()
 
     const { rows } = await h.sql('select prompt_index from public.sessions where id = $1', [session.id])
-    expect(rows[0].prompt_index).toBe(0)
+    expect(rows[0].prompt_index).toBe(before.rows[0].prompt_index)
   })
 
   it('does not expose private tables or helper functions', async () => {

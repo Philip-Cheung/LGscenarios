@@ -46,7 +46,7 @@ For each project:
 2. **Enable anonymous sign-ins**: Authentication → Sign In / Providers → *Allow anonymous sign-ins*.
 3. **Rate limits**: Authentication → Rate Limits → *Anonymous sign-ins*. The default is 30 per hour per IP address, and a group of 12 on one Wi-Fi network shares one IP.
    - **Production**: raise it enough for your group plus retries (for example 100 per hour), and rely on CAPTCHA for abuse protection.
-   - **Test project**: raise it well above that (for example 1,000 per hour), because a full run of the database and E2E suites creates about 50 anonymous users.
+   - **Test project**: raise it well above that (for example 1,000 per hour), because each `npm run test:db` creates 21 anonymous users and each `npm run test:e2e` creates 29, and reruns within the hour add up. When the limit is hit, sign-ins fail with HTTP 429 and the app shows "Too many attempts".
 4. **CAPTCHA (production)**: Authentication → Attack Protection → enable CAPTCHA with **Cloudflare Turnstile**. Paste the Turnstile **secret key** there only; it never goes in the frontend. Put the **site key** in `VITE_TURNSTILE_SITE_KEY`. The app shows the check only when a phone needs a new anonymous identity.
    - **Test project**: leave CAPTCHA off, or use Cloudflare's always-pass test keys: secret `1x0000000000000000000000000000000AA`, then set `TEST_TURNSTILE_SITE_KEY=1x00000000000000000000AA` and `TEST_CAPTCHA_TOKEN=XXXX.DUMMY.TOKEN.XXXX`.
 5. **Data API**: Settings → API → *Exposed schemas* must include `public` and must **not** include `app_private`. Every table and function grant is explicit in the migrations, so nothing depends on default exposure.
