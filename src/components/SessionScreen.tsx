@@ -16,11 +16,24 @@ interface SessionScreenProps {
   userId: string
   initial: SessionSnapshot
   scenario: ScenarioContent
+  slug: string
+  /** Supabase URL that serves setting images from Storage. */
+  imageBaseUrl: string
   onStartOver(): void
   onEnded(byPartner: boolean): void
 }
 
-export function SessionScreen({ client, api, userId, initial, scenario, onStartOver, onEnded }: SessionScreenProps) {
+export function SessionScreen({
+  client,
+  api,
+  userId,
+  initial,
+  scenario,
+  slug,
+  imageBaseUrl,
+  onStartOver,
+  onEnded,
+}: SessionScreenProps) {
   const { snapshot, connection, ended, endedByPartner, pending, notice, lastError, actions } = useSessionSync({
     client,
     api,
@@ -30,8 +43,8 @@ export function SessionScreen({ client, api, userId, initial, scenario, onStartO
   })
 
   useEffect(() => {
-    if (ended) clearPointer(scenario.slug)
-  }, [ended, scenario.slug])
+    if (ended) clearPointer(slug)
+  }, [ended, slug])
 
   useEffect(() => {
     if (ended === 'ended' || snapshot.status === 'ended') onEnded(endedByPartner)
@@ -39,7 +52,7 @@ export function SessionScreen({ client, api, userId, initial, scenario, onStartO
 
   if (ended === 'ended' || snapshot.status === 'ended') return null
   if (ended) return <EndedCard reason={ended} onStartOver={onStartOver} />
-  if (snapshot.scenarioId !== scenario.scenarioId || snapshot.scenarioVersion !== scenario.version) {
+  if (snapshot.scenarioId !== scenario.id || snapshot.scenarioVersion !== scenario.version) {
     return (
       <MessageCard heading="Please refresh this page" actionLabel="Refresh" onAction={() => window.location.reload()}>
         <p className={styles.muted}>This pair uses a different version of the scenario.</p>
@@ -55,6 +68,7 @@ export function SessionScreen({ client, api, userId, initial, scenario, onStartO
       notice={notice}
       lastError={lastError}
       actions={actions}
+      imageBaseUrl={imageBaseUrl}
     />
   )
 }

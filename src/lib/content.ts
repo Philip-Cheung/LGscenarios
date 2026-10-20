@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+/** The only scenario JSON contract this app can render. */
+export const SCENARIO_SCHEMA_VERSION = '1.0'
+
 const identifier = z
   .string()
   .max(64)
@@ -13,127 +16,173 @@ const plainText = (max: number) =>
     .max(max)
     .refine((value) => !/[<>]/.test(value), 'Plain text only; angle brackets are not allowed')
 
-const branchOptionSchema = z
+const role = z.enum(['missionary', 'christian'])
+
+/** A file in the public `scenario-images` storage bucket, e.g. `who-is-god/door.jpg`. */
+const imageSchema = z
+  .object({
+    path: z
+      .string()
+      .max(160)
+      .regex(
+        /^[a-z0-9]+([-_][a-z0-9]+)*(\/[a-z0-9]+([-_][a-z0-9]+)*)*\.(jpg|jpeg|png|webp)$/,
+        'Use a lowercase bucket path ending in .jpg, .jpeg, .png, or .webp',
+      ),
+    alt: plainText(160),
+  })
+  .strict()
+
+const roleSceneSchema = z
+  .object({
+    label: plainText(40),
+    sceneTitle: plainText(80),
+    sceneText: plainText(400),
+    goal: plainText(200),
+    image: imageSchema.optional(),
+  })
+  .strict()
+
+const interactionTriggerSchema = z
+  .object({
+    initiatingRole: role,
+    initiatorPrompt: plainText(200),
+    initiatorActionLabel: plainText(40),
+    receiverPrompt: plainText(200),
+    receiverActionLabel: plainText(40),
+  })
+  .strict()
+
+const openingDialogueSchema = z
+  .object({
+    speakerRole: role,
+    script: plainText(500),
+    listenerPrompt: plainText(200).optional(),
+  })
+  .strict()
+
+const christianHelpSchema = z
+  .object({
+    hint: plainText(240).optional(),
+    scriptures: z.array(plainText(60)).min(1).max(6).optional(),
+    hiddenAnswer: plainText(800),
+  })
+  .strict()
+
+const followUpSchema = z
   .object({
     id: identifier.max(40),
-    label: plainText(80),
-    response: plainText(400),
-    suggestedAnswer: plainText(600).optional(),
+    label: plainText(60).optional(),
+    missionaryScript: plainText(500),
+    christian: christianHelpSchema,
   })
   .strict()
 
-const sayCueSchema = z.object({ type: z.literal('say'), text: plainText(400) }).strict()
-const waitCueSchema = z.object({ type: z.literal('wait'), text: plainText(240) }).strict()
-const challengeCueSchema = z.object({ type: z.literal('challenge'), text: plainText(400) }).strict()
-const ifTheySayCueSchema = z
-  .object({
-    type: z.literal('ifTheySay'),
-    options: z.array(branchOptionSchema).min(2).max(3),
-  })
-  .strict()
-
-export const cueSchema = z.discriminatedUnion('type', [
-  sayCueSchema,
-  waitCueSchema,
-  challengeCueSchema,
-  ifTheySayCueSchema,
-])
-
-export const promptSchema = z
+const questionSchema = z
   .object({
     id: identifier.max(40),
-    label: plainText(60),
-    text: plainText(400),
-    suggestedAnswer: plainText(600),
-    scriptureReference: plainText(80).optional(),
-    cues: z.array(cueSchema).min(1).max(4).optional(),
+    title: plainText(80),
+    topicTag: plainText(40).optional(),
+    missionaryScript: plainText(500),
+    christian: christianHelpSchema,
+    followUps: z.array(followUpSchema).max(6).optional(),
   })
   .strict()
-  .superRefine((prompt, ctx) => {
-    if (!prompt.cues) return
-    const seen = new Set<string>()
-    prompt.cues.forEach((cue, index) => {
-      if (seen.has(cue.type)) {
-        ctx.addIssue({ code: 'custom', message: `Duplicate cue "${cue.type}"`, path: ['cues', index, 'type'] })
-      }
-      seen.add(cue.type)
-    })
-    const spoken = prompt.cues.filter((cue) => cue.type === 'say' || cue.type === 'challenge' || cue.type === 'ifTheySay')
-    if (spoken.length !== 1) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'A prompt with cues needs exactly one SAY, CHALLENGE, or IF THEY SAY beat',
-        path: ['cues'],
-      })
+
+const conclusionSchema = z
+  .object({
+    closingPrompt: plainText(300),
+    reflectionPrompt: plainText(300).optional(),
+  })
+  .strict()
+
+const contentShape = {
+  schemaVersion: z.literal(SCENARIO_SCHEMA_VERSION),
+  id: identifier,
+  version: z.number().int().positive(),
+  title: plainText(80),
+  subtitle: plainText(180).optional(),
+  estimatedMinutes: z.number().int().min(1).max(120).optional(),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  roles: z.object({ missionary: roleSceneSchema, christian: roleSceneSchema }).strict(),
+  interactionTrigger: interactionTriggerSchema,
+  openingDialogue: openingDialogueSchema,
+  questions: z.array(questionSchema).min(1).max(12),
+  conclusion: conclusionSchema,
+  /** Reviewer notes and sources. Stored, never shown to participants. */
+  sourceNotes: z.string().max(2000).optional(),
+}
+
+function checkUniqueIds(scenario: { questions: z.infer<typeof questionSchema>[] }, ctx: z.RefinementCtx) {
+  const questionIds = new Set<string>()
+  scenario.questions.forEach((question, index) => {
+    if (questionIds.has(question.id)) {
+      ctx.addIssue({ code: 'custom', message: `Duplicate question id "${question.id}"`, path: ['questions', index, 'id'] })
     }
-    for (const cue of prompt.cues) {
-      if (cue.type === 'say' && cue.text !== prompt.text) {
-        ctx.addIssue({ code: 'custom', message: 'SAY text must match the prompt text', path: ['cues'] })
-      }
-      if (cue.type === 'challenge' && cue.text !== prompt.text) {
-        ctx.addIssue({ code: 'custom', message: 'CHALLENGE text must match the prompt text', path: ['cues'] })
-      }
-      if (cue.type === 'ifTheySay') {
-        if (prompt.cues.some((item) => item.type === 'say' || item.type === 'challenge' || item.type === 'wait')) {
-          ctx.addIssue({
-            code: 'custom',
-            message: 'IF THEY SAY is its own beat and cannot include SAY, CHALLENGE, or WAIT',
-            path: ['cues'],
-          })
-        }
-        const ids = new Set<string>()
-        cue.options.forEach((option, index) => {
-          if (ids.has(option.id)) {
-            ctx.addIssue({
-              code: 'custom',
-              message: `Duplicate branch id "${option.id}"`,
-              path: ['cues', index, 'id'],
-            })
-          }
-          ids.add(option.id)
+    questionIds.add(question.id)
+    const followUpIds = new Set<string>()
+    question.followUps?.forEach((followUp, followUpIndex) => {
+      if (followUpIds.has(followUp.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Duplicate follow-up id "${followUp.id}"`,
+          path: ['questions', index, 'followUps', followUpIndex, 'id'],
         })
       }
-    }
-  })
-
-export const scenarioSchema = z
-  .object({
-    scenarioId: identifier,
-    slug: identifier,
-    version: z.number().int().positive(),
-    title: plainText(80),
-    description: plainText(180).optional(),
-    prompts: z.array(promptSchema).min(1).max(200),
-  })
-  .strict()
-  .superRefine((scenario, ctx) => {
-    const seen = new Set<string>()
-    scenario.prompts.forEach((prompt, index) => {
-      if (seen.has(prompt.id)) {
-        ctx.addIssue({ code: 'custom', message: `Duplicate prompt id "${prompt.id}"`, path: ['prompts', index, 'id'] })
-      }
-      seen.add(prompt.id)
+      followUpIds.add(followUp.id)
     })
   })
+}
 
-export type ScenarioPrompt = z.infer<typeof promptSchema>
-export type ScenarioContent = z.infer<typeof scenarioSchema>
-export type ScenarioCue = z.infer<typeof cueSchema>
+/** Scenario content as stored in `scenario_registry.content` and rendered by the app. */
+export const scenarioContentSchema = z.object(contentShape).strict().superRefine(checkUniqueIds)
 
-/** Branch ids for each prompt index. Empty when that prompt is not conditional. */
-export function branchIdsByPrompt(scenario: ScenarioContent): string[][] {
-  return scenario.prompts.map((prompt) => {
-    const cue = prompt.cues?.find((item) => item.type === 'ifTheySay')
-    return cue?.type === 'ifTheySay' ? cue.options.map((option) => option.id) : []
+/**
+ * A reviewed scenario file in `content/scenarios`. `status` decides whether
+ * publishing stores it as a hidden draft or opens it to participants; it is
+ * kept in the registry row, not in the stored content.
+ */
+export const scenarioFileSchema = z
+  .object({
+    $schema: z.string().optional(),
+    status: z.enum(['draft', 'published']),
+    ...contentShape,
   })
+  .strict()
+  .superRefine(checkUniqueIds)
+
+export type ScenarioContent = z.infer<typeof scenarioContentSchema>
+export type ScenarioFile = z.infer<typeof scenarioFileSchema>
+export type ScenarioQuestion = ScenarioContent['questions'][number]
+export type ScenarioFollowUp = NonNullable<ScenarioQuestion['followUps']>[number]
+export type ChristianHelp = ScenarioQuestion['christian']
+export type ScenarioRoleScene = ScenarioContent['roles']['missionary']
+export type ScenarioImage = NonNullable<ScenarioRoleScene['image']>
+
+/** Strips file-only fields, leaving exactly what is stored and rendered. */
+export function toStoredContent(file: ScenarioFile): ScenarioContent {
+  const { $schema: _schema, status: _status, ...content } = file
+  return content
+}
+
+/** The question and optional follow-up the pair is currently discussing. */
+export function findDiscussionItem(
+  scenario: ScenarioContent,
+  questionId: string | null,
+  followUpId: string | null,
+): { question: ScenarioQuestion; followUp: ScenarioFollowUp | null } | null {
+  const question = scenario.questions.find((item) => item.id === questionId)
+  if (!question) return null
+  if (!followUpId) return { question, followUp: null }
+  const followUp = question.followUps?.find((item) => item.id === followUpId)
+  return followUp ? { question, followUp } : null
 }
 
 /** Soft limits: content above these validates but produces a warning. */
 export const CONTENT_WARNING_LIMITS = {
   title: 60,
-  label: 40,
-  text: 180,
-  suggestedAnswer: 240,
+  sceneText: 280,
+  script: 240,
+  hiddenAnswer: 360,
 } as const
 
 export interface ContentReport {
@@ -141,19 +190,20 @@ export interface ContentReport {
   warnings: string[]
 }
 
-function describe(scenario: { scenarioId?: unknown; version?: unknown }, index: number) {
-  return typeof scenario.scenarioId === 'string' ? `${scenario.scenarioId} v${String(scenario.version)}` : `#${index}`
+function describe(raw: unknown, index: number) {
+  const value = (raw ?? {}) as Record<string, unknown>
+  return typeof value.id === 'string' ? `${value.id} v${String(value.version)}` : `#${index}`
 }
 
-/** Validates a full set of scenario versions, including cross-version rules. */
-export function validateScenarioSet(scenarios: readonly unknown[]): ContentReport {
+/** Validates a full set of scenario files, including cross-version rules. */
+export function validateScenarioFiles(files: readonly unknown[]): ContentReport {
   const errors: string[] = []
   const warnings: string[] = []
-  const valid: ScenarioContent[] = []
+  const valid: ScenarioFile[] = []
 
-  scenarios.forEach((raw, index) => {
-    const result = scenarioSchema.safeParse(raw)
-    const name = describe((raw ?? {}) as Record<string, unknown>, index)
+  files.forEach((raw, index) => {
+    const result = scenarioFileSchema.safeParse(raw)
+    const name = describe(raw, index)
     if (!result.success) {
       for (const issue of result.error.issues) {
         errors.push(`${name}: ${issue.path.join('.') || '(root)'} ${issue.message}`)
@@ -165,39 +215,37 @@ export function validateScenarioSet(scenarios: readonly unknown[]): ContentRepor
     if (scenario.title.length > CONTENT_WARNING_LIMITS.title) {
       warnings.push(`${name}: title is ${scenario.title.length} characters`)
     }
-    for (const prompt of scenario.prompts) {
-      for (const field of ['label', 'text', 'suggestedAnswer'] as const) {
-        if (prompt[field].length > CONTENT_WARNING_LIMITS[field]) {
-          warnings.push(`${name}: prompt "${prompt.id}" ${field} is ${prompt[field].length} characters`)
+    for (const roleName of ['missionary', 'christian'] as const) {
+      const length = scenario.roles[roleName].sceneText.length
+      if (length > CONTENT_WARNING_LIMITS.sceneText) warnings.push(`${name}: ${roleName} sceneText is ${length} characters`)
+    }
+    if (scenario.openingDialogue.script.length > CONTENT_WARNING_LIMITS.script) {
+      warnings.push(`${name}: opening script is ${scenario.openingDialogue.script.length} characters`)
+    }
+    for (const question of scenario.questions) {
+      const items: { label: string; item: Pick<ScenarioFollowUp, 'missionaryScript' | 'christian'> }[] = [
+        { label: `question "${question.id}"`, item: question },
+        ...(question.followUps ?? []).map((followUp) => ({
+          label: `follow-up "${question.id}/${followUp.id}"`,
+          item: followUp,
+        })),
+      ]
+      for (const { label, item } of items) {
+        if (item.missionaryScript.length > CONTENT_WARNING_LIMITS.script) {
+          warnings.push(`${name}: ${label} script is ${item.missionaryScript.length} characters`)
+        }
+        if (item.christian.hiddenAnswer.length > CONTENT_WARNING_LIMITS.hiddenAnswer) {
+          warnings.push(`${name}: ${label} hidden answer is ${item.christian.hiddenAnswer.length} characters`)
         }
       }
     }
   })
 
   const versionKeys = new Set<string>()
-  const slugVersionKeys = new Set<string>()
-  const slugToScenario = new Map<string, string>()
-  const scenarioToSlug = new Map<string, string>()
   for (const scenario of valid) {
-    const versionKey = `${scenario.scenarioId}@${scenario.version}`
-    if (versionKeys.has(versionKey)) errors.push(`Duplicate scenario version ${versionKey}`)
-    versionKeys.add(versionKey)
-
-    const slugVersionKey = `${scenario.slug}@${scenario.version}`
-    if (slugVersionKeys.has(slugVersionKey)) errors.push(`Duplicate slug version ${slugVersionKey}`)
-    slugVersionKeys.add(slugVersionKey)
-
-    const mappedScenario = slugToScenario.get(scenario.slug)
-    if (mappedScenario && mappedScenario !== scenario.scenarioId) {
-      errors.push(`Slug "${scenario.slug}" is used by both ${mappedScenario} and ${scenario.scenarioId}`)
-    }
-    slugToScenario.set(scenario.slug, scenario.scenarioId)
-
-    const mappedSlug = scenarioToSlug.get(scenario.scenarioId)
-    if (mappedSlug && mappedSlug !== scenario.slug) {
-      errors.push(`Scenario ${scenario.scenarioId} uses both slugs "${mappedSlug}" and "${scenario.slug}"`)
-    }
-    scenarioToSlug.set(scenario.scenarioId, scenario.slug)
+    const key = `${scenario.id}@${scenario.version}`
+    if (versionKeys.has(key)) errors.push(`Duplicate scenario version ${key}`)
+    versionKeys.add(key)
   }
 
   return { errors, warnings }

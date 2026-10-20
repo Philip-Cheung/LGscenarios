@@ -55,13 +55,14 @@ All tokens are defined on `:root` in `tokens.css`. Screens and primitives use `v
 | Text | `--dp-color-text`, `--dp-color-text-muted`, `--dp-color-text-placeholder` | Primary `#1C1C1E`, secondary `#51515A`, placeholders |
 | Borders | `--dp-color-border`, `--dp-color-border-strong` | Decorative separators `#D8D8DF`; control outlines `#6E6E76` (≥ 3:1). A separator is never the only sign of a control |
 | Actions | `--dp-color-action-primary-*`, `--dp-color-action-secondary-*`, `--dp-color-action-destructive-*`, `--dp-color-action-text`, `--dp-color-action-disabled-*` | Accent `#005BC4` with white text, red destructive `#B42318` with white text, accent text actions, solid disabled colours |
+| Roles and session header | `--dp-color-role-{missionary,christian}`, `…-hover`, `…-tint`, `--dp-color-destructive-tint`, `--dp-color-destructive-tint-hover`, `--dp-color-progress-track` | Missionary blue `#005BC4`, Christian green `#18794E`, each with a hover shade and a pale tint for the role pill, goal panel and selected topics. The leave icon is destructive red on a red tint. Progress track `#E5E5EA` |
 | Focus and status | `--dp-color-focus-ring`, `--dp-color-error`, `--dp-color-error-border`, `--dp-color-status` | Keyboard focus, error text (also described in words), neutral status text |
 | Typography | `--dp-font-family`, `--dp-font-size-{meta,guidance,body,control,answer,choice,section,prompt,prompt-wide,title,code}`, `--dp-font-weight-{regular,medium,semibold,bold}`, `--dp-line-height-{tight,prompt,body}` | `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Scenario title 32px/700. Spoken prompt 28px (30px from 480px), weight 600, line-height 1.4. Body 17px. No webfont download |
 | Spacing | `--dp-space-{1,2,3,4,5,6,8,10}` | 4/8/12/16/20/24/32/40px |
-| Shape and sizing | `--dp-radius-{card,control,panel,cue}`, `--dp-control-height`, `--dp-control-height-primary`, `--dp-choice-min-height`, `--dp-content-max-width`, `--dp-page-gutter`, `--dp-page-gutter-regular`, `--dp-page-gutter-wide` | Cards 20px, controls 14px. Targets at least 48px; primary actions 52px. Role cards at least 140px and allowed to grow. Column 680px. Page padding 16px under 360px, 20px from 360px, 24px from 480px |
+| Shape and sizing | `--dp-radius-{card,control,panel,cue,pill}`, `--dp-icon-button-size`, `--dp-icon-size`, `--dp-progress-height`, `--dp-topic-min-height`, `--dp-control-height`, `--dp-control-height-primary`, `--dp-choice-min-height`, `--dp-content-max-width`, `--dp-page-gutter`, `--dp-page-gutter-regular`, `--dp-page-gutter-wide` | Cards 20px, controls 14px. Targets at least 48px; primary actions 52px; the icon-only leave button 44px with a 22px icon; topic buttons at least 64px; progress bar 6px. Role cards at least 140px and allowed to grow. Column 680px. Page padding 16px under 360px, 20px from 360px, 24px from 480px |
 | Motion | `--dp-duration-{press,enter,answer,success,fast}`, `--dp-easing-standard`, `--dp-enter-distance` | Press 100ms scale 0.98, enter 160ms and 4px, answer 150ms, success mark 250ms. All durations and the travel distance are 0 under `prefers-reduced-motion` |
 
-Measured contrast: primary text on white 17:1, secondary text on white 7.8:1 and on the page 7:1, white on accent 6.4:1, white on destructive 6.6:1, destructive text on white 6.6:1, placeholder on white 5.2:1, control outline on white 5:1 and on the page 4.5:1. Disabled controls use a solid gray fill and are not the only way to discover an action.
+Measured contrast: primary text on white 17:1, secondary text on white 7.8:1 and on the page 7:1, white on accent 6.4:1, white on destructive 6.6:1, destructive text on white 6.6:1 and on its tint 5.7:1, white on Christian green 5.4:1, Christian green on its tint 4.8:1, placeholder on white 5.2:1, control outline on white 5:1 and on the page 4.5:1. Disabled controls use a solid gray fill and are not the only way to discover an action.
 
 To change the theme, edit `tokens.css`. Screens should not need to change. The E2E test "changing a design token updates the wrapped components" checks that a token change reaches the vendor-backed `Button`.
 
@@ -165,4 +166,40 @@ The starting screen is the scenario title (`h1`), one short description, then **
 
 ### Session actions
 
-Before a partner joins, both pairing screens end with a secondary **Back to roles** button inside the card. For the missionary it closes the pairing code on the server without a dialog, and stays put with an explanation when offline. Once paired, **Exit** is in the session bar for both phones. **Restart** is a quieter text action for the current missionary during play and after completion. Restart needs the partner's confirmation and expires after 60 seconds on the server. Conditional prompts use real buttons, distinct from cue tags, and Next/Finish stay unavailable until one option is chosen.
+Before a partner joins, both pairing screens end with a secondary **Back to roles** button inside the card. For the missionary it closes the pairing code on the server without a dialog, and stays put with an explanation when offline. Once paired, leaving is the red icon button in the session header (see below). **Restart** is a quieter text action for the current missionary during play and after completion. Restart needs the partner's confirmation, expires after 60 seconds on the server, and returns both phones to the scene.
+
+## Guided flow additions
+
+### Role accents
+
+`SessionView` wraps the session in `.roleMissionary` or `.roleChristian`. These classes point the primary action, text action, focus ring and selected colours at the role's blue or green, and set `--dp-role-accent` and `--dp-role-tint` for the header and topic buttons. Colour is never the only role signal: the header pill names the role.
+
+### `SessionHeader`
+
+Shown on both phones from the scene until the wrap-up. From left to right:
+
+- the role pill
+- "Step N of 6 · Label" (Scene, Start, Opening, Questions, Discussion, Wrap-up), with a decorative progress bar (`aria-hidden`, because the text already says it)
+- a 44px icon-only **Leave session** button: red exit icon on a red tint, `aria-label="Leave session"`, which opens the End session confirmation
+
+Labels are short enough to fit a 320px screen without truncation.
+
+### `GuidedStage`
+
+One card per shared stage, rendered only from server state. A small turn label at the top ("Your turn", "Partner's turn", "Your turn to answer") says whose move it is.
+
+| Stage | Missionary | Christian |
+| --- | --- | --- |
+| Scene | Scene title, optional image, text, goal panel, **I'm ready** | Same, with their own scene |
+| Start | Whoever the scenario names as initiator sees its prompt and action; the other waits, then sees the receiver prompt and action | |
+| Opening | The speaker sees a `SAY` cue, the line, and **Continue** | The listener sees "Listen to your partner" and an optional prompt |
+| Questions | Topic buttons (tag and title) plus **Finish conversation** | "Your partner is choosing a question" (no preview) |
+| Discussion, before asking | `SAY` (or `CHALLENGE` for a follow-up), the script, **Question asked**, and **Choose a different question** | "Listen for your partner's question" |
+| Discussion, after asking | `WAIT` "Listen to their answer", what was asked, follow-up buttons, **Choose another question**, **Finish conversation** | The question, "Answer in your own words first", **Show hint** / **Show scripture**, and the concealed answer |
+| Wrap-up | Closing line with a `SAY` cue, reflection prompt, **Switch roles** | Reflection prompt, swap response |
+
+Images are optional: a missing or failed image is removed and the text carries the scene.
+
+### Reveal answer
+
+The suggested answer is not rendered (not in the page or the accessibility tree) until **Reveal answer** is tapped. Before that, a dashed panel with three decorative lines (`aria-hidden`) shows where it will appear. After reveal, **Hide answer** conceals it again. The help component is keyed by round, question and follow-up, so a new question, a follow-up, a restart, a swap or a reload always starts concealed. Hint and scripture are separate disclosures with `aria-expanded`. **Finish conversation** asks for confirmation ("Keep talking" is the safe default).

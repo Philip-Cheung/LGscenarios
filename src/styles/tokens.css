@@ -47,6 +47,17 @@
   --dp-color-error-border: #b42318;
   --dp-color-status: #51515a;
   --dp-color-selected: #e8f1fc;
+  --dp-color-destructive-tint: #fdecea;
+  --dp-color-destructive-tint-hover: #f9d7d3;
+  --dp-color-progress-track: #e5e5ea;
+
+  /* Roles. Accents only; the role is always also named in text. */
+  --dp-color-role-missionary: #005bc4;
+  --dp-color-role-missionary-hover: #004a9f;
+  --dp-color-role-missionary-tint: #e8f1fc;
+  --dp-color-role-christian: #18794e;
+  --dp-color-role-christian-hover: #11603d;
+  --dp-color-role-christian-tint: #e6f4ec;
 
   /* Typography. System fonts only; San Francisco is not downloaded. */
   --dp-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -91,6 +102,11 @@
   --dp-focus-ring-offset: 2px;
   --dp-control-height: 48px;
   --dp-control-height-primary: 52px;
+  --dp-icon-button-size: 44px;
+  --dp-icon-size: 22px;
+  --dp-progress-height: 6px;
+  --dp-topic-min-height: 64px;
+  --dp-radius-pill: 999px;
   --dp-choice-min-height: 140px;
   --dp-content-max-width: 680px;
   --dp-page-gutter: 16px;

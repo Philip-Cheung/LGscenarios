@@ -41,7 +41,6 @@ function withDefaults(snapshot: SessionSnapshot): SessionSnapshot {
     ...snapshot,
     restartPending: snapshot.restartPending ?? false,
     restartRequestedAt: snapshot.restartRequestedAt ?? null,
-    selectedBranchId: snapshot.selectedBranchId ?? null,
     partnerFresh: snapshot.partnerFresh,
     pairCode: snapshot.pairCode ?? null,
     codeExpiresAt: snapshot.codeExpiresAt ?? null,

@@ -1,0 +1,75 @@
+{
+  "$schema": "../scenario.schema.json",
+  "schemaVersion": "1.0",
+  "id": "coffee-chat",
+  "version": 1,
+  "status": "published",
+  "title": "Coffee with a friend",
+  "subtitle": "Practise a relaxed conversation about faith at a café.",
+  "estimatedMinutes": 8,
+  "difficulty": "beginner",
+  "roles": {
+    "missionary": {
+      "label": "Missionary",
+      "sceneTitle": "A café downtown",
+      "sceneText": "You are meeting a friend you know from a community event. They are already at a table.",
+      "goal": "Have a friendly conversation and ask what they believe."
+    },
+    "christian": {
+      "label": "Christian",
+      "sceneTitle": "A café downtown",
+      "sceneText": "You are having coffee and waiting for a friend you know from a community event.",
+      "goal": "Share what you believe in your own words."
+    }
+  },
+  "interactionTrigger": {
+    "initiatingRole": "christian",
+    "initiatorPrompt": "You see your friend walk into the café.",
+    "initiatorActionLabel": "Wave them over",
+    "receiverPrompt": "Your friend waves at you from a table.",
+    "receiverActionLabel": "Walk over and sit down"
+  },
+  "openingDialogue": {
+    "speakerRole": "missionary",
+    "script": "Thanks for meeting me! I've been looking forward to catching up.",
+    "listenerPrompt": "Greet your friend and chat for a moment."
+  },
+  "questions": [
+    {
+      "id": "church",
+      "title": "What is your church like?",
+      "topicTag": "Church",
+      "missionaryScript": "I didn't know you went to church. What's your church like?",
+      "christian": {
+        "hint": "Mention something you value about your church.",
+        "hiddenAnswer": "Share one or two things you appreciate, such as the teaching, the people, or how it helps you follow Jesus."
+      },
+      "followUps": [
+        {
+          "id": "why-go",
+          "label": "Ask why it matters",
+          "missionaryScript": "Why is going to church important to you?",
+          "christian": {
+            "hiddenAnswer": "Church is where I worship God with other believers, learn from the Bible, and serve others."
+          }
+        }
+      ]
+    },
+    {
+      "id": "bible",
+      "title": "How do you read the Bible?",
+      "topicTag": "Scripture",
+      "missionaryScript": "Do you read the Bible much? How do you know how to understand it?",
+      "christian": {
+        "hint": "Think about reading each passage in its context.",
+        "scriptures": ["2 Timothy 3:16-17"],
+        "hiddenAnswer": "I read it regularly and try to understand each passage in its context. I trust it as God's word."
+      }
+    }
+  ],
+  "conclusion": {
+    "closingPrompt": "Thanks for the coffee. Let's do this again soon.",
+    "reflectionPrompt": "Which question was hardest to answer, and why?"
+  },
+  "sourceNotes": "Sample scenario that exercises a non-doorstep trigger started by the Christian."
+}

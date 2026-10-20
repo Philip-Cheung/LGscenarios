@@ -1,19 +1,41 @@
-import { validateScenarioSet } from '../src/lib/content'
-import { allScenarios, CURRENT_SCENARIO_SLUG, findLatestBundledBySlug } from '../src/scenarios'
-import { hasRegistryMigration } from './registry'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { scenarioFileSchema, toStoredContent, validateScenarioFiles } from '../src/lib/content'
+import { buildJsonSchema } from './jsonSchema'
+import {
+  fileNameProblem,
+  JSON_SCHEMA_PATH,
+  listMigrationFiles,
+  MIGRATIONS_DIR,
+  readScenarioFiles,
+  scenarioMigrationName,
+} from './scenarios'
 
-const report = validateScenarioSet(allScenarios)
+const files = readScenarioFiles()
+const report = validateScenarioFiles(files.map((file) => file.raw))
 
-if (!findLatestBundledBySlug(CURRENT_SCENARIO_SLUG)) {
-  report.errors.push(`CURRENT_SCENARIO_SLUG "${CURRENT_SCENARIO_SLUG}" does not match any bundled scenario`)
+if (!existsSync(JSON_SCHEMA_PATH) || readFileSync(JSON_SCHEMA_PATH, 'utf8') !== buildJsonSchema()) {
+  report.errors.push('content/scenario.schema.json is out of date (npm run scenario:schema)')
 }
 
-for (const scenario of allScenarios) {
-  if (!hasRegistryMigration(scenario)) {
-    report.warnings.push(
-      `${scenario.scenarioId} v${scenario.version} has no registry migration yet ` +
-        `(npm run registry:generate -- ${scenario.scenarioId} ${scenario.version})`,
-    )
+const migrations = listMigrationFiles().sort()
+for (const file of files) {
+  const problem = fileNameProblem(file.path, file.raw)
+  if (problem) report.errors.push(problem)
+
+  const parsed = scenarioFileSchema.safeParse(file.raw)
+  if (!parsed.success) continue
+  const scenario = parsed.data
+  const name = scenarioMigrationName(scenario)
+  const latest = migrations.filter((migration) => migration.endsWith(`_${name}.sql`)).at(-1)
+  const command = `npm run scenario:publish -- content/scenarios/${scenario.id}.v${scenario.version}.json`
+  if (!latest) {
+    report.warnings.push(`${scenario.id} v${scenario.version} has no ${scenario.status} migration yet (${command})`)
+    continue
+  }
+  const sql = readFileSync(join(MIGRATIONS_DIR, latest), 'utf8')
+  if (!sql.includes(JSON.stringify(toStoredContent(scenario), null, 2))) {
+    report.warnings.push(`${scenario.id} v${scenario.version} changed since ${latest} (${command})`)
   }
 }
 
@@ -23,4 +45,4 @@ if (report.errors.length > 0) {
   console.error(`Content validation failed with ${report.errors.length} error(s).`)
   process.exit(1)
 }
-console.log(`Validated ${allScenarios.length} scenario version(s); ${report.warnings.length} warning(s).`)
+console.log(`Validated ${files.length} scenario file(s); ${report.warnings.length} warning(s).`)

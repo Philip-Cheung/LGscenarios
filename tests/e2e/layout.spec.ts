@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { closePair, SCENARIO_PATH, startPair } from './helpers'
+import { askQuestion, closePair, DOORSTEP, heading, SCENARIO_PATH, startPair, walkToQuestions } from './helpers'
 
 const VIEWPORTS = [
   { width: 320, height: 640 },
@@ -14,30 +14,37 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 for (const viewport of VIEWPORTS) {
-  test(`prompt screens fit a ${viewport.width}px wide screen`, async ({ browser }) => {
+  test(`guided screens fit a ${viewport.width}px wide screen`, async ({ browser }) => {
     const pair = await startPair(browser, viewport.width, viewport.height)
     const { missionary, christian } = pair
+    await walkToQuestions(pair)
+    await askQuestion(pair, 'hope')
 
-    await christian.page.getByRole('button', { name: 'Show answer' }).click()
+    await christian.page.getByRole('button', { name: 'Reveal answer' }).click()
     for (const page of [missionary.page, christian.page]) {
       await expectNoHorizontalOverflow(page)
       const controls = page.locator('main button')
       for (const box of await controls.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height))) {
         expect(box).toBeGreaterThanOrEqual(44)
       }
+      // The leave control stays on screen beside the progress bar.
+      const leave = await page.getByRole('button', { name: 'Leave session' }).boundingBox()
+      expect((leave?.x ?? 0) + (leave?.width ?? 0)).toBeLessThanOrEqual(viewport.width)
+      await expect(page.getByText('Step 5 of 6 · Discussion')).toBeVisible()
     }
 
-    // The card keeps its shape when the answer is hidden again.
-    const before = await christian.page.getByText('Your partner moves to the next prompt.').boundingBox()
+    // Hiding the answer again does not move the question.
+    const question = heading(christian.page, DOORSTEP.questions.hope.script)
+    const before = await question.boundingBox()
     await christian.page.getByRole('button', { name: 'Hide answer' }).click()
-    const after = await christian.page.getByText('Your partner moves to the next prompt.').boundingBox()
-    expect(after?.y).toBeLessThanOrEqual(before?.y ?? 0)
+    const after = await question.boundingBox()
+    expect(after?.y).toBe(before?.y)
 
     await closePair(pair)
   })
 }
 
-test('prompt screens stay usable at 200% text size on a 320px screen', async ({ browser }) => {
+test('guided screens stay usable at 200% text size on a 320px screen', async ({ browser }) => {
   const pair = await startPair(browser, 320, 640)
   const { missionary, christian } = pair
   for (const page of [missionary.page, christian.page]) {
@@ -45,22 +52,25 @@ test('prompt screens stay usable at 200% text size on a 320px screen', async ({ 
       document.documentElement.style.fontSize = '200%'
     })
   }
+  await walkToQuestions(pair)
+  await askQuestion(pair, 'hope')
 
-  await christian.page.getByRole('button', { name: 'Show answer' }).click()
+  await christian.page.getByRole('button', { name: 'Reveal answer' }).click()
   await expectNoHorizontalOverflow(christian.page)
   await expectNoHorizontalOverflow(missionary.page)
 
-  // Navigation remains reachable by normal page scrolling and still works.
-  const next = missionary.page.getByRole('button', { name: 'Next', exact: true })
-  await next.scrollIntoViewIfNeeded()
-  await next.click()
-  await expect(christian.page.getByText('2 of 3')).toBeVisible()
+  // Controls remain reachable by normal page scrolling and still work.
+  const another = missionary.page.getByRole('button', { name: 'Choose another question' })
+  await another.scrollIntoViewIfNeeded()
+  await another.click()
+  await expect(heading(christian.page, 'Your partner is choosing a question')).toBeVisible()
 
   await closePair(pair)
 })
 
 test('the role screen is keyboard reachable with a visible focus indicator', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
+  await expect(page.getByRole('button', { name: 'Mormon missionary' })).toBeVisible()
   await page.keyboard.press('Tab')
   const focused = page.locator(':focus-visible')
   await expect(focused).toHaveAccessibleName(/Mormon missionary/)

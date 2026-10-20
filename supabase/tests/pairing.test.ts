@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { expectError, expectOk, Harness, rpc, type TestUser } from './harness'
+import { expectError, expectOk, guided, Harness, rpc, type TestUser } from './harness'
 
 let h: Harness
 let users: TestUser[]
@@ -23,26 +23,24 @@ describe('pairing', () => {
     const sessions = await Promise.all(missionaries.map((m, i) => h.activePair(m, christians[i])))
     expect(new Set(sessions.map((s) => s.id)).size).toBe(6)
 
-    // Pair i advances i % 3 prompts; others must be unaffected.
+    // Pair i walks i % 3 steps; others must be unaffected.
+    const expectedStage = ['interaction_trigger', 'interaction_trigger', 'opening_dialogue']
     await Promise.all(
       sessions.map(async (session, i) => {
-        let revision = session.revision
-        for (let step = 0; step < i % 3; step += 1) {
-          const next = expectOk(
-            await rpc(missionaries[i], 'navigate', {
-              p_session_id: session.id,
-              p_direction: 'next',
-              p_expected_revision: revision,
-            }),
-          )
-          revision = next.revision
-        }
+        if (i % 3 === 0) return
+        const knocked = expectOk(await guided(missionaries[i], session, 'trigger_initiate'))
+        if (i % 3 === 2) expectOk(await guided(christians[i], knocked, 'trigger_acknowledge'))
       }),
     )
 
     for (const [i, session] of sessions.entries()) {
       const forChristian = expectOk(await rpc(christians[i], 'get_session', { p_session_id: session.id }))
-      expect(forChristian).toMatchObject({ status: 'active', prompt_index: i % 3, my_role: 'christian' })
+      expect(forChristian).toMatchObject({
+        status: 'active',
+        stage: expectedStage[i % 3],
+        trigger_initiated: i % 3 !== 0,
+        my_role: 'christian',
+      })
 
       // Each participant can read only their own row through RLS.
       const { data, error } = await christians[i].client.from('sessions').select('id')
@@ -52,10 +50,7 @@ describe('pairing', () => {
       // Nobody from another pair can see or drive this session.
       const other = missionaries[(i + 1) % 6]
       expectError(await rpc(other, 'get_session', { p_session_id: session.id }), 'not_found')
-      expectError(
-        await rpc(other, 'navigate', { p_session_id: session.id, p_direction: 'next', p_expected_revision: 0 }),
-        'not_found',
-      )
+      expectError(await guided(other, { id: session.id, revision: 0 }, 'trigger_initiate'), 'not_found')
     }
   })
 

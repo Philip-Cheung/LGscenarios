@@ -10,7 +10,6 @@ const state = {
   scenario_id: 'sample-doorstep',
   scenario_version: 1,
   status: 'waiting',
-  prompt_index: 0,
   revision: 0,
   round: 1,
   my_role: 'missionary',
@@ -18,7 +17,13 @@ const state = {
   swap_pending: false,
   restart_pending: false,
   restart_requested_at: null,
-  selected_branch_id: null,
+  stage: 'scene_setup',
+  my_ready: false,
+  partner_ready: false,
+  trigger_initiated: false,
+  active_question_id: null,
+  active_followup_id: null,
+  question_asked: false,
   partner_fresh: null,
   expires_at: '2026-10-20T12:00:00Z',
   pair_code: 'ABCDEF',
@@ -47,6 +52,7 @@ describe('parseRpcResult', () => {
     expect(parseRpcResult({ ok: false, error: 'boom' })).toEqual({ ok: false, error: 'unavailable', session: null })
     expect(parseRpcResult(null)).toEqual({ ok: false, error: 'unavailable', session: null })
     expect(parseRpcResult({ ok: true, session: { ...state, pair_code: '<script>' } }).ok).toBe(false)
+    expect(parseRpcResult({ ok: true, session: { ...state, active_question_id: '../etc' } }).ok).toBe(false)
   })
 })
 
@@ -58,21 +64,37 @@ describe('snapshotFromRealtimeRow', () => {
     missionary_user_id: MISSIONARY,
     christian_user_id: CHRISTIAN,
     status: 'active',
-    prompt_index: 2,
     revision: '7',
     round: 1,
     swap_requested_by: null,
     restart_requested_by: null,
     restart_requested_at: null,
-    selected_branch_id: null,
+    stage: 'discussion',
+    missionary_ready: true,
+    christian_ready: false,
+    trigger_initiated: true,
+    active_question_id: 'nature-of-god',
+    active_followup_id: null,
+    question_asked: true,
     expires_at: '2026-10-20T12:00:00Z',
   }
 
   it('derives the viewer role and leaves unsent fields undefined', () => {
     const snapshot = snapshotFromRealtimeRow(row, CHRISTIAN)
-    expect(snapshot).toMatchObject({ myRole: 'christian', revision: 7, promptIndex: 2, partnerJoined: true })
+    expect(snapshot).toMatchObject({
+      myRole: 'christian',
+      revision: 7,
+      stage: 'discussion',
+      activeQuestionId: 'nature-of-god',
+      partnerJoined: true,
+    })
     expect(snapshot?.pairCode).toBeUndefined()
     expect(snapshot?.partnerFresh).toBeUndefined()
+  })
+
+  it('maps ready flags to the viewer, so each phone knows whose tap is missing', () => {
+    expect(snapshotFromRealtimeRow(row, MISSIONARY)).toMatchObject({ meReady: true, partnerReady: false })
+    expect(snapshotFromRealtimeRow(row, CHRISTIAN)).toMatchObject({ meReady: false, partnerReady: true })
   })
 
   it('ignores rows for sessions the viewer is not in', () => {

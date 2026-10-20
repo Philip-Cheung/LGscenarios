@@ -1,6 +1,8 @@
 # LGscenarios: Doorstep Practice
 
-A two-phone role-play app for practising doorstep conversations. One person plays the **Mormon missionary** and one the **Christian**. Each pair opens the same weekly link (for example `/s/sample-doorstep`) and pairs with a short code. The missionary controls the prompts, and the Christian can reveal a suggested answer on their own phone only.
+A two-phone role-play app for practising doorstep conversations. One person plays the **Mormon missionary** and one the **Christian**. Each pair opens the same weekly link (for example `/s/who-is-god`) and pairs with a short code. Both players read their scene and tap Ready, act out the opening (a knock at the door, a wave across a café), and then the missionary chooses questions and follow-ups. The Christian sees each question only after it has been asked, and can reveal a suggested answer on their own phone only.
+
+Scenarios are reviewed JSON files in `content/scenarios/`, stored in Supabase as versioned rows. Publishing a new scenario is a database migration; the frontend doesn't change and doesn't need redeploying.
 
 - Frontend: React 19, TypeScript, Vite and React Router, deployed on Vercel.
 - Backend: Supabase (Postgres with row-level security and atomic RPCs, anonymous Auth, and Realtime Postgres Changes). Postgres is the source of truth; there is no simulated or offline mode.
@@ -15,7 +17,7 @@ A two-phone role-play app for practising doorstep conversations. One person play
 npm ci
 cp .env.example .env.development.local   # then fill in the test project's VITE_* values (see section 4)
 npx playwright install chromium          # browser for the E2E suite
-npm run dev                              # http://localhost:5173/s/sample-doorstep
+npm run dev                              # http://localhost:5173/ opens the latest published scenario
 ```
 
 Use `.env.development.local`, not `.env.local`: Vite loads `.env.local` for production builds too, and the test suites refuse to run when the test project looks like production.
@@ -29,13 +31,14 @@ Without valid `VITE_*` values the app shows "Practice is not set up yet" instead
 | `npm run dev` | Vite dev server |
 | `npm run typecheck` | TypeScript project build check |
 | `npm run lint` | oxlint plus the design-system import-boundary check |
-| `npm run content:validate` | Validates every scenario file and warns about overly long text |
+| `npm run content:validate` | Validates every scenario file, checks the JSON Schema is current, and warns about long text or files without a migration |
 | `npm test` | Unit and component tests (Vitest and Testing Library) |
 | `npm run test:db` | Integration tests against the **test** Supabase project |
 | `npm run test:e2e` | Playwright tests against a production build that uses the **test** project |
 | `npm run build` | Typecheck and production build into `dist/` |
 | `npm run validate` | typecheck, lint, content, unit tests and build |
-| `npm run registry:generate -- <id> <version> [--publish]` | Writes a scenario registry migration |
+| `npm run scenario:publish -- content/scenarios/<id>.v<N>.json` | Validates all scenario files and writes the migration that stores this one (as a draft or published, from its `status`) |
+| `npm run scenario:schema` | Regenerates `content/scenario.schema.json` after a content schema change |
 | `npm run db:push [-- --dry-run]` | Applies committed migrations to the database in `.env.test.local` |
 
 ## 2. Supabase setup
@@ -60,11 +63,13 @@ Migrations live in `supabase/migrations/` and are applied in timestamp order:
 | Migration | Contents |
 | --- | --- |
 | `…_core_schema.sql` | Scenario registry, sessions, private tables (`app_private`), explicit grants, row-level security |
-| `…_session_rpcs.sql` | `create_pair`, `join_pair`, `regenerate_pair_code`, `start_pair`, `navigate`, `finish_pair`, `request_swap`, `respond_swap`, `heartbeat`, `get_session`. All are `SECURITY DEFINER`, check the revision, and are executable by `authenticated` only. |
-| `…_phase2_exit_restart_branch.sql` | Adds `ended`, restart requests, and `select_branch`. `end_session`, `request_restart`, `respond_restart`, and `cancel_restart` follow the same revision and membership rules. |
-| `…_phase2_branch_required_guard.sql` | `navigate` and `finish_pair` refuse to leave a conditional prompt until a response is chosen |
+| `…_session_rpcs.sql` | `create_pair`, `join_pair`, `regenerate_pair_code`, `request_swap`, `respond_swap`, `heartbeat`, `get_session` (and the retired linear `start_pair`, `navigate`, `finish_pair`). All are `SECURITY DEFINER`, check the revision, and are executable by `authenticated` only. |
 | `…_realtime_and_cleanup.sql` | Adds `public.sessions` (only) to the `supabase_realtime` publication; cleanup functions; `pg_cron` schedules |
-| `…_registry_sample_doorstep_v1_publish.sql` | Generated registry entry for the sample scenario, published |
+| `…_registry_sample_doorstep_v1_publish.sql`, `…_v2_publish.sql` | Registry rows for the retired linear sample. They stay so old rows keep their history; their content is empty. |
+| `…_phase2_exit_restart_branch.sql` | Adds `ended` and restart requests: `end_session`, `request_restart`, `respond_restart`, `cancel_restart` (plus the retired `select_branch`) |
+| `…_phase2_branch_required_guard.sql` | Guard for the retired linear flow |
+| `…_guided_flow.sql` | Stores scenario content and a `draft`/`published` status in `scenario_registry` (published rows are immutable; drafts are hidden by RLS), adds `featured_scenario()` for the site root, the public `scenario-images` storage bucket, the guided session columns, and `guided_event`, which validates every stage change against the role and ids in the pinned content. Restart and swap return the pair to the scene. Execute on the linear RPCs is revoked. |
+| `…_scenario_<id>_v<N>_publish.sql` / `…_draft.sql` | Generated by `npm run scenario:publish`: one scenario version, stored and verified |
 
 **Test project**: copy the commented `TEST_*` lines from `.env.example` into `.env.test.local` (git-ignored; a placeholder copy is already in your checkout) and fill them in:
 
@@ -101,7 +106,8 @@ Alternatively, use `npx supabase link --project-ref <ref>` followed by `npx supa
   select cron.schedule('doorstep-cleanup-anonymous-users', '41 3 * * *', 'select app_private.cleanup_anonymous_users()');
   ```
 
-- Table Editor → `scenario_registry` shows `sample-doorstep` v2 with `active_for_new_sessions = true`. v1 stays in the table for pairs already using it, with `active_for_new_sessions = false`.
+- Table Editor → `scenario_registry` shows `sample-doorstep` v3 and `coffee-chat` v1 as `published` with `active_for_new_sessions = true`, and `who-is-god` v1 as `draft`. `sample-doorstep` v1 and v2 stay as inactive rows with no content.
+- Storage shows a public `scenario-images` bucket (JPEG, PNG or WebP, up to 2 MB each).
 
 ### Data retention and maintenance
 
@@ -112,7 +118,8 @@ Alternatively, use `npx supabase link --project-ref <ref>` followed by `npx supa
 ## 3. Realtime, RLS and grants
 
 - Clients subscribe only to `UPDATE` events on their own `sessions` row. Realtime authorizes each event through the same row-level security policy as reads (participants of an unexpired session). Pairing codes, heartbeats and rate counters live in `app_private`, which is never published or exposed.
-- Browsers can only `SELECT` from `sessions` (filtered by RLS) and from published `scenario_registry` rows. All changes go through the RPCs above.
+- Browsers can only `SELECT` from `sessions` (filtered by RLS) and from `scenario_registry` rows whose `status` is `published`. Drafts are invisible to every browser, signed in or not. All changes go through the RPCs above.
+- The suggested answer is part of the published content, so a determined participant could read it from the network response. It's hidden in the interface only (not rendered until Reveal), which is enough for practice between friends.
 
 ## 4. Frontend environment variables
 
@@ -124,7 +131,7 @@ Alternatively, use `npx supabase link --project-ref <ref>` followed by `npx supa
 
 Vite **bundles these values into the JavaScript at build time**, so every visitor can read them. Only public values belong here, and you must rebuild or redeploy after changing them. Server secrets (the Turnstile secret key, the database password, the service-role key) belong only in the Supabase dashboard or your local git-ignored env files.
 
-The build also writes a Content-Security-Policy `<meta>` tag allowing only the exact Supabase origin (`https` and `wss`) and, if a site key is set, `challenges.cloudflare.com`.
+The build also writes a Content-Security-Policy `<meta>` tag allowing only the exact Supabase origin (`https` and `wss`, and for images from the `scenario-images` bucket) and, if a site key is set, `challenges.cloudflare.com`.
 
 ## 5. Vercel deployment
 
@@ -135,7 +142,7 @@ The build also writes a Content-Security-Policy `<meta>` tag allowing only the e
 
 ## 6. Routing and headers
 
-`vercel.json` rewrites every path except `/assets/*` and `/favicon.svg` to `index.html`, so direct loads and refreshes of `/s/sample-doorstep` work and asset requests still resolve. The bare address (`/`) redirects to `CURRENT_SCENARIO_SLUG` from `src/scenarios/index.ts`; other unknown paths show the not-found page. It also sends these headers:
+`vercel.json` rewrites every path except `/assets/*` and `/favicon.svg` to `index.html`, so direct loads and refreshes of `/s/<slug>` work and asset requests still resolve. The bare address (`/`) asks the database for the most recently published active scenario (`featured_scenario()`) and redirects there, so it follows each week's publish automatically. A slug with no published scenario shows "This scenario is not available"; other unknown paths show the not-found page. It also sends these headers:
 
 - `Content-Security-Policy` with `frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'`, which complements the build-time `<meta>` policy
 - `X-Content-Type-Options: nosniff`
@@ -162,38 +169,48 @@ npm run test:db
 npm run test:e2e   # builds into dist-e2e with TEST_* values and serves it with production headers
 ```
 
-The E2E suite runs six simultaneous pairs (12 isolated browser identities), and tests reconnecting and reloading, role swaps, CSP and headers, layouts at 320, 375 and 430px and desktop, 200% text size, and design-token propagation.
+The E2E suite runs six simultaneous pairs (12 isolated browser identities), and tests the full guided round (ready, trigger, opening, questions, follow-ups, finish), answers staying hidden until Reveal, a second scenario at its own link with a different trigger, the leave button, reconnecting and reloading, role swaps, draft links, CSP and headers, layouts at 320, 375 and 430px and desktop, 200% text size, and design-token propagation.
 
 Manual check after each production deploy, using **two real phones**:
 
 1. Share the link in WhatsApp and open it on both phones in WhatsApp's in-app browser.
 2. Phone A taps **Mormon missionary**; phone B taps **Christian** and enters the code.
-3. Start, then step forward and back. On phone B, check the answer is hidden until **Show answer** is tapped, and hidden again after each step.
+3. Both tap **I'm ready**, then play the trigger and the opening line. Phone A chooses a question; phone B sees it only after A taps **Question asked**, and the answer stays hidden until **Reveal answer** is tapped. Choose a follow-up and check the answer is hidden again.
 4. Lock phone B for about a minute: phone A should show **Waiting for your partner to reconnect**. Unlock phone B and confirm both phones catch up.
-5. Finish, switch roles, and confirm control moves to phone B.
+5. Finish, switch roles, and confirm control moves to phone B. Tap the red leave icon at the top right and confirm both phones leave.
 
 ## 9. Weekly workflow
 
-Never edit a published scenario version. Each change is a new version.
+Publishing a scenario changes only the database. There's no frontend build or Vercel deploy, and pairs already practising keep the version they started with.
 
-1. Add `src/scenarios/<slug>.v<N>.ts`, with `scenarioId`, `slug`, `version` and `title`, and `prompts` entries that each have an `id`, `label`, `text` and `suggestedAnswer`. A `description` and script cues (`say`, `wait`, `challenge`, or `ifTheySay`) are optional. Register it in `src/scenarios/index.ts`. Keep older versions in place.
-2. Run `npm run content:validate`.
-3. Generate an **inactive** registry entry with `npm run registry:generate -- <scenarioId> <N>`.
-4. Run `npm run validate` and `npm run test:e2e`.
-5. Commit, push, and let Vercel deploy the frontend that knows about the new version. Then apply the migration with `npm run db:push` (test) or the production command above.
-6. Publish it with `npm run registry:generate -- <scenarioId> <N> --publish` and apply it with `db:push`. If this is a new week rather than a revision, set `CURRENT_SCENARIO_SLUG` in `src/scenarios/index.ts` to the new slug so the bare site address opens it. Commit and push both. The migration is idempotent.
-7. Open `https://<your-domain>/s/<slug>` on two phones, then share the link.
+1. **Write** `content/scenarios/<id>.v<N>.json` with `"status": "draft"`. Start from an existing file. The `$schema` line gives editor autocomplete and checks against `content/scenario.schema.json`. A scenario has:
+   - `roles.missionary` and `roles.christian`: `label`, `sceneTitle`, `sceneText`, `goal`, and an optional `image` (`path` inside the `scenario-images` bucket, plus `alt` text).
+   - `interactionTrigger`: who starts (`initiatingRole`), what they see and tap, and what the other player sees and taps (for example *Knock on the door* / *Open the door*).
+   - `openingDialogue`: who speaks first and their line.
+   - `questions` (1 to 12): each has an `id`, a `title`, an optional `topicTag`, the `missionaryScript`, and `christian` help (`hiddenAnswer`, with an optional `hint` and up to 6 `scriptures`). Each question can have up to 6 `followUps` in the same shape.
+   - `conclusion`: the closing line and an optional reflection prompt.
+   Ids are lowercase words joined by hyphens. Everything is plain text.
+2. **Images** (optional): upload them to the `scenario-images` bucket (Storage in the dashboard) and reference their paths. A missing image just leaves the text.
+3. **Check** with `npm run content:validate`, then preview it: `npm run scenario:publish -- content/scenarios/<id>.v<N>.json` writes a draft migration. Apply it to the test project with `npm run db:push`. Drafts can't be opened by participants.
+4. **Review** the text with whoever owns the content. Edit the JSON and repeat step 3 as often as needed: a draft row is replaced each time.
+5. **Publish**: change `"status"` to `"published"`, run `npm run scenario:publish -- content/scenarios/<id>.v<N>.json` again, commit the JSON and the new migration, then apply it to production with the production `db:push` command in section 2. Publishing freezes that version, makes it active for new pairs, deactivates the scenario's older versions, and makes it the scenario the bare site address opens.
+6. Open `https://<your-domain>/s/<id>` on two phones, then share the link.
+
+Never edit a published file. To fix a published scenario, copy it to `<id>.v<N+1>.json`, bump `version`, and publish that; the database refuses changes to published rows.
+
+The current `who-is-god.v1.json` is a **draft**. Its roles, opening, and first question come from the brief; the other two questions and their follow-ups are placeholders marked in `sourceNotes`, to be reviewed before publishing.
 
 ## 10. Rollback
 
-- Keep every published scenario file and registry row. Sessions in progress keep the version they started with.
-- To stop new sessions using a version, add a migration that sets `active_for_new_sessions = false` for that version (and `true` for the previous one). Don't delete registry rows or scenario files.
-- Never activate a registry version before the deployed frontend includes its content file.
-- Make schema changes additive; avoid destructive migrations. To roll back the frontend, promote a previous deployment in Vercel. That's safe as long as it still contains every active scenario version.
+- Keep every scenario file and registry row. Sessions in progress keep the version they started with.
+- To stop new pairs using a version, add a migration that sets `active_for_new_sessions = false` for that version (and `true` for the previous published one). Pairs with a link to a scenario that has no active version see "This scenario is not available".
+- To change which scenario the bare address opens, publish (or republish as a new version) the one you want; it follows the latest `published_at` among active rows.
+- Make schema changes additive; avoid destructive migrations. The frontend can be rolled back by promoting a previous Vercel deployment, but only to one that understands the guided flow (this release or later).
+- **Deploying this release**: apply `…_guided_flow.sql` and the scenario migrations at a quiet time, then deploy the frontend straight away. Pairs that started on the old linear flow can't continue afterwards and see "This practice was updated. Start a new pair."
 
 ## Testing details
 
-- **Unit and component tests** (`npm test`) cover snapshot merging by revision, validation of RPC and Realtime payloads, pair-code handling, content validation, config safety (secret keys are refused), the import-boundary checker, and the Button, TextInput, PromptCard and JoinForm behaviour.
+- **Unit and component tests** (`npm test`) cover snapshot merging by revision, validation of RPC and Realtime payloads, pair-code handling, content validation, config safety (secret keys are refused), the import-boundary checker, the guided stage screens (who sees what at each stage, the question hidden until asked, the answer not in the page until revealed and hidden again on a new question or round, the café trigger), and the Button, TextInput and JoinForm behaviour.
 - **Database tests** (`npm run test:db`, `supabase/tests/`) use real anonymous users with the publishable key, exactly like the browser. They also open a direct database connection, used only to move clocks, reset rate counters and clean up. Coverage:
   - six isolated pairs
   - a third entrant, self-joins, and concurrent joins
@@ -204,9 +221,12 @@ Never edit a published scenario version. Each change is a new version.
   - signed-out and unrelated callers (RPCs, RLS reads, Realtime subscriptions)
   - direct table writes
   - private schema access
-  - role permissions before and after swaps
-  - concurrent Next
-  - stale, invalid and out-of-range commands
+  - drafts hidden from every browser, the featured scenario, and the retired linear RPCs refused
+  - both players ready before the interaction starts (a repeated Ready is harmless)
+  - role permissions taken from the scenario content, before and after swaps
+  - concurrent question choices
+  - stale revisions, steps out of order, unknown events, and question or follow-up ids not in the pinned content
+  - restart mid-discussion clearing the question and follow-up
   - partner staleness
   - expiry and cleanup
 - **Safety guard**: the database and E2E suites refuse to run unless `TEST_PROJECT_IS_DISPOSABLE=yes` is set, `TEST_SUPABASE_URL` and `TEST_DATABASE_URL` point at the same project, and the URL differs from any production `VITE_SUPABASE_URL` in `.env.production[.local]`.
@@ -257,16 +277,19 @@ Cursor loads skills from `.cursor/skills/` and `.agents/skills/` in the workspac
 ```
 src/
   app/            routes, pages (not found, config error), dev-only preview gallery
-  components/     feature screens (role select, join, session, prompt card)
+  components/     feature screens (role select, join, session header, guided stages)
   components/ui/  app-owned design-system primitives (the only vendor imports)
   lib/            config, content schema, pair codes, Supabase client, Turnstile loader
-  scenarios/      immutable scenario content files
+  scenarios/      scenario lookup from Supabase; JSON fixtures for tests and the preview
   sessions/       RPC client, payload validation, snapshot merging, sync hook
   styles/         tokens.css (canonical), vendor-theme.css, app.css
+content/
+  scenarios/      reviewed scenario JSON, one file per version
+  scenario.schema.json  generated JSON Schema for editors
 supabase/
   migrations/     schema, RPCs, Realtime, cleanup, registry entries
   tests/          real-database integration tests
-scripts/          content validation, registry generator, boundary check, db push
+scripts/          content validation, scenario publishing, JSON Schema, boundary check, db push
 tests/e2e/        Playwright end-to-end tests
 docs/             design-system.md
 ```

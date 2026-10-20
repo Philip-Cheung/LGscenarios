@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { parseRpcResult } from './schema'
-import type { NavigateDirection, RpcResult } from './types'
+import type { GuidedEvent, RpcResult } from './types'
 
 /**
  * Thin adapter over the session RPCs. Identity always comes from the caller's
@@ -43,20 +43,14 @@ export class SessionApi {
     return this.call('regenerate_pair_code', { p_session_id: sessionId })
   }
 
-  startPair(sessionId: string, expectedRevision: number) {
-    return this.call('start_pair', { p_session_id: sessionId, p_expected_revision: expectedRevision })
-  }
-
-  navigate(sessionId: string, direction: NavigateDirection, expectedRevision: number) {
-    return this.call('navigate', {
+  /** Advances the shared conversation; the server checks role, stage, and content ids. */
+  guidedEvent(sessionId: string, event: GuidedEvent, targetId: string | null, expectedRevision: number) {
+    return this.call('guided_event', {
       p_session_id: sessionId,
-      p_direction: direction,
+      p_event: event,
+      p_target_id: targetId,
       p_expected_revision: expectedRevision,
     })
-  }
-
-  finishPair(sessionId: string, expectedRevision: number) {
-    return this.call('finish_pair', { p_session_id: sessionId, p_expected_revision: expectedRevision })
   }
 
   requestSwap(sessionId: string, expectedRevision: number) {
@@ -93,15 +87,6 @@ export class SessionApi {
 
   cancelRestart(sessionId: string, expectedRevision: number) {
     return this.call('cancel_restart', { p_session_id: sessionId, p_expected_revision: expectedRevision })
-  }
-
-  selectBranch(sessionId: string, branchId: string, expectedRevision: number, expectedRound: number) {
-    return this.call('select_branch', {
-      p_session_id: sessionId,
-      p_branch_id: branchId,
-      p_expected_revision: expectedRevision,
-      p_expected_round: expectedRound,
-    })
   }
 
   getSession(sessionId: string) {

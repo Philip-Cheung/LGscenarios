@@ -5,9 +5,10 @@ import { messageForEndFailure } from '../sessions/messages'
 import { isPartnerAway, isRestartCurrent, RESTART_TIMEOUT_MS } from '../sessions/snapshot'
 import type { SessionErrorCode, SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, PendingAction, SessionActions } from '../sessions/useSessionSync'
-import { PromptCard } from './PromptCard'
+import { GuidedStage } from './GuidedStage'
 import { ROLE_LABELS } from './roles'
-import { Button, Card, ConfirmDialog, StatusMessage } from './ui'
+import { SessionHeader } from './SessionHeader'
+import { Button, Card, ConfirmDialog, CueTag, StatusMessage } from './ui'
 import { useDelayedFlag } from './useDelayedFlag'
 import styles from './screens.module.css'
 
@@ -19,6 +20,8 @@ export interface SessionViewProps {
   notice: string | null
   lastError?: SessionErrorCode | null
   actions: SessionActions
+  /** Supabase URL that serves setting images from Storage. */
+  imageBaseUrl?: string
 }
 
 const CONNECTION_MESSAGE_DELAY_MS = 800
@@ -32,6 +35,7 @@ export function SessionView({
   notice,
   lastError = null,
   actions,
+  imageBaseUrl = '',
 }: SessionViewProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const showConnection = useDelayedFlag(connection !== 'live', CONNECTION_MESSAGE_DELAY_MS)
@@ -39,11 +43,11 @@ export function SessionView({
   const restartLive = useRestartLive(snapshot)
   const controlsLocked = connection !== 'live' || pending !== null || restartLive
   const canAct = !controlsLocked && !partnerAway
-  const canSelect = connection === 'live' && pending === null && !restartLive
   const [exitOpen, setExitOpen] = useState(false)
   const [exitOffline, setExitOffline] = useState(false)
   const [exitFailed, setExitFailed] = useState(false)
   const [restartOpen, setRestartOpen] = useState(false)
+  const [finishOpen, setFinishOpen] = useState(false)
 
   let statusText = notice ?? ''
   if (showConnection) statusText = connection === 'reconnecting' ? 'Reconnecting…' : 'Connecting…'
@@ -55,7 +59,16 @@ export function SessionView({
   }
 
   // Move focus to the new heading when the shared step changes, not on heartbeats.
-  const viewKey = `${snapshot.status}:${snapshot.round}:${snapshot.promptIndex}:${snapshot.myRole}:${snapshot.selectedBranchId ?? ''}`
+  const viewKey = [
+    snapshot.status,
+    snapshot.round,
+    snapshot.stage,
+    snapshot.myRole,
+    snapshot.triggerInitiated,
+    snapshot.activeQuestionId ?? '',
+    snapshot.activeFollowupId ?? '',
+    snapshot.questionAsked,
+  ].join(':')
   const firstRender = useRef(true)
   useEffect(() => {
     if (firstRender.current) {
@@ -64,6 +77,11 @@ export function SessionView({
     }
     headingRef.current?.focus()
   }, [viewKey])
+
+  // A finish request that the partner's progress made moot closes the dialog.
+  const finishAvailable =
+    snapshot.status === 'active' && (snapshot.stage === 'question_selection' || snapshot.stage === 'discussion')
+  if (finishOpen && !finishAvailable && pending !== 'finish_discussion') setFinishOpen(false)
 
   const showRestart =
     snapshot.myRole === 'missionary' &&
@@ -85,20 +103,20 @@ export function SessionView({
     if (!ok) setExitFailed(true)
   }
 
+  const roleClass = snapshot.myRole === 'missionary' ? styles.roleMissionary : styles.roleChristian
+
   return (
-    <>
+    <div className={`${styles.session} ${roleClass}`}>
       {snapshot.status === 'waiting' ? null : (
+        <SessionHeader roleLabel={scenario.roles[snapshot.myRole].label} stage={snapshot.stage} onLeave={openExit} />
+      )}
+      {showRestart && !restartLive ? (
         <div className={styles.sessionBar}>
-          {showRestart && !restartLive ? (
-            <button type="button" className={`${styles.textAction} ${styles.textActionQuiet}`} onClick={() => setRestartOpen(true)}>
-              Restart
-            </button>
-          ) : null}
-          <button type="button" className={styles.textAction} onClick={openExit}>
-            Exit
+          <button type="button" className={`${styles.textAction} ${styles.textActionQuiet}`} onClick={() => setRestartOpen(true)}>
+            Restart
           </button>
         </div>
-      )}
+      ) : null}
       {partnerAway ? (
         <div className={styles.notice} role="region" aria-labelledby="partner-away-heading">
           <h2 id="partner-away-heading" className={styles.heading}>
@@ -131,7 +149,7 @@ export function SessionView({
       {restartOpen ? (
         <ConfirmDialog
           title="Restart this scenario?"
-          description="Both players will return to the first prompt and keep their roles. Your partner will be asked to confirm."
+          description="Both players will return to the scene and keep their roles. Your partner will be asked to confirm."
           confirmLabel="Ask to restart"
           pending={pending === 'requestRestart'}
           error={pending === 'requestRestart' ? null : notice}
@@ -146,7 +164,26 @@ export function SessionView({
           }}
         />
       ) : null}
-    </>
+      {finishOpen ? (
+        <ConfirmDialog
+          title="Finish the conversation?"
+          description="You’ll both move to the wrap-up. You can restart or switch roles afterward."
+          confirmLabel="Finish"
+          cancelLabel="Keep talking"
+          pending={pending === 'finish_discussion'}
+          error={pending === 'finish_discussion' ? null : notice}
+          onConfirm={() => {
+            void actions.send('finish_discussion').then((ok) => {
+              if (ok) setFinishOpen(false)
+            })
+          }}
+          onCancel={() => {
+            if (pending === 'finish_discussion') return
+            setFinishOpen(false)
+          }}
+        />
+      ) : null}
+    </div>
   )
 
   function renderBody() {
@@ -164,35 +201,6 @@ export function SessionView({
           />
         )
       case 'ready':
-        return (
-          <Card className={styles.enter} aria-labelledby="lobby-heading">
-            <div className={styles.cardBody}>
-              <p className={styles.meta}>
-                <span>{ROLE_LABELS[snapshot.myRole]}</span>
-                <span>Paired</span>
-              </p>
-              <h1 id="lobby-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
-                {snapshot.myRole === 'missionary' ? <JoinedMark /> : null}
-                {snapshot.myRole === 'missionary' ? 'Your partner has joined' : 'Waiting for your partner to start'}
-              </h1>
-              <p className={styles.muted}>
-                {snapshot.myRole === 'missionary'
-                  ? 'You read each prompt aloud and move to the next one.'
-                  : 'You answer each prompt. You can show a suggested answer on your phone.'}
-              </p>
-              <div className={styles.footer}>
-                <StatusMessage>{statusText}</StatusMessage>
-                {snapshot.myRole === 'missionary' ? (
-                  <Button block disabled={!canAct || partnerAway} loading={pending === 'start'} onClick={actions.start}>
-                    Start
-                  </Button>
-                ) : (
-                  <p className={`${styles.guidance} ${styles.reserved}`}>Your partner moves to the next prompt.</p>
-                )}
-              </div>
-            </div>
-          </Card>
-        )
       case 'active':
         return (
           <>
@@ -204,22 +212,17 @@ export function SessionView({
                 actions={actions}
               />
             ) : null}
-            <PromptCard
+            <GuidedStage
               key={viewKey}
               scenario={scenario}
-              role={snapshot.myRole}
-              promptIndex={snapshot.promptIndex}
-              selectedBranchId={snapshot.selectedBranchId}
+              snapshot={snapshot}
               statusText={statusText}
               canAct={canAct}
-              canSelect={canSelect}
-              partnerAway={partnerAway}
               pending={pending}
               headingRef={headingRef}
-              onBack={actions.back}
-              onNext={actions.next}
-              onFinish={actions.finish}
-              onSelectBranch={(branchId) => void actions.selectBranch(branchId)}
+              imageBaseUrl={imageBaseUrl}
+              onSend={(event, targetId) => void actions.send(event, targetId)}
+              onFinish={() => setFinishOpen(true)}
             />
           </>
         )
@@ -235,6 +238,7 @@ export function SessionView({
               />
             ) : null}
             <FinishCard
+              scenario={scenario}
               snapshot={snapshot}
               statusText={statusText}
               canAct={canAct}
@@ -403,7 +407,7 @@ function RestartNotice({
       <h2 id="restart-request-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
         Your partner wants to restart.
       </h2>
-      <p className={styles.muted}>You’ll both return to the first prompt and keep your roles.</p>
+      <p className={styles.muted}>You’ll both return to the scene and keep your roles.</p>
       <div className={styles.stack}>
         <Button
           block
@@ -423,6 +427,7 @@ function RestartNotice({
 }
 
 interface FinishCardProps {
+  scenario: ScenarioContent
   snapshot: SessionSnapshot
   statusText: string
   canAct: boolean
@@ -432,8 +437,9 @@ interface FinishCardProps {
   actions: SessionActions
 }
 
-function FinishCard({ snapshot, statusText, canAct, partnerAway, pending, headingRef, actions }: FinishCardProps) {
+function FinishCard({ scenario, snapshot, statusText, canAct, partnerAway, pending, headingRef, actions }: FinishCardProps) {
   const isMissionary = snapshot.myRole === 'missionary'
+  const { closingPrompt, reflectionPrompt } = scenario.conclusion
   let explanation: string
   if (isMissionary) {
     explanation = snapshot.swapPending
@@ -449,13 +455,24 @@ function FinishCard({ snapshot, statusText, canAct, partnerAway, pending, headin
     <Card className={styles.enter} aria-labelledby="finish-heading">
       <div className={styles.cardBody}>
         <p className={styles.meta}>
-          <span>{ROLE_LABELS[snapshot.myRole]}</span>
           <span>Round {snapshot.round}</span>
         </p>
         <h1 id="finish-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
           <JoinedMark />
-          Scenario complete
+          Conversation complete
         </h1>
+        {isMissionary ? (
+          <div className={styles.beat}>
+            <CueTag kind="say" />
+            <p className={styles.answerText}>{closingPrompt}</p>
+          </div>
+        ) : null}
+        {reflectionPrompt ? (
+          <div className={styles.goal}>
+            <p className={styles.goalLabel}>Reflect together</p>
+            <p className={styles.text}>{reflectionPrompt}</p>
+          </div>
+        ) : null}
         <p className={styles.muted} role="status">
           {explanation}
         </p>
