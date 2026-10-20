@@ -45,6 +45,55 @@ function actions(end: SessionActions['end']): SessionActions {
   }
 }
 
+describe('SessionView while waiting for a partner', () => {
+  const waiting: SessionSnapshot = {
+    ...snapshot,
+    status: 'waiting',
+    partnerJoined: false,
+    partnerFresh: null,
+    pairCode: 'K7MPQ3',
+    codeExpiresAt: new Date(Date.now() + 900_000).toISOString(),
+  }
+
+  function renderWaiting(end: SessionActions['end']) {
+    render(
+      <SessionView
+        scenario={sampleDoorstepV2}
+        snapshot={waiting}
+        connection="live"
+        pending={null}
+        notice={null}
+        actions={actions(end)}
+      />,
+    )
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('offers Back to roles in the card instead of Exit, and closes the code without a dialog', async () => {
+    const end = vi.fn(async () => true)
+    renderWaiting(end)
+
+    expect(screen.queryByRole('button', { name: 'Exit' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Back to roles' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(end).toHaveBeenCalledOnce()
+  })
+
+  it('stays on the code and explains when offline', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    const end = vi.fn(async () => true)
+    renderWaiting(end)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Back to roles' }))
+    expect(end).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Your code cannot be closed until your connection returns.')
+    expect(screen.getByTestId('pair-code')).toBeInTheDocument()
+  })
+})
+
 describe('SessionView when the partner is disconnected', () => {
   it('lets the connected player end the session without waiting for them', async () => {
     const end = vi.fn(async () => true)

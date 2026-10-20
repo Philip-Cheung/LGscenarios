@@ -72,9 +72,7 @@ export function SessionView({
 
   const exitDescription = partnerAway
     ? 'Your partner is disconnected. This closes the scenario for both of you. You can start a new pair afterward.'
-    : snapshot.status === 'waiting' || !snapshot.partnerJoined
-      ? 'This closes your pairing code and returns you to role selection.'
-      : 'This ends the scenario for both players. You can start a new pair afterward.'
+    : 'This ends the scenario for both players. You can start a new pair afterward.'
 
   const confirmEnd = async () => {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -89,16 +87,18 @@ export function SessionView({
 
   return (
     <>
-      <div className={styles.sessionBar}>
-        {showRestart && !restartLive ? (
-          <button type="button" className={`${styles.textAction} ${styles.textActionQuiet}`} onClick={() => setRestartOpen(true)}>
-            Restart
+      {snapshot.status === 'waiting' ? null : (
+        <div className={styles.sessionBar}>
+          {showRestart && !restartLive ? (
+            <button type="button" className={`${styles.textAction} ${styles.textActionQuiet}`} onClick={() => setRestartOpen(true)}>
+              Restart
+            </button>
+          ) : null}
+          <button type="button" className={styles.textAction} onClick={openExit}>
+            Exit
           </button>
-        ) : null}
-        <button type="button" className={styles.textAction} onClick={openExit}>
-          Exit
-        </button>
-      </div>
+        </div>
+      )}
       {partnerAway ? (
         <div className={styles.notice} role="region" aria-labelledby="partner-away-heading">
           <h2 id="partner-away-heading" className={styles.heading}>
@@ -160,6 +160,7 @@ export function SessionView({
             pending={pending}
             headingRef={headingRef}
             onRegenerate={actions.regenerateCode}
+            onBack={actions.end}
           />
         )
       case 'ready':
@@ -267,13 +268,25 @@ interface WaitingCardProps {
   pending: PendingAction | null
   headingRef: Ref<HTMLHeadingElement>
   onRegenerate(): void
+  /** Closes the pairing code on the server; the screen leaves once it is ended. */
+  onBack(): Promise<boolean>
 }
 
-function WaitingCard({ snapshot, statusText, canAct, pending, headingRef, onRegenerate }: WaitingCardProps) {
+function WaitingCard({ snapshot, statusText, canAct, pending, headingRef, onRegenerate, onBack }: WaitingCardProps) {
   const codeExpired = useHasPassed(snapshot.codeExpiresAt ?? null) || !snapshot.pairCode
   const isMissionary = snapshot.myRole === 'missionary'
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState(false)
+  const [backOffline, setBackOffline] = useState(false)
+
+  const goBack = () => {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setBackOffline(true)
+      return
+    }
+    setBackOffline(false)
+    void onBack()
+  }
 
   const copyCode = async () => {
     if (!snapshot.pairCode) return
@@ -338,6 +351,18 @@ function WaitingCard({ snapshot, statusText, canAct, pending, headingRef, onRege
               Get a new code
             </Button>
           ) : null}
+          <Button
+            variant="secondary"
+            block
+            disabled={pending !== null && pending !== 'end'}
+            loading={pending === 'end'}
+            onClick={goBack}
+          >
+            Back to roles
+          </Button>
+          <StatusMessage tone="error">
+            {backOffline ? 'You are offline. Your code cannot be closed until your connection returns.' : null}
+          </StatusMessage>
         </div>
       </div>
     </Card>
