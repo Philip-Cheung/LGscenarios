@@ -172,7 +172,22 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
         if (result.ok) {
           requestRef.current = null
           writePointer(slug, result.session.id)
-          setPhase({ kind: 'session', userId: identity.userId, snapshot: result.session, scenario: resolved.scenario })
+          // A partner who joins by code takes the room's scenario, whichever link they opened.
+          const { scenarioId: roomId, scenarioVersion: roomVersion } = result.session
+          let scenario = resolved.scenario
+          if (roomId !== scenarioId || roomVersion !== version) {
+            const room = await fetchScenarioVersion(client, roomId, roomVersion)
+            if (room.status === 'outdated') {
+              setPhase({ kind: 'outdated' })
+              return
+            }
+            if (room.status !== 'ok') {
+              setPhase({ kind: 'resumeError' })
+              return
+            }
+            scenario = room.scenario
+          }
+          setPhase({ kind: 'session', userId: identity.userId, snapshot: result.session, scenario })
           return
         }
         if (result.error !== 'unavailable') requestRef.current = null

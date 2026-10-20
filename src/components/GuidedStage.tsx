@@ -1,10 +1,18 @@
 import { useId, useState, type ReactNode, type Ref } from 'react'
-import { findQuestion, type ScenarioContent, type ScenarioImage, type ScenarioQuestion } from '../lib/content'
+import {
+  findQuestion,
+  type ScenarioContent,
+  type ScenarioHelpSection,
+  type ScenarioImage,
+  type ScenarioQuestion,
+} from '../lib/content'
+import { referencedPassages, richTextOneLine } from '../lib/richText'
 import { scenarioImageUrl } from '../scenarios/catalog'
 import type { GuidedEvent, Role, SessionSnapshot } from '../sessions/types'
 import type { PendingAction } from '../sessions/useSessionSync'
 import { AppScreen, type ScreenFrame } from './AppScreen'
 import { ActivityDots, BubblesArt, DoorArt, Icon, PairCheck } from './art'
+import { PassageButtons, Passages, RichText } from './RichText'
 import { otherRole } from './roles'
 import { Button } from './ui'
 import styles from './screens.module.css'
@@ -24,11 +32,14 @@ export interface GuidedStageProps {
 
 const DEFAULT_PARTNER_NOTE = 'Take a moment. You don’t need a perfect answer.'
 const DEFAULT_LISTENER_PROMPT = 'They’ll start with a short hello. Listen, then let them know you’re ready.'
+const FOLLOW_UP_GUIDANCE = 'Use what your partner actually said. Adapt the wording if needed.'
 
 /** The shared practice, from the paired summary through the closing line. */
 export function GuidedStage(props: GuidedStageProps) {
   const { scenario, snapshot } = props
   const isMissionary = snapshot.myRole === 'missionary'
+  const openingQuestion = scenario.openingDialogue.question
+  const followUpPending = snapshot.exchange === 'follow_up' && snapshot.activeQuestionId !== null
   switch (snapshot.stage) {
     case 'paired':
       return <Paired {...props} />
@@ -37,6 +48,18 @@ export function GuidedStage(props: GuidedStageProps) {
     case 'ready_together':
       return <ReadyTogether {...props} />
     case 'opening_dialogue':
+      if (openingQuestion && snapshot.openingQuestionAsked) {
+        return isMissionary ? (
+          <PartnerTurn
+            {...props}
+            title="Make room to listen"
+            description="Your partner is answering your question. Let them finish in their own time."
+            note="Curiosity is more helpful than a perfect next line."
+          />
+        ) : (
+          <OpeningResponse {...props} />
+        )
+      }
       return isMissionary ? (
         <Opening {...props} />
       ) : (
@@ -48,13 +71,16 @@ export function GuidedStage(props: GuidedStageProps) {
         />
       )
     case 'question_selection':
-      return isMissionary ? (
-        <Questions {...props} />
-      ) : (
+      if (isMissionary) return followUpPending ? <FollowUp {...props} /> : <Questions {...props} />
+      return (
         <PartnerTurn
           {...props}
           title="Your partner’s turn"
-          description="They’re choosing a question. Listen when they ask it. The question will appear here next."
+          description={
+            followUpPending
+              ? 'Listen for their follow-up question. It will appear here next.'
+              : 'They’re choosing a question. Listen when they ask it. The question will appear here next.'
+          }
           active
         />
       )
@@ -78,7 +104,9 @@ export function GuidedStage(props: GuidedStageProps) {
           title="A moment to wrap up"
           description="Your partner will close the conversation. Thank you for sharing your perspective."
           note="You’ve both made space for a conversation."
-        />
+        >
+          {scenario.conclusion.listenerReply ? <p className={styles.hint}>{scenario.conclusion.listenerReply}</p> : null}
+        </PartnerTurn>
       )
     case 'conclusion':
       return null
@@ -94,12 +122,14 @@ export function PartnerTurn({
   description,
   note = DEFAULT_PARTNER_NOTE,
   active = false,
+  children,
 }: Pick<GuidedStageProps, 'frame' | 'viewKey' | 'headingRef'> & {
   title: string
   description: string
   note?: string
   /** Shows the activity dots while the partner is choosing. */
   active?: boolean
+  children?: ReactNode
 }) {
   return (
     <AppScreen {...frame} viewKey={viewKey} waiting note={note}>
@@ -109,6 +139,7 @@ export function PartnerTurn({
         {title}
       </h1>
       <p>{description}</p>
+      {children}
       {active ? <ActivityDots /> : null}
     </AppScreen>
   )
@@ -251,23 +282,74 @@ function ReadyTogether({ scenario, snapshot, frame, viewKey, canAct, pending, he
 }
 
 function Opening({ scenario, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  const { script, scriptNote, question } = scenario.openingDialogue
+  const event: GuidedEvent = question ? 'ask_opening_question' : 'opening_complete'
   return (
     <AppScreen
       {...frame}
       viewKey={viewKey}
       actions={
-        <Button disabled={!canAct} loading={pending === 'opening_complete'} onClick={() => onSend('opening_complete')}>
-          I’ve said it
+        <Button disabled={!canAct} loading={pending === event} onClick={() => onSend(event)}>
+          {question ? 'I’ve asked it' : 'I’ve said it'}
         </Button>
       }
     >
-      <TurnTag>Your turn · Opening</TurnTag>
-      <h1 ref={headingRef} tabIndex={-1} className={styles.srOnly}>
-        Start with a hello
-      </h1>
-      <blockquote className={styles.quote}>“{scenario.openingDialogue.script}”</blockquote>
-      <p>Try it in your own words.</p>
-      <p className={styles.hint}>Continue when you’ve finished speaking.</p>
+      <Passages bible={scenario.bible}>
+        <TurnTag>Your turn · Opening</TurnTag>
+        <h1 ref={headingRef} tabIndex={-1} className={styles.srOnly}>
+          Start with a hello
+        </h1>
+        <blockquote className={styles.quote}>“{script}”</blockquote>
+        {scriptNote ? <p className={styles.hint}>{scriptNote}</p> : null}
+        {question ? (
+          <>
+            <div className={styles.conversation}>
+              <small>{question.missionaryNote ?? 'Then ask'}</small>
+              <blockquote>
+                <RichText text={question.prompt} quoted />
+              </blockquote>
+            </div>
+            <p>Try it in your own words.</p>
+            <p className={styles.hint}>Continue when you’ve asked the question.</p>
+          </>
+        ) : (
+          <>
+            <p>Try it in your own words.</p>
+            <p className={styles.hint}>Continue when you’ve finished speaking.</p>
+          </>
+        )}
+      </Passages>
+    </AppScreen>
+  )
+}
+
+function OpeningResponse({ scenario, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  const question = scenario.openingDialogue.question
+  if (!question) return null
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      actions={
+        <Button disabled={!canAct} loading={pending === 'share_complete'} onClick={() => onSend('share_complete')}>
+          I’ve shared my thoughts
+        </Button>
+      }
+    >
+      <Passages bible={scenario.bible}>
+        <TurnTag>Your turn · Opening</TurnTag>
+        <h1 ref={headingRef} tabIndex={-1}>
+          A little about you
+        </h1>
+        <div className={styles.conversation}>
+          <small>Your partner asked</small>
+          <blockquote>
+            <RichText text={question.prompt} quoted />
+          </blockquote>
+        </div>
+        <p>Answer in your own words. If you need a starting point, you can reveal an example below.</p>
+        <ExampleAnswer example={question.exampleAnswer} moreHelp={question.moreHelp} />
+      </Passages>
     </AppScreen>
   )
 }
@@ -278,6 +360,8 @@ function Questions({ scenario, snapshot, frame, viewKey, canAct, pending, headin
   const answered = new Set(snapshot.answeredQuestionIds)
   const allAnswered = scenario.questions.every((question) => answered.has(question.id))
   const choice = selected && !answered.has(selected) ? selected : null
+  const chosen = findQuestion(scenario, choice)
+  const acknowledgment = answered.size === 0 ? scenario.openingDialogue.question?.acknowledgment : undefined
   const moveToClosing = (
     <Button
       variant={allAnswered ? 'primary' : 'text'}
@@ -311,50 +395,115 @@ function Questions({ scenario, snapshot, frame, viewKey, canAct, pending, headin
         )
       }
     >
-      <TurnTag>Your turn · Questions</TurnTag>
-      <h1 ref={headingRef} tabIndex={-1}>
-        What would you like to ask?
-      </h1>
-      <p>Choose a topic that feels natural.</p>
-      <fieldset className={styles.choices}>
-        <legend className={styles.srOnly}>Choose a question</legend>
-        {scenario.questions.map((question) => {
-          const done = answered.has(question.id)
-          return (
-            <label key={question.id} className={done ? `${styles.choice} ${styles.choiceAnswered}` : styles.choice}>
-              <span className={styles.optionIcon}>
-                <Icon kind={done ? 'check' : (question.icon ?? 'chat')} />
-              </span>
-              <span>
-                <small>
-                  {question.topic}
-                  {done ? ' · Answered' : null}
-                </small>
-                <strong>{question.prompt}</strong>
-              </span>
-              <input
-                type="radio"
-                name="question"
-                value={question.id}
-                disabled={done}
-                checked={choice === question.id}
-                onChange={() => setSelected(question.id)}
-              />
-            </label>
-          )
-        })}
-      </fieldset>
-      <p className={styles.hint}>
-        {allAnswered
-          ? 'You’ve asked every question. Move to closing when you’re ready.'
-          : 'Say your question aloud, then continue.'}
-      </p>
+      <Passages bible={scenario.bible}>
+        <TurnTag>Your turn · Questions</TurnTag>
+        <h1 ref={headingRef} tabIndex={-1}>
+          What would you like to ask?
+        </h1>
+        {acknowledgment ? (
+          <div className={styles.conversation}>
+            <small>First, acknowledge their answer</small>
+            <blockquote>“{acknowledgment}”</blockquote>
+            <p className={styles.hint}>Adapt it to what your partner said.</p>
+          </div>
+        ) : null}
+        <p>Choose a topic that feels natural.</p>
+        <fieldset className={styles.choices}>
+          <legend className={styles.srOnly}>Choose a question</legend>
+          {scenario.questions.map((question) => {
+            const done = answered.has(question.id)
+            return (
+              <label key={question.id} className={done ? `${styles.choice} ${styles.choiceAnswered}` : styles.choice}>
+                <span className={styles.optionIcon}>
+                  <Icon kind={done ? 'check' : (question.icon ?? 'chat')} />
+                </span>
+                <span>
+                  <small>
+                    {question.topic}
+                    {done ? ' · Answered' : null}
+                  </small>
+                  <strong>{richTextOneLine(question.prompt)}</strong>
+                </span>
+                <input
+                  type="radio"
+                  name="question"
+                  value={question.id}
+                  disabled={done}
+                  checked={choice === question.id}
+                  onChange={() => setSelected(question.id)}
+                />
+              </label>
+            )
+          })}
+        </fieldset>
+        {chosen && referencedPassages(chosen.prompt).length > 0 ? (
+          <p className={styles.hint}>
+            Bible passage in this question: <PassageButtons text={chosen.prompt} />
+          </p>
+        ) : null}
+        <p className={styles.hint}>
+          {allAnswered
+            ? 'You’ve asked every question. Move to closing when you’re ready.'
+            : 'Say your question aloud, then continue.'}
+        </p>
+      </Passages>
+    </AppScreen>
+  )
+}
+
+function FollowUp({ scenario, snapshot, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  const question = findQuestion(scenario, snapshot.activeQuestionId)
+  const followUp = question?.followUp
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      actions={
+        <>
+          <Button disabled={!canAct || !followUp} loading={pending === 'ask_follow_up'} onClick={() => onSend('ask_follow_up')}>
+            I’ve asked it
+          </Button>
+          <Button variant="secondary" disabled={!canAct} loading={pending === 'next_topic'} onClick={() => onSend('next_topic')}>
+            Next topic
+          </Button>
+          <Button variant="text" disabled={!canAct} loading={pending === 'move_to_closing'} onClick={() => onSend('move_to_closing')}>
+            Move to closing
+          </Button>
+        </>
+      }
+    >
+      <Passages bible={scenario.bible}>
+        <TurnTag>Your turn · Follow-up</TurnTag>
+        <h1 ref={headingRef} tabIndex={-1}>
+          Ask a follow-up
+        </h1>
+        <p>{FOLLOW_UP_GUIDANCE}</p>
+        {followUp ? (
+          <>
+            <div className={styles.conversation}>
+              <small>{question.topic} · Suggested wording</small>
+              <blockquote>
+                <RichText text={followUp.prompt} quoted />
+              </blockquote>
+            </div>
+            {followUp.missionaryNote ? <p className={styles.hint}>{followUp.missionaryNote}</p> : null}
+            {followUp.missionaryHelp ? (
+              <details className={styles.moreHelp}>
+                <summary>More help</summary>
+                <HelpSections sections={followUp.missionaryHelp} />
+              </details>
+            ) : null}
+          </>
+        ) : null}
+      </Passages>
     </AppScreen>
   )
 }
 
 function Response({ scenario, snapshot, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
   const question = findQuestion(scenario, snapshot.activeQuestionId)
+  const followUp = snapshot.exchange === 'follow_up' ? question?.followUp : undefined
+  const prompt = followUp?.prompt ?? question?.prompt
   return (
     <AppScreen
       {...frame}
@@ -365,27 +514,44 @@ function Response({ scenario, snapshot, frame, viewKey, canAct, pending, heading
         </Button>
       }
     >
-      <TurnTag>Your turn · Response</TurnTag>
-      <h1 ref={headingRef} tabIndex={-1}>
-        Respond in your own words.
-      </h1>
-      {question ? (
-        <div className={styles.conversation}>
-          <small>Your partner asked</small>
-          <blockquote>“{question.prompt}”</blockquote>
-        </div>
-      ) : null}
-      <p>Explain what you believe. If you need a starting point, you can reveal an example below.</p>
-      {question ? <ExampleAnswer question={question} /> : null}
+      <Passages bible={scenario.bible}>
+        <TurnTag>{followUp ? 'Your turn · Follow-up' : 'Your turn · Response'}</TurnTag>
+        <h1 ref={headingRef} tabIndex={-1}>
+          {followUp ? 'Respond to the follow-up' : 'Respond in your own words.'}
+        </h1>
+        {prompt ? (
+          <div className={styles.conversation}>
+            <small>Your partner asked</small>
+            <blockquote>
+              <RichText text={prompt} quoted />
+            </blockquote>
+          </div>
+        ) : null}
+        <p>Explain what you believe. If you need a starting point, you can reveal an example below.</p>
+        {followUp ? (
+          <ExampleAnswer example={followUp.exampleAnswer} moreHelp={followUp.moreHelp} />
+        ) : question ? (
+          <ExampleAnswer example={question.exampleAnswer} moreHelp={question.moreHelp} scriptures={question.scriptures} />
+        ) : null}
+      </Passages>
     </AppScreen>
   )
 }
 
 /**
  * The example answer is real text, blurred until revealed. The blurred copy is
- * hidden from assistive technology; the readable copy is hidden until revealed.
+ * plain text hidden from assistive technology; the readable copy, with its
+ * passage buttons and More help, is hidden until revealed.
  */
-function ExampleAnswer({ question }: { question: ScenarioQuestion }) {
+function ExampleAnswer({
+  example,
+  moreHelp,
+  scriptures,
+}: {
+  example: string
+  moreHelp?: readonly ScenarioHelpSection[]
+  scriptures?: ScenarioQuestion['scriptures']
+}) {
   const id = useId()
   const [revealed, setRevealed] = useState(false)
   return (
@@ -393,11 +559,19 @@ function ExampleAnswer({ question }: { question: ScenarioQuestion }) {
       <div className={styles.exampleHeading}>Example Christian response</div>
       <p className={styles.hint}>One possible response. Make it your own.</p>
       <p className={styles.exampleBlur} aria-hidden="true" hidden={revealed}>
-        “{question.exampleAnswer}”
+        “{richTextOneLine(example)}”
       </p>
-      <div id={id} hidden={!revealed}>
-        <p className={styles.exampleText}>“{question.exampleAnswer}”</p>
-        {question.scriptures ? <p className={styles.hint}>Scripture: {question.scriptures.join(' · ')}</p> : null}
+      <div id={id} hidden={!revealed} className={styles.exampleRevealed}>
+        <div className={styles.exampleText}>
+          <RichText text={example} quoted />
+        </div>
+        {scriptures ? <p className={styles.hint}>Scripture: {scriptures.join(' · ')}</p> : null}
+        {moreHelp ? (
+          <details className={styles.moreHelp}>
+            <summary>More help</summary>
+            <HelpSections sections={moreHelp} />
+          </details>
+        ) : null}
       </div>
       <Button
         variant="text"
@@ -409,6 +583,19 @@ function ExampleAnswer({ question }: { question: ScenarioQuestion }) {
         {revealed ? 'Hide example answer' : 'Reveal example answer'}
       </Button>
     </aside>
+  )
+}
+
+function HelpSections({ sections }: { sections: readonly ScenarioHelpSection[] }) {
+  return (
+    <div className={styles.helpSections}>
+      {sections.map((section, index) => (
+        <section key={index}>
+          {section.heading ? <h2 className={styles.helpHeading}>{section.heading}</h2> : null}
+          <RichText text={section.text} />
+        </section>
+      ))}
+    </div>
   )
 }
 

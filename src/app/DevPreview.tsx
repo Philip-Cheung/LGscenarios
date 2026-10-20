@@ -6,7 +6,7 @@ import { RoleSelect } from '../components/RoleSelect'
 import { SessionView } from '../components/SessionView'
 import { Welcome } from '../components/Welcome'
 import type { ScenarioContent } from '../lib/content'
-import { coffeeChat, sampleDoorstep, whoIsGod } from '../scenarios/fixtures'
+import { coffeeChat, sampleDoorstep, weekOne, whoIsGod } from '../scenarios/fixtures'
 import type { SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, SessionActions } from '../sessions/useSessionSync'
 
@@ -33,6 +33,8 @@ const base: SessionSnapshot = {
   partnerReady: false,
   activeQuestionId: null,
   answeredQuestionIds: [],
+  openingQuestionAsked: false,
+  exchange: 'initial',
   partnerFresh: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   pairCode: null,
@@ -137,6 +139,35 @@ const STATES: Record<string, PreviewState> = {
   },
   'restart-asked': {
     snapshot: { ...responding, myRole: 'christian', restartPending: true, restartRequestedAt: new Date().toISOString() },
+  },
+  'week-scene': { scenario: weekOne, snapshot: { status: 'ready' } },
+  'week-opening-missionary': { scenario: weekOne, snapshot: { stage: 'opening_dialogue' } },
+  'week-opening-christian': {
+    scenario: weekOne,
+    snapshot: { stage: 'opening_dialogue', myRole: 'christian', openingQuestionAsked: true },
+  },
+  'week-questions-first': { scenario: weekOne, snapshot: { stage: 'question_selection', openingQuestionAsked: true } },
+  'week-response-christian': {
+    scenario: weekOne,
+    snapshot: { stage: 'response', activeQuestionId: 'first-vision', myRole: 'christian', openingQuestionAsked: true },
+  },
+  'week-follow-up-missionary': {
+    scenario: weekOne,
+    snapshot: { stage: 'question_selection', activeQuestionId: 'accounts', exchange: 'follow_up', openingQuestionAsked: true },
+  },
+  'week-follow-up-christian': {
+    scenario: weekOne,
+    snapshot: {
+      stage: 'response',
+      activeQuestionId: 'accounts',
+      exchange: 'follow_up',
+      myRole: 'christian',
+      openingQuestionAsked: true,
+    },
+  },
+  'week-questions-answered': {
+    scenario: weekOne,
+    snapshot: { stage: 'question_selection', openingQuestionAsked: true, answeredQuestionIds: ['faith', 'accounts'] },
   },
   'left': { screen: 'left' },
   'partner-left': { screen: 'partnerLeft' },

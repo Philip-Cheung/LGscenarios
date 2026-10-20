@@ -20,6 +20,8 @@ const base: SessionSnapshot = {
   partnerReady: true,
   activeQuestionId: null,
   answeredQuestionIds: [],
+  openingQuestionAsked: false,
+  exchange: 'initial',
   partnerFresh: true,
   expiresAt: '2026-10-20T12:00:00Z',
   pairCode: null,

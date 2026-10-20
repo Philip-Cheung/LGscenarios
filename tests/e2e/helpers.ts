@@ -25,7 +25,7 @@ export const DOORSTEP = {
 export const SCREENS = {
   welcome: 'Practice talking with Mormon missionaries.',
   chooseRole: 'Select a role',
-  invite: 'Good conversations start with two.',
+  invite: 'Invite your partner',
   join: 'Find your practice partner.',
   paired: 'A little practice, together.',
   readyTogether: 'A moment to settle in.',

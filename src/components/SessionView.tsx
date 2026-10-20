@@ -67,6 +67,8 @@ export function SessionView({
     snapshot.stage,
     snapshot.myRole,
     snapshot.activeQuestionId ?? '',
+    snapshot.exchange,
+    snapshot.openingQuestionAsked,
     snapshot.swapPending,
     partnerAway,
     restartLive,
@@ -95,7 +97,11 @@ export function SessionView({
   const roleLabel = ROLE_SHORT_LABELS[snapshot.myRole]
   const meta =
     snapshot.status === 'waiting' || snapshot.stage === 'paired' ? undefined : (
-      <ProgressMeta roleLabel={roleLabel} stage={snapshot.stage} />
+      <ProgressMeta
+        roleLabel={roleLabel}
+        stage={snapshot.stage}
+        followUp={snapshot.exchange === 'follow_up' && snapshot.activeQuestionId !== null}
+      />
     )
 
   const frame: ScreenFrame = {
@@ -358,9 +364,15 @@ function WaitingScreen({
         <Icon />
         Invite your partner
       </span>
-      <h1 ref={headingRef} tabIndex={-1}>
-        {codeExpired ? 'This code has expired.' : 'Good conversations start with two.'}
-      </h1>
+      {codeExpired ? (
+        <h1 ref={headingRef} tabIndex={-1}>
+          This code has expired.
+        </h1>
+      ) : (
+        <h1 ref={headingRef} tabIndex={-1} className={styles.srOnly}>
+          Invite your partner
+        </h1>
+      )}
       {codeExpired ? (
         <p>Get a new code, then share it with your partner.</p>
       ) : (
@@ -472,6 +484,7 @@ function Completion({
       <div className={styles.reflection}>
         <p className={styles.eyebrow}>REFLECT TOGETHER</p>
         <p>{scenario.conclusion.reflectionPrompt ?? DEFAULT_REFLECTION_PROMPT}</p>
+        {scenario.conclusion.reflectionFollowUp ? <p>{scenario.conclusion.reflectionFollowUp}</p> : null}
       </div>
     </AppScreen>
   )

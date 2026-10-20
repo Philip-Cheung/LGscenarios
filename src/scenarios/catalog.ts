@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { SCENARIO_SCHEMA_VERSION, scenarioContentSchema, type ScenarioContent } from '../lib/content'
+import { SCENARIO_SCHEMA_VERSIONS, scenarioContentSchema, type ScenarioContent } from '../lib/content'
 
 export type ScenarioLookup =
   | { status: 'ok'; scenario: ScenarioContent }
@@ -27,7 +27,7 @@ const versionKey = (scenarioId: string, version: number) => `${scenarioId}@${ver
 function fromRow(row: RegistryRow): ScenarioLookup {
   if (row.content === null) return { status: 'retired' }
   const declared = (row.content as { schemaVersion?: unknown } | null)?.schemaVersion
-  if (declared !== SCENARIO_SCHEMA_VERSION) return { status: 'outdated' }
+  if (!(SCENARIO_SCHEMA_VERSIONS as readonly unknown[]).includes(declared)) return { status: 'outdated' }
   const parsed = scenarioContentSchema.safeParse(row.content)
   if (!parsed.success || parsed.data.id !== row.scenario_id || parsed.data.version !== row.version) {
     return { status: 'unavailable' }
