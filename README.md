@@ -178,7 +178,7 @@ The E2E suite runs six simultaneous pairs (12 isolated browser identities), and 
 Manual check after each production deploy, using **two real phones**:
 
 1. Share the link in WhatsApp and open it on both phones in WhatsApp's in-app browser.
-2. Phone A taps **Start a practice**, chooses a role and taps **Get a pairing code**; phone B taps **Join your partner** and enters the six-digit code. Phone B takes the other role. Both see the paired summary; phone A taps **Start practice**.
+2. Phone A taps **Create a room**, chooses a role and taps **Get a pairing code**; phone B taps **Join your partner** and enters the six-digit code. Phone B takes the other role. Both see the paired summary; phone A taps **Start practice**.
 3. Both tap **I’m ready**, then phone A taps **Begin conversation** and **I’ve said it**. Phone A chooses a question and taps **I’ve asked it**; phone B sees it only then, and the example answer stays blurred until **Reveal example answer**. Phone B taps **I’ve shared my thoughts**; ask a second question and check the answer starts blurred again.
 4. Lock phone B for about a minute: phone A should show **Your partner is offline**. Unlock phone B and confirm both phones catch up.
 5. Tap **Move to closing** and **Finish practice**, then **Switch roles** on phone A and accept on phone B; confirm phone B now has **Start practice**. Open the `···` menu, choose **Leave session**, and confirm both phones leave.

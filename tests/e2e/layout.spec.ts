@@ -72,7 +72,7 @@ test('guided screens stay usable at 200% text size on a 320px screen', async ({ 
 
 test('the role screen is keyboard reachable with a visible focus indicator', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
-  await page.getByRole('button', { name: 'Start a practice' }).click()
+  await page.getByRole('button', { name: 'Create a room' }).click()
   await expect(page.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
   await page.keyboard.press('Tab')
   const focused = page.locator(':focus-visible')
@@ -88,7 +88,7 @@ test('the role screen is keyboard reachable with a visible focus indicator', asy
 test('the production build styles the primary action from the design tokens', async ({ page }) => {
   // Guards against chunking that drops or reorders the token and component CSS.
   await page.goto(SCENARIO_PATH)
-  const button = page.getByRole('button', { name: 'Start a practice' })
+  const button = page.getByRole('button', { name: 'Create a room' })
   const styles = await button.evaluate((el) => ({
     radius: getComputedStyle(el).borderTopLeftRadius,
     text: getComputedStyle(el).color,
@@ -103,7 +103,7 @@ test('the production build styles the primary action from the design tokens', as
 
 test('changing a design token updates the components', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
-  const button = page.getByRole('button', { name: 'Start a practice' })
+  const button = page.getByRole('button', { name: 'Create a room' })
   const fill = () => button.evaluate((el) => getComputedStyle(el).backgroundColor)
   const before = await fill()
 

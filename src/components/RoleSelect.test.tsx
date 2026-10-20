@@ -15,7 +15,7 @@ describe('Welcome', () => {
     expect(screen.getByRole('img', { name: /open green door/ })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Your partner ended the practice.')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Start a practice' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create a room' }))
     expect(onCreate).toHaveBeenCalledOnce()
     await userEvent.click(screen.getByRole('button', { name: 'Join your partner' }))
     expect(onJoin).toHaveBeenCalledOnce()

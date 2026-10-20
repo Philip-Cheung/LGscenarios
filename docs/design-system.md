@@ -93,7 +93,7 @@ Before pairing, the screens follow who creates the practice rather than the role
 
 | Screen | Creator | Joiner |
 | --- | --- | --- |
-| Welcome | The doorway art, a "Conversation practice for Christians" chip, "Practice talking with Mormon missionaries.", two short paragraphs, **Start a practice** and **Join your partner** | Same |
+| Welcome | The doorway art, a "Conversation practice for Christians" chip, "Practice talking with Mormon missionaries.", two short paragraphs, **Create a room** and **Join your partner** | Same |
 | Role choice | "Which role will you practise?" with two radio cards titled with the short role names "Mormon" and "Christian" (Mormon selected by default), "This week’s scenario" with the scenario title, **Get a pairing code**, **Back** | Not shown; the joiner takes the other role |
 | Pairing | "Good conversations start with two." with the six-digit code (`482 716`), both roles, waiting dots, **Change roles**, and **Get a new code** after expiry. Reopening the link in the creator's browser shows the same code with "You started this practice earlier in this browser." | "Find your practice partner." with the numeric code field, **Join practice**, **Back** |
 | Paired | "You’re paired" summary, **Start practice** | The same summary; waits for the creator |
