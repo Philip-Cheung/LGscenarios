@@ -31,6 +31,16 @@ describe('readConfig', () => {
     expect(anon.ok).toBe(true)
   })
 
+  it('refuses values that are not a publishable key', () => {
+    for (const value of ['the sb_publishable_… value from your .env.test.local', 'not-a-key', jwt({ role: 'authenticated' })]) {
+      const result = readConfig({ VITE_SUPABASE_URL: URL_OK, VITE_SUPABASE_PUBLISHABLE_KEY: value })
+      expect(result).toEqual({
+        ok: false,
+        problems: ['VITE_SUPABASE_PUBLISHABLE_KEY is not a publishable key (it should start with sb_publishable_)'],
+      })
+    }
+  })
+
   it('requires https except for a local development server', () => {
     const key = 'sb_publishable_abc'
     expect(readConfig({ VITE_SUPABASE_URL: 'http://example.com', VITE_SUPABASE_PUBLISHABLE_KEY: key }).ok).toBe(false)

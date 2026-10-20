@@ -35,22 +35,27 @@ export function readConfig(env: RawEnv): ConfigResult {
     problems.push('VITE_SUPABASE_PUBLISHABLE_KEY is missing')
   } else if (key.startsWith('sb_secret_')) {
     problems.push('VITE_SUPABASE_PUBLISHABLE_KEY must be a publishable key, not a secret key')
-  } else if (looksLikeServiceRoleJwt(key)) {
+  } else if (jwtRole(key) === 'service_role') {
     problems.push('VITE_SUPABASE_PUBLISHABLE_KEY must not be a service_role key')
+  } else if (!PUBLISHABLE_KEY.test(key) && jwtRole(key) !== 'anon') {
+    problems.push('VITE_SUPABASE_PUBLISHABLE_KEY is not a publishable key (it should start with sb_publishable_)')
   }
 
   if (problems.length > 0) return { ok: false, problems }
   return { ok: true, config: { supabaseUrl: url, supabasePublishableKey: key, turnstileSiteKey: turnstile || null } }
 }
 
-function looksLikeServiceRoleJwt(key: string): boolean {
+const PUBLISHABLE_KEY = /^sb_publishable_[A-Za-z0-9_-]+$/
+
+/** The `role` claim of a legacy JWT API key, or null if the value is not one. */
+function jwtRole(key: string): string | null {
   const parts = key.split('.')
-  if (parts.length !== 3) return false
+  if (parts.length !== 3) return null
   try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))) as { role?: string }
-    return payload.role === 'service_role'
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))) as { role?: unknown }
+    return typeof payload.role === 'string' ? payload.role : null
   } catch {
-    return false
+    return null
   }
 }
 
