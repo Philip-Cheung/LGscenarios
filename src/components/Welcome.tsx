@@ -16,11 +16,11 @@ export function Welcome({ notice = null, onCreate, onJoin }: WelcomeProps) {
     <AppScreen
       meta={<PairingMeta label="Before you begin" />}
       viewKey="welcome"
-      note="One person starts the practice. The other joins using a code."
+      note="One person creates a room. The other joins using a code."
       status={<StatusMessage className={styles.statusLine}>{notice}</StatusMessage>}
       actions={
         <>
-          <Button onClick={onCreate}>Start a practice</Button>
+          <Button onClick={onCreate}>Create a room</Button>
           <Button variant="secondary" onClick={onJoin}>
             Join your partner
           </Button>

@@ -47,7 +47,7 @@ export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, 
     >
       <span className={styles.turn}>
         <Icon />
-        Start a practice
+        Create a room
       </span>
       <h1 tabIndex={-1}>Which role will you practise?</h1>
       <p>One person practises as the Christian. The other plays the missionary to help their partner prepare.</p>

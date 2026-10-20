@@ -76,7 +76,7 @@ export async function readPairCode(page: Page): Promise<string> {
 
 /** From the welcome screen, creates a practice in the chosen role and returns its code. */
 export async function createPractice(page: Page, role: 'Missionary' | 'Christian' = 'Missionary'): Promise<string> {
-  await page.getByRole('button', { name: 'Start a practice' }).click()
+  await page.getByRole('button', { name: 'Create a room' }).click()
   await expect(heading(page, SCREENS.chooseRole)).toBeVisible()
   await page.getByRole('radio', { name: ROLE_NAMES[role] }).check()
   await page.getByRole('button', { name: 'Get a pairing code' }).click()
