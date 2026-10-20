@@ -21,7 +21,7 @@ test('serves the security headers and a strict content security policy', async (
   expect(policy).not.toContain('unsafe-inline')
   expect(policy).not.toContain('unsafe-eval')
 
-  await expect(page.getByRole('button', { name: 'Mormon missionary' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Create a practice' })).toBeVisible()
   expect(violations).toEqual([])
 })
 
@@ -31,7 +31,7 @@ test('unknown and draft scenario links get the same friendly explanation', async
   // Drafts are hidden by row-level security until they are published, and look like any unknown link.
   await page.goto('/s/who-is-god')
   await expect(page.getByRole('heading', { level: 1, name: 'This scenario is not available' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Mormon missionary' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Create a practice' })).toHaveCount(0)
   await page.goto('/s/Not_A_Link')
   await expect(page.getByRole('heading', { name: 'We could not find that scenario' })).toBeVisible()
 })
@@ -39,7 +39,7 @@ test('unknown and draft scenario links get the same friendly explanation', async
 test('the site root opens the most recently published scenario', async ({ page }) => {
   await page.goto('/')
   await expect(page).toHaveURL(/\/s\/[a-z0-9-]+$/)
-  await expect(page.getByRole('button', { name: 'Mormon missionary' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Create a practice' })).toBeVisible()
 })
 
 test('the development preview gallery is not shipped', async ({ page }) => {

@@ -13,20 +13,19 @@ const state = {
   revision: 0,
   round: 1,
   my_role: 'missionary',
+  is_creator: true,
   partner_joined: false,
   swap_pending: false,
   restart_pending: false,
+  restart_by_me: false,
   restart_requested_at: null,
-  stage: 'scene_setup',
+  stage: 'paired',
   my_ready: false,
   partner_ready: false,
-  trigger_initiated: false,
   active_question_id: null,
-  active_followup_id: null,
-  question_asked: false,
   partner_fresh: null,
   expires_at: '2026-10-20T12:00:00Z',
-  pair_code: 'ABCDEF',
+  pair_code: '482716',
   code_expires_at: '2026-10-20T00:15:00Z',
 }
 
@@ -35,7 +34,7 @@ describe('parseRpcResult', () => {
     const result = parseRpcResult({ ok: true, session: state })
     expect(result).toEqual({
       ok: true,
-      session: expect.objectContaining({ id: SESSION, myRole: 'missionary', pairCode: 'ABCDEF', partnerFresh: null }),
+      session: expect.objectContaining({ id: SESSION, myRole: 'missionary', isCreator: true, pairCode: '482716', partnerFresh: null }),
     })
   })
 
@@ -52,7 +51,13 @@ describe('parseRpcResult', () => {
     expect(parseRpcResult({ ok: false, error: 'boom' })).toEqual({ ok: false, error: 'unavailable', session: null })
     expect(parseRpcResult(null)).toEqual({ ok: false, error: 'unavailable', session: null })
     expect(parseRpcResult({ ok: true, session: { ...state, pair_code: '<script>' } }).ok).toBe(false)
+    expect(parseRpcResult({ ok: true, session: { ...state, pair_code: 'K7MPQ3' } }).ok).toBe(false)
     expect(parseRpcResult({ ok: true, session: { ...state, active_question_id: '../etc' } }).ok).toBe(false)
+  })
+
+  it('rejects stages from before the warm-coach flow', () => {
+    expect(parseRpcResult({ ok: true, session: { ...state, stage: 'discussion' } }).ok).toBe(false)
+    expect(parseRpcResult({ ok: true, session: { ...state, stage: 'ready_together' } }).ok).toBe(true)
   })
 })
 
@@ -63,19 +68,18 @@ describe('snapshotFromRealtimeRow', () => {
     scenario_version: 1,
     missionary_user_id: MISSIONARY,
     christian_user_id: CHRISTIAN,
+    creator_user_id: CHRISTIAN,
+    creator_role: 'christian',
     status: 'active',
     revision: '7',
     round: 1,
     swap_requested_by: null,
     restart_requested_by: null,
     restart_requested_at: null,
-    stage: 'discussion',
+    stage: 'response',
     missionary_ready: true,
     christian_ready: false,
-    trigger_initiated: true,
     active_question_id: 'nature-of-god',
-    active_followup_id: null,
-    question_asked: true,
     expires_at: '2026-10-20T12:00:00Z',
   }
 
@@ -84,7 +88,7 @@ describe('snapshotFromRealtimeRow', () => {
     expect(snapshot).toMatchObject({
       myRole: 'christian',
       revision: 7,
-      stage: 'discussion',
+      stage: 'response',
       activeQuestionId: 'nature-of-god',
       partnerJoined: true,
     })
@@ -97,6 +101,17 @@ describe('snapshotFromRealtimeRow', () => {
     expect(snapshotFromRealtimeRow(row, CHRISTIAN)).toMatchObject({ meReady: false, partnerReady: true })
   })
 
+  it('marks the creator and whose restart request it is', () => {
+    const asked = { ...row, restart_requested_by: CHRISTIAN, restart_requested_at: new Date().toISOString() }
+    expect(snapshotFromRealtimeRow(asked, CHRISTIAN)).toMatchObject({ isCreator: true, restartPending: true, restartByMe: true })
+    expect(snapshotFromRealtimeRow(asked, MISSIONARY)).toMatchObject({ isCreator: false, restartPending: true, restartByMe: false })
+  })
+
+  it('gives a waiting creator the role they chose', () => {
+    const waiting = { ...row, status: 'waiting', christian_user_id: null, missionary_user_id: CHRISTIAN, stage: 'paired' }
+    expect(snapshotFromRealtimeRow(waiting, CHRISTIAN)).toMatchObject({ myRole: 'christian', isCreator: true })
+  })
+
   it('ignores rows for sessions the viewer is not in', () => {
     expect(snapshotFromRealtimeRow(row, OUTSIDER)).toBeNull()
   })
@@ -104,5 +119,7 @@ describe('snapshotFromRealtimeRow', () => {
   it('never requests pairing codes over Realtime', () => {
     expect(REALTIME_SESSION_COLUMNS).not.toContain('pair_code')
     expect(REALTIME_SESSION_COLUMNS).toContain('revision')
+    expect(REALTIME_SESSION_COLUMNS).toContain('creator_role')
+    expect(REALTIME_SESSION_COLUMNS).not.toContain('trigger_initiated')
   })
 })

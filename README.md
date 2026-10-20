@@ -1,12 +1,12 @@
 # LGscenarios: Doorstep Practice
 
-A two-phone role-play app for practising doorstep conversations. One person plays the **Mormon missionary** and one the **Christian**. Each pair opens the same weekly link (for example `/s/who-is-god`) and pairs with a short code. Both players read their scene and tap Ready, act out the opening (a knock at the door, a wave across a café), and then the missionary chooses questions and follow-ups. The Christian sees each question only after it has been asked, and can reveal a suggested answer on their own phone only.
+A two-phone role-play app for practising doorstep conversations. One person plays the **Missionary** and one the **Christian**. Each pair opens the same weekly link (for example `/s/who-is-god`) and pairs with a short code. The practice has six steps: both players read their scene and tap Ready, settle in together, the missionary says the opening line, asks questions one at a time, and closes the conversation. The Christian sees each question only after it has been asked, and can reveal an example answer on their own phone only.
 
 Scenarios are reviewed JSON files in `content/scenarios/`, stored in Supabase as versioned rows. Publishing a new scenario is a database migration; the frontend doesn't change and doesn't need redeploying.
 
 - Frontend: React 19, TypeScript, Vite and React Router, deployed on Vercel.
 - Backend: Supabase (Postgres with row-level security and atomic RPCs, anonymous Auth, and Realtime Postgres Changes). Postgres is the source of truth; there is no simulated or offline mode.
-- Design system: tokens plus an app-owned wrapper layer around `@openai/apps-sdk-ui`. See [docs/design-system.md](docs/design-system.md).
+- Design system: the Warm Coach design from the design handoff, as tokens and plain HTML primitives with CSS modules. See [docs/design-system.md](docs/design-system.md).
 
 ## 1. Requirements and local setup
 
@@ -51,7 +51,7 @@ For each project:
 2. **Enable anonymous sign-ins**: Authentication → Sign In / Providers → *Allow anonymous sign-ins*.
 3. **Rate limits**: Authentication → Rate Limits → *Anonymous sign-ins*. The default is 30 per hour per IP address, and a group of 12 on one Wi-Fi network shares one IP.
    - **Production**: raise it enough for your group plus retries (for example 100 per hour), and rely on CAPTCHA for abuse protection.
-   - **Test project**: raise it well above that (for example 1,000 per hour), because each `npm run test:db` creates 21 anonymous users and each `npm run test:e2e` creates 29, and reruns within the hour add up. When the limit is hit, sign-ins fail with HTTP 429 and the app shows "Too many attempts".
+   - **Test project**: raise it well above that (for example 1,000 per hour), because each `npm run test:db` creates 21 anonymous users and each `npm run test:e2e` creates about 40, and reruns within the hour add up. When the limit is hit, sign-ins fail with HTTP 429 and the app shows "Too many attempts".
 4. **CAPTCHA (production)**: Authentication → Attack Protection → enable CAPTCHA with **Cloudflare Turnstile**. Paste the Turnstile **secret key** there only; it never goes in the frontend. Put the **site key** in `VITE_TURNSTILE_SITE_KEY`. The app shows the check only when a phone needs a new anonymous identity.
    - **Test project**: leave CAPTCHA off, or use Cloudflare's always-pass test keys: secret `1x0000000000000000000000000000000AA`, then set `TEST_TURNSTILE_SITE_KEY=1x00000000000000000000AA` and `TEST_CAPTCHA_TOKEN=XXXX.DUMMY.TOKEN.XXXX`.
 5. **Data API**: Settings → API → *Exposed schemas* must include `public` and must **not** include `app_private`. Every table and function grant is explicit in the migrations, so nothing depends on default exposure.
@@ -69,6 +69,9 @@ Migrations live in `supabase/migrations/` and are applied in timestamp order:
 | `…_phase2_exit_restart_branch.sql` | Adds `ended` and restart requests: `end_session`, `request_restart`, `respond_restart`, `cancel_restart` (plus the retired `select_branch`) |
 | `…_phase2_branch_required_guard.sql` | Guard for the retired linear flow |
 | `…_guided_flow.sql` | Stores scenario content and a `draft`/`published` status in `scenario_registry` (published rows are immutable; drafts are hidden by RLS), adds `featured_scenario()` for the site root, the public `scenario-images` storage bucket, the guided session columns, and `guided_event`, which validates every stage change against the role and ids in the pinned content. Restart and swap return the pair to the scene. Execute on the linear RPCs is revoked. |
+| `…_warm_coach_flow.sql` | The six-step flow: stages `paired`, `scene_setup`, `ready_together`, `opening_dialogue`, `question_selection`, `response`, `closing`, `conclusion`, and `guided_event` events `start_practice`, `ready`, `begin`, `opening_complete`, `ask_question`, `share_complete`, `move_to_closing`, `finish`. Only the Christian sends `share_complete`; both send `ready`; the missionary sends the rest. Joining leads to the paired summary; restart returns the pair to the scene, and a role swap to the paired summary. Accepts content schema 2.0 only. |
+| `…_reference_pairing.sql` | The creator chooses either role (`create_pair` takes `p_role`; new `creator_user_id` and `creator_role` columns). While waiting, the creator holds the missionary seat and sees their chosen role; if they chose the Christian, the seats swap when the partner joins. Pairing codes are six digits. Only the creator sends `start_practice` (also after a role swap). Either person can request a restart; only the other can accept or decline it. |
+| `…_restart_by_either.sql` | Lets a restart request come from either seat |
 | `…_scenario_<id>_v<N>_publish.sql` / `…_draft.sql` | Generated by `npm run scenario:publish`: one scenario version, stored and verified |
 
 **Test project**: copy the commented `TEST_*` lines from `.env.example` into `.env.test.local` (git-ignored; a placeholder copy is already in your checkout) and fill them in:
@@ -106,7 +109,7 @@ Alternatively, use `npx supabase link --project-ref <ref>` followed by `npx supa
   select cron.schedule('doorstep-cleanup-anonymous-users', '41 3 * * *', 'select app_private.cleanup_anonymous_users()');
   ```
 
-- Table Editor → `scenario_registry` shows `sample-doorstep` v3 and `coffee-chat` v1 as `published` with `active_for_new_sessions = true`, and `who-is-god` v1 as `draft`. `sample-doorstep` v1 and v2 stay as inactive rows with no content.
+- Table Editor → `scenario_registry` shows `sample-doorstep` v4 and `coffee-chat` v2 as `published` with `active_for_new_sessions = true`, and `who-is-god` v1 as `draft`. Older versions stay as inactive rows.
 - Storage shows a public `scenario-images` bucket (JPEG, PNG or WebP, up to 2 MB each).
 
 ### Data retention and maintenance
@@ -119,7 +122,7 @@ Alternatively, use `npx supabase link --project-ref <ref>` followed by `npx supa
 
 - Clients subscribe only to `UPDATE` events on their own `sessions` row. Realtime authorizes each event through the same row-level security policy as reads (participants of an unexpired session). Pairing codes, heartbeats and rate counters live in `app_private`, which is never published or exposed.
 - Browsers can only `SELECT` from `sessions` (filtered by RLS) and from `scenario_registry` rows whose `status` is `published`. Drafts are invisible to every browser, signed in or not. All changes go through the RPCs above.
-- The suggested answer is part of the published content, so a determined participant could read it from the network response. It's hidden in the interface only (not rendered until Reveal), which is enough for practice between friends.
+- The example answer is part of the published content, so a determined participant could read it from the network response or the page. It's concealed in the interface only (blurred and hidden from assistive technology until Reveal), which is enough for practice between friends.
 
 ## 4. Frontend environment variables
 
@@ -169,26 +172,26 @@ npm run test:db
 npm run test:e2e   # builds into dist-e2e with TEST_* values and serves it with production headers
 ```
 
-The E2E suite runs six simultaneous pairs (12 isolated browser identities), and tests the full guided round (ready, trigger, opening, questions, follow-ups, finish), answers staying hidden until Reveal, a second scenario at its own link with a different trigger, the leave button, reconnecting and reloading, role swaps, draft links, CSP and headers, layouts at 320, 375 and 430px and desktop, 200% text size, and design-token propagation.
+The E2E suite runs six simultaneous pairs (12 isolated browser identities), and tests the full guided round (paired summary, scene, ready together, opening, the question loop, closing, completion), example answers staying concealed until Reveal, the welcome screen, a creator practicing as the Christian, digit codes, restart from either side with the partner's consent, a second scenario at its own link, leaving from the session menu, reconnecting and reloading, role swaps, draft links, CSP and headers, layouts at 320, 375 and 430px and desktop, 200% text size, keyboard focus, and design-token propagation.
 
 Manual check after each production deploy, using **two real phones**:
 
 1. Share the link in WhatsApp and open it on both phones in WhatsApp's in-app browser.
-2. Phone A taps **Mormon missionary**; phone B taps **Christian** and enters the code.
-3. Both tap **I'm ready**, then play the trigger and the opening line. Phone A chooses a question; phone B sees it only after A taps **Question asked**, and the answer stays hidden until **Reveal answer** is tapped. Choose a follow-up and check the answer is hidden again.
-4. Lock phone B for about a minute: phone A should show **Waiting for your partner to reconnect**. Unlock phone B and confirm both phones catch up.
-5. Finish, switch roles, and confirm control moves to phone B. Tap the red leave icon at the top right and confirm both phones leave.
+2. Phone A taps **Create a practice**, chooses a side and taps **Get a pairing code**; phone B taps **Join a practice** and enters the six-digit code. Phone B takes the other side. Both see the paired summary; phone A taps **Start practice**.
+3. Both tap **I’m ready**, then phone A taps **Begin conversation** and **I’ve said it**. Phone A chooses a question and taps **I’ve asked it**; phone B sees it only then, and the example answer stays blurred until **Reveal example answer**. Phone B taps **I’ve shared my thoughts**; ask a second question and check the answer starts blurred again.
+4. Lock phone B for about a minute: phone A should show **Your partner is offline**. Unlock phone B and confirm both phones catch up.
+5. Tap **Move to closing** and **Finish practice**, then **Switch roles** on phone A and accept on phone B; confirm phone B now has **Start practice**. Open the `···` menu, choose **Leave session**, and confirm both phones leave.
 
 ## 9. Weekly workflow
 
 Publishing a scenario changes only the database. There's no frontend build or Vercel deploy, and pairs already practising keep the version they started with.
 
 1. **Write** `content/scenarios/<id>.v<N>.json` with `"status": "draft"`. Start from an existing file. The `$schema` line gives editor autocomplete and checks against `content/scenario.schema.json`. A scenario has:
-   - `roles.missionary` and `roles.christian`: `label`, `sceneTitle`, `sceneText`, `goal`, and an optional `image` (`path` inside the `scenario-images` bucket, plus `alt` text).
-   - `interactionTrigger`: who starts (`initiatingRole`), what they see and tap, and what the other player sees and taps (for example *Knock on the door* / *Open the door*).
-   - `openingDialogue`: who speaks first and their line.
-   - `questions` (1 to 12): each has an `id`, a `title`, an optional `topicTag`, the `missionaryScript`, and `christian` help (`hiddenAnswer`, with an optional `hint` and up to 6 `scriptures`). Each question can have up to 6 `followUps` in the same shape.
-   - `conclusion`: the closing line and an optional reflection prompt.
+   - `"schemaVersion": "2.0"`, `title`, and optionally `subtitle`, `estimatedMinutes`, `difficulty` and `"illustration": "doorway"` (the built-in door art on the scene screen).
+   - `roles.missionary` and `roles.christian`: `label`, `sceneTitle`, `sceneText`, `goal`, and an optional `image` (`path` inside the `scenario-images` bucket, plus `alt` text). A role image replaces the illustration.
+   - `openingDialogue`: the missionary's opening `script`, and an optional `listenerPrompt` for the Christian.
+   - `questions` (1 to 12): each has an `id`, a `topic`, an optional `icon` (`chat`, `leaf` or `book`), the `prompt` the missionary asks, the `exampleAnswer` for the Christian, and up to 6 optional `scriptures`.
+   - `conclusion`: the `closingPrompt` and an optional `reflectionPrompt`.
    Ids are lowercase words joined by hyphens. Everything is plain text.
 2. **Images** (optional): upload them to the `scenario-images` bucket (Storage in the dashboard) and reference their paths. A missing image just leaves the text.
 3. **Check** with `npm run content:validate`, then preview it: `npm run scenario:publish -- content/scenarios/<id>.v<N>.json` writes a draft migration. Apply it to the test project with `npm run db:push`. Drafts can't be opened by participants.
@@ -198,19 +201,19 @@ Publishing a scenario changes only the database. There's no frontend build or Ve
 
 Never edit a published file. To fix a published scenario, copy it to `<id>.v<N+1>.json`, bump `version`, and publish that; the database refuses changes to published rows.
 
-The current `who-is-god.v1.json` is a **draft**. Its roles, opening, and first question come from the brief; the other two questions and their follow-ups are placeholders marked in `sourceNotes`, to be reviewed before publishing.
+The current `who-is-god.v1.json` is a **draft**. Its roles, opening, and first two questions come from the brief; the other four questions and the closing line are placeholders marked in `sourceNotes`, to be reviewed before publishing.
 
 ## 10. Rollback
 
 - Keep every scenario file and registry row. Sessions in progress keep the version they started with.
 - To stop new pairs using a version, add a migration that sets `active_for_new_sessions = false` for that version (and `true` for the previous published one). Pairs with a link to a scenario that has no active version see "This scenario is not available".
 - To change which scenario the bare address opens, publish (or republish as a new version) the one you want; it follows the latest `published_at` among active rows.
-- Make schema changes additive; avoid destructive migrations. The frontend can be rolled back by promoting a previous Vercel deployment, but only to one that understands the guided flow (this release or later).
-- **Deploying this release**: apply `…_guided_flow.sql` and the scenario migrations at a quiet time, then deploy the frontend straight away. Pairs that started on the old linear flow can't continue afterwards and see "This practice was updated. Start a new pair."
+- Make schema changes additive; avoid destructive migrations. The frontend can be rolled back by promoting a previous Vercel deployment, but only to one that understands the six-step flow (this release or later).
+- **Deploying this release**: apply `…_warm_coach_flow.sql`, the scenario migrations, `…_reference_pairing.sql` and `…_restart_by_either.sql` at a quiet time, then deploy the frontend straight away. The database and frontend must change together: the previous frontend doesn't understand the new stages or calls `create_pair` without a role, and pairs that started on the previous flow can't continue and must start a new practice. Unused letter codes are deleted by the migration.
 
 ## Testing details
 
-- **Unit and component tests** (`npm test`) cover snapshot merging by revision, validation of RPC and Realtime payloads, pair-code handling, content validation, config safety (secret keys are refused), the import-boundary checker, the guided stage screens (who sees what at each stage, the question hidden until asked, the answer not in the page until revealed and hidden again on a new question or round, the café trigger), and the Button, TextInput and JoinForm behaviour.
+- **Unit and component tests** (`npm test`) cover snapshot merging by revision, validation of RPC and Realtime payloads, pair-code handling, content validation, config safety (secret keys are refused), the import-boundary checker, the session screens (who sees what at each stage, the question hidden until asked, the example answer concealed until revealed and again on a new question or round, the session menu, restart and swap requests from either side, the paused and completion screens), and the Button, TextInput, ConfirmDialog, Welcome, RoleSelect and JoinForm behaviour.
 - **Database tests** (`npm run test:db`, `supabase/tests/`) use real anonymous users with the publishable key, exactly like the browser. They also open a direct database connection, used only to move clocks, reset rate counters and clean up. Coverage:
   - six isolated pairs
   - a third entrant, self-joins, and concurrent joins
@@ -222,11 +225,13 @@ The current `who-is-god.v1.json` is a **draft**. Its roles, opening, and first q
   - direct table writes
   - private schema access
   - drafts hidden from every browser, the featured scenario, and the retired linear RPCs refused
-  - both players ready before the interaction starts (a repeated Ready is harmless)
-  - role permissions taken from the scenario content, before and after swaps
-  - concurrent question choices
-  - stale revisions, steps out of order, unknown events, and question or follow-up ids not in the pinned content
-  - restart mid-discussion clearing the question and follow-up
+  - a creator who chooses the Christian: their role while waiting, the seat swap on join, and digit-only codes
+  - the paired summary only the creator can start (also after a role swap), and both players ready before the conversation (a repeated Ready is harmless)
+  - restart requested by either person, answered only by the other, and cancelled only by the person who asked
+  - role permissions (the missionary leads; only the Christian finishes sharing), before and after swaps
+  - concurrent question choices and the question loop through to closing
+  - stale revisions, steps out of order, unknown and retired events, and question ids not in the pinned content
+  - restart during a response clearing the question
   - partner staleness
   - expiry and cleanup
 - **Safety guard**: the database and E2E suites refuse to run unless `TEST_PROJECT_IS_DISPOSABLE=yes` is set, `TEST_SUPABASE_URL` and `TEST_DATABASE_URL` point at the same project, and the URL differs from any production `VITE_SUPABASE_URL` in `.env.production[.local]`.
@@ -253,7 +258,6 @@ Resolved versions at implementation time (exact versions are in `package-lock.js
 | `@supabase/supabase-js` | 2.118.0 |
 | Supabase CLI (`supabase`, dev dependency) | 2.121.0 |
 | Zod | 4.6.7 (the browser uses `zod/mini`) |
-| `@openai/apps-sdk-ui` / Tailwind CSS | 0.2.2 / 4.3.3 |
 | Vitest / Testing Library React | 5.0.5 / 16.3.3 |
 | `@playwright/test` / `@playwright/cli` | 1.64.1 / 0.1.22 |
 | oxlint | 1.89.0 |
@@ -277,12 +281,13 @@ Cursor loads skills from `.cursor/skills/` and `.agents/skills/` in the workspac
 ```
 src/
   app/            routes, pages (not found, config error), dev-only preview gallery
-  components/     feature screens (role select, join, session header, guided stages)
-  components/ui/  app-owned design-system primitives (the only vendor imports)
+  components/     feature screens (panel frame, role choice, join, session, guided stages, illustrations)
+  components/ui/  app-owned design-system primitives
   lib/            config, content schema, pair codes, Supabase client, Turnstile loader
   scenarios/      scenario lookup from Supabase; JSON fixtures for tests and the preview
   sessions/       RPC client, payload validation, snapshot merging, sync hook
-  styles/         tokens.css (canonical), vendor-theme.css, app.css
+  assets/         illustrations from the design handoff
+  styles/         tokens.css (canonical), app.css
 content/
   scenarios/      reviewed scenario JSON, one file per version
   scenario.schema.json  generated JSON Schema for editors

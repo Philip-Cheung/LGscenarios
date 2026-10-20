@@ -17,7 +17,6 @@ function Harness() {
           title="End this session?"
           description="This ends the scenario for both players. You can start a new pair afterward."
           confirmLabel="End session"
-          destructive
           onConfirm={() => {
             setConfirmed(true)
             setOpen(false)
@@ -33,12 +32,12 @@ describe('ConfirmDialog', () => {
   it('focuses the safe action, cancels on Escape, and restores focus', async () => {
     render(<Harness />)
     await userEvent.click(screen.getByRole('button', { name: 'Exit' }))
-    const dialog = screen.getByRole('alertdialog', { name: 'End this session?' })
+    const dialog = screen.getByRole('dialog', { name: 'End this session?' })
     expect(dialog).toHaveAccessibleDescription(/both players/)
-    expect(screen.getByRole('button', { name: 'Keep playing' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Keep practicing' })).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Exit' })).toHaveFocus()
     expect(screen.getByText('Playing')).toBeInTheDocument()
   })
@@ -50,6 +49,6 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('button', { name: 'End session' })).toHaveFocus()
     await userEvent.keyboard('{Enter}')
     expect(screen.getByText('Ended')).toBeInTheDocument()
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

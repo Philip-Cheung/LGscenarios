@@ -15,7 +15,7 @@
     },
     "schemaVersion": {
       "type": "string",
-      "const": "1.0"
+      "const": "2.0"
     },
     "id": {
       "type": "string",
@@ -48,6 +48,12 @@
         "beginner",
         "intermediate",
         "advanced"
+      ]
+    },
+    "illustration": {
+      "type": "string",
+      "enum": [
+        "doorway"
       ]
     },
     "roles": {
@@ -164,56 +170,9 @@
       ],
       "additionalProperties": false
     },
-    "interactionTrigger": {
-      "type": "object",
-      "properties": {
-        "initiatingRole": {
-          "type": "string",
-          "enum": [
-            "missionary",
-            "christian"
-          ]
-        },
-        "initiatorPrompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200
-        },
-        "initiatorActionLabel": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 40
-        },
-        "receiverPrompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200
-        },
-        "receiverActionLabel": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 40
-        }
-      },
-      "required": [
-        "initiatingRole",
-        "initiatorPrompt",
-        "initiatorActionLabel",
-        "receiverPrompt",
-        "receiverActionLabel"
-      ],
-      "additionalProperties": false
-    },
     "openingDialogue": {
       "type": "object",
       "properties": {
-        "speakerRole": {
-          "type": "string",
-          "enum": [
-            "missionary",
-            "christian"
-          ]
-        },
         "script": {
           "type": "string",
           "minLength": 1,
@@ -226,7 +185,6 @@
         }
       },
       "required": [
-        "speakerRole",
         "script"
       ],
       "additionalProperties": false
@@ -243,115 +201,45 @@
             "maxLength": 40,
             "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
           },
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 80
-          },
-          "topicTag": {
+          "topic": {
             "type": "string",
             "minLength": 1,
             "maxLength": 40
           },
-          "missionaryScript": {
+          "icon": {
+            "type": "string",
+            "enum": [
+              "chat",
+              "leaf",
+              "book"
+            ]
+          },
+          "prompt": {
             "type": "string",
             "minLength": 1,
             "maxLength": 500
           },
-          "christian": {
-            "type": "object",
-            "properties": {
-              "hint": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 240
-              },
-              "scriptures": {
-                "minItems": 1,
-                "maxItems": 6,
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 60
-                }
-              },
-              "hiddenAnswer": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 800
-              }
-            },
-            "required": [
-              "hiddenAnswer"
-            ],
-            "additionalProperties": false
+          "exampleAnswer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 800
           },
-          "followUps": {
+          "scriptures": {
+            "minItems": 1,
             "maxItems": 6,
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "maxLength": 40,
-                  "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-                },
-                "label": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 60
-                },
-                "missionaryScript": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 500
-                },
-                "christian": {
-                  "type": "object",
-                  "properties": {
-                    "hint": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 240
-                    },
-                    "scriptures": {
-                      "minItems": 1,
-                      "maxItems": 6,
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 60
-                      }
-                    },
-                    "hiddenAnswer": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 800
-                    }
-                  },
-                  "required": [
-                    "hiddenAnswer"
-                  ],
-                  "additionalProperties": false
-                }
-              },
-              "required": [
-                "id",
-                "missionaryScript",
-                "christian"
-              ],
-              "additionalProperties": false
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
             }
           }
         },
         "required": [
           "id",
-          "title",
-          "missionaryScript",
-          "christian"
+          "topic",
+          "prompt",
+          "exampleAnswer"
         ],
         "additionalProperties": false
       }
@@ -387,7 +275,6 @@
     "version",
     "title",
     "roles",
-    "interactionTrigger",
     "openingDialogue",
     "questions",
     "conclusion"

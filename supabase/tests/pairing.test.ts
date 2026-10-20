@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { expectError, expectOk, guided, Harness, rpc, type TestUser } from './harness'
+import { expectError, expectOk, guided, Harness, rpc, SCENARIO_ID, SCENARIO_VERSION, type TestUser } from './harness'
 
 let h: Harness
 let users: TestUser[]
@@ -24,12 +24,12 @@ describe('pairing', () => {
     expect(new Set(sessions.map((s) => s.id)).size).toBe(6)
 
     // Pair i walks i % 3 steps; others must be unaffected.
-    const expectedStage = ['interaction_trigger', 'interaction_trigger', 'opening_dialogue']
+    const expectedStage = ['ready_together', 'opening_dialogue', 'question_selection']
     await Promise.all(
       sessions.map(async (session, i) => {
         if (i % 3 === 0) return
-        const knocked = expectOk(await guided(missionaries[i], session, 'trigger_initiate'))
-        if (i % 3 === 2) expectOk(await guided(christians[i], knocked, 'trigger_acknowledge'))
+        const opening = expectOk(await guided(missionaries[i], session, 'begin'))
+        if (i % 3 === 2) expectOk(await guided(missionaries[i], opening, 'opening_complete'))
       }),
     )
 
@@ -38,7 +38,6 @@ describe('pairing', () => {
       expect(forChristian).toMatchObject({
         status: 'active',
         stage: expectedStage[i % 3],
-        trigger_initiated: i % 3 !== 0,
         my_role: 'christian',
       })
 
@@ -50,7 +49,7 @@ describe('pairing', () => {
       // Nobody from another pair can see or drive this session.
       const other = missionaries[(i + 1) % 6]
       expectError(await rpc(other, 'get_session', { p_session_id: session.id }), 'not_found')
-      expectError(await guided(other, { id: session.id, revision: 0 }, 'trigger_initiate'), 'not_found')
+      expectError(await guided(other, { id: session.id, revision: 0 }, 'begin'), 'not_found')
     }
   })
 
@@ -117,7 +116,9 @@ describe('pairing', () => {
     await h.resetRateLimits(missionary, christian)
     const created = expectOk(await h.createPair(missionary))
     const code = created.pair_code ?? ''
-    const typed = ` ${code.slice(0, 3).toLowerCase()} - ${code.slice(3).toLowerCase()} `
+    expect(code).toMatch(/^[0-9]{6}$/)
+    expectError(await h.joinPair(christian, `${code.slice(0, 5)}x`), 'invalid_code')
+    const typed = ` ${code.slice(0, 3)} - ${code.slice(3)} `
     expectOk(await h.joinPair(christian, typed))
   })
 
@@ -136,7 +137,7 @@ describe('pairing', () => {
 
     expectError(await rpc(christian, 'regenerate_pair_code', { p_session_id: created.id }), 'not_found')
     const regenerated = expectOk(await rpc(missionary, 'regenerate_pair_code', { p_session_id: created.id }))
-    expect(regenerated.pair_code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/)
+    expect(regenerated.pair_code).toMatch(/^[0-9]{6}$/)
     expect(regenerated.pair_code).not.toBe(created.pair_code)
     expectOk(await h.joinPair(christian, regenerated.pair_code ?? ''))
   })
@@ -165,7 +166,43 @@ describe('pairing', () => {
     expectError(await h.createPair(creator), 'rate_limited')
   })
 
-  it('never issues a pairing code to the Christian', async () => {
+  it('lets the creator choose the Christian role and seats the joiner as the missionary', async () => {
+    const [creator, joiner] = users.slice(7, 9)
+    await h.resetRateLimits(creator, joiner)
+    const created = expectOk(await h.createPair(creator, randomUUID(), 'christian'))
+    expect(created).toMatchObject({ status: 'waiting', my_role: 'christian', is_creator: true })
+    expect(created.pair_code).toMatch(/^[0-9]{6}$/)
+
+    const joined = expectOk(await h.joinPair(joiner, created.pair_code ?? ''))
+    expect(joined).toMatchObject({ status: 'ready', my_role: 'missionary', is_creator: false, pair_code: null })
+    const forCreator = expectOk(await rpc(creator, 'get_session', { p_session_id: created.id }))
+    expect(forCreator).toMatchObject({ my_role: 'christian', is_creator: true, pair_code: null })
+
+    // Only the creator starts the practice, even though the joiner holds the missionary seat.
+    expectError(await guided(joiner, forCreator, 'start_practice'), 'forbidden')
+    const scene = expectOk(await guided(creator, forCreator, 'start_practice'))
+    expect(scene).toMatchObject({ stage: 'scene_setup', my_role: 'christian' })
+    // The missionary still drives the guided steps.
+    const together = await h.bothReady(joiner, creator, scene)
+    expectError(await guided(creator, together, 'begin'), 'forbidden')
+    expectOk(await guided(joiner, together, 'begin'))
+  })
+
+  it('rejects an unknown creator role', async () => {
+    const [creator] = users.slice(9, 10)
+    await h.resetRateLimits(creator)
+    expectError(
+      await rpc(creator, 'create_pair', {
+        p_scenario_id: SCENARIO_ID,
+        p_version: SCENARIO_VERSION,
+        p_request_id: randomUUID(),
+        p_role: 'observer',
+      }),
+      'invalid_input',
+    )
+  })
+
+  it('never issues a pairing code to the joiner', async () => {
     const [missionary, christian] = users.slice(5, 7)
     await h.resetRateLimits(missionary, christian)
     const ready = await h.readyPair(missionary, christian)

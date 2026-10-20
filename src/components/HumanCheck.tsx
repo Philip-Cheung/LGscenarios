@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadTurnstile } from '../lib/turnstile'
-import { Button, Card, StatusMessage } from './ui'
+import { AppScreen, PairingMeta } from './AppScreen'
+import { Button, StatusMessage } from './ui'
 import styles from './screens.module.css'
 
 interface HumanCheckProps {
@@ -44,18 +45,23 @@ export function HumanCheck({ siteKey, onToken, onCancel }: HumanCheckProps) {
   }, [siteKey])
 
   return (
-    <Card aria-labelledby="check-heading">
-      <div className={styles.stack}>
-        <h2 id="check-heading" className={styles.heading}>
-          Just a moment
-        </h2>
-        <p className={styles.muted}>Checking this browser before pairing.</p>
-        <div ref={containerRef} className={styles.captcha} />
-        <StatusMessage tone="error">{error}</StatusMessage>
-        <Button variant="secondary" block onClick={onCancel}>
+    <AppScreen
+      meta={<PairingMeta label="Before you begin" />}
+      viewKey="check"
+      status={
+        <StatusMessage tone="error" className={styles.statusLine}>
+          {error}
+        </StatusMessage>
+      }
+      actions={
+        <Button variant="text" onClick={onCancel}>
           Back
         </Button>
-      </div>
-    </Card>
+      }
+    >
+      <h1 tabIndex={-1}>Just a moment</h1>
+      <p>Checking this browser before pairing.</p>
+      <div ref={containerRef} className={styles.captcha} />
+    </AppScreen>
   )
 }

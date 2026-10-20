@@ -1,15 +1,11 @@
 .status {
   margin: 0;
-  min-height: var(--dp-status-min-height);
-  color: var(--dp-color-status);
-  font-size: var(--dp-font-size-body);
-  line-height: var(--dp-line-height-body);
-}
-
-.status:empty {
-  min-height: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+  text-align: center;
 }
 
 .error {
-  color: var(--dp-color-error);
+  color: var(--color-danger);
 }

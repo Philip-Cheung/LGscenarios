@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { askQuestion, closePair, DOORSTEP, heading, SCENARIO_PATH, startPair, walkToQuestions } from './helpers'
+import { askQuestion, closePair, exampleAnswer, heading, SCENARIO_PATH, SCREENS, startPair, walkToQuestions } from './helpers'
 
 const VIEWPORTS = [
   { width: 320, height: 640 },
@@ -20,24 +20,26 @@ for (const viewport of VIEWPORTS) {
     await walkToQuestions(pair)
     await askQuestion(pair, 'hope')
 
-    await christian.page.getByRole('button', { name: 'Reveal answer' }).click()
+    const { toggle } = await exampleAnswer(christian.page)
+    await toggle.click()
     for (const page of [missionary.page, christian.page]) {
       await expectNoHorizontalOverflow(page)
-      const controls = page.locator('main button')
-      for (const box of await controls.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height))) {
-        expect(box).toBeGreaterThanOrEqual(44)
-      }
-      // The leave control stays on screen beside the progress bar.
-      const leave = await page.getByRole('button', { name: 'Leave session' }).boundingBox()
-      expect((leave?.x ?? 0) + (leave?.width ?? 0)).toBeLessThanOrEqual(viewport.width)
-      await expect(page.getByText('Step 5 of 6 · Discussion')).toBeVisible()
+      // Rendered buttons only; the closed menu's items have no box.
+      const heights = await page
+        .locator('main button')
+        .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height).filter((height) => height > 0))
+      for (const height of heights) expect(height).toBeGreaterThanOrEqual(44)
+      // The session menu stays on screen beside the wordmark.
+      const menu = await page.getByLabel('Session controls').boundingBox()
+      expect((menu?.x ?? 0) + (menu?.width ?? 0)).toBeLessThanOrEqual(viewport.width)
+      await expect(page.getByText('5 of 6 · Response')).toBeVisible()
     }
 
-    // Hiding the answer again does not move the question.
-    const question = heading(christian.page, DOORSTEP.questions.hope.script)
-    const before = await question.boundingBox()
-    await christian.page.getByRole('button', { name: 'Hide answer' }).click()
-    const after = await question.boundingBox()
+    // Hiding the example answer again does not move the heading.
+    const title = heading(christian.page, SCREENS.response)
+    const before = await title.boundingBox()
+    await christian.page.getByRole('button', { name: 'Hide example answer' }).click()
+    const after = await title.boundingBox()
     expect(after?.y).toBe(before?.y)
 
     await closePair(pair)
@@ -55,55 +57,58 @@ test('guided screens stay usable at 200% text size on a 320px screen', async ({ 
   await walkToQuestions(pair)
   await askQuestion(pair, 'hope')
 
-  await christian.page.getByRole('button', { name: 'Reveal answer' }).click()
+  await (await exampleAnswer(christian.page)).toggle.click()
   await expectNoHorizontalOverflow(christian.page)
   await expectNoHorizontalOverflow(missionary.page)
 
   // Controls remain reachable by normal page scrolling and still work.
-  const another = missionary.page.getByRole('button', { name: 'Choose another question' })
-  await another.scrollIntoViewIfNeeded()
-  await another.click()
-  await expect(heading(christian.page, 'Your partner is choosing a question')).toBeVisible()
+  const shared = christian.page.getByRole('button', { name: 'I’ve shared my thoughts' })
+  await shared.scrollIntoViewIfNeeded()
+  await shared.click()
+  await expect(heading(missionary.page, SCREENS.questions)).toBeVisible()
 
   await closePair(pair)
 })
 
 test('the role screen is keyboard reachable with a visible focus indicator', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
-  await expect(page.getByRole('button', { name: 'Mormon missionary' })).toBeVisible()
+  await page.getByRole('button', { name: 'Create a practice' }).click()
+  await expect(page.getByRole('radio', { name: /Missionary$/ })).toBeChecked()
   await page.keyboard.press('Tab')
   const focused = page.locator(':focus-visible')
-  await expect(focused).toHaveAccessibleName(/Mormon missionary/)
-  const outline = await focused.evaluate((el) => getComputedStyle(el).outlineStyle)
-  const shadow = await focused.evaluate((el) => getComputedStyle(el).boxShadow)
-  expect(outline !== 'none' || shadow !== 'none').toBe(true)
+  await expect(focused).toHaveAccessibleName(/Missionary$/)
+  // The radio's card draws the ring around the whole choice.
+  const outline = await focused.evaluate((el) => getComputedStyle(el.closest('label') ?? el).outlineStyle)
+  expect(outline).not.toBe('none')
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('radio', { name: /Christian$/ })).toBeChecked()
+  await expect(page.getByRole('button', { name: 'Get a pairing code' })).toBeVisible()
 })
 
-test('the production build keeps the vendor component layer above the CSS reset', async ({ page }) => {
-  // Guards against chunking that loads library CSS before the cascade layer order is declared.
-  // Role cards are native buttons; the Join action is still the wrapped vendor button.
+test('the production build styles the primary action from the design tokens', async ({ page }) => {
+  // Guards against chunking that drops or reorders the token and component CSS.
   await page.goto(SCENARIO_PATH)
-  await page.getByRole('button', { name: /^Christian/ }).click()
-  const button = page.getByRole('button', { name: 'Join' })
+  const button = page.getByRole('button', { name: 'Create a practice' })
   const styles = await button.evaluate((el) => ({
-    radius: getComputedStyle(el, '::before').borderRadius,
+    radius: getComputedStyle(el).borderTopLeftRadius,
     text: getComputedStyle(el).color,
-    fill: getComputedStyle(el, '::before').backgroundColor,
+    fill: getComputedStyle(el).backgroundColor,
+    height: el.getBoundingClientRect().height,
   }))
-  expect(styles.radius).not.toBe('0px')
+  expect(styles.radius).toBe('14px')
+  expect(styles.fill).toBe('rgb(32, 92, 80)')
   expect(styles.text).not.toBe(styles.fill)
+  expect(styles.height).toBeGreaterThanOrEqual(52)
 })
 
-test('changing a design token updates the wrapped components', async ({ page }) => {
+test('changing a design token updates the components', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
-  await page.getByRole('button', { name: /^Christian/ }).click()
-  const button = page.getByRole('button', { name: 'Join' })
-  // The vendor button paints its fill on ::before.
-  const fill = () => button.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)
+  const button = page.getByRole('button', { name: 'Create a practice' })
+  const fill = () => button.evaluate((el) => getComputedStyle(el).backgroundColor)
   const before = await fill()
 
   // CSSOM changes are allowed by the CSP (unlike injected <style> tags).
-  await page.evaluate(() => document.documentElement.style.setProperty('--dp-color-action-primary-bg', 'rgb(1, 2, 3)'))
+  await page.evaluate(() => document.documentElement.style.setProperty('--color-teal', 'rgb(1, 2, 3)'))
   await expect.poll(fill).toBe('rgb(1, 2, 3)')
   expect(before).not.toBe('rgb(1, 2, 3)')
 })

@@ -3,13 +3,16 @@ import { isRestartCurrent } from './snapshot'
 import type { RpcResult, SessionErrorCode, SessionSnapshot } from './types'
 
 const uuid = z.uuid()
+const role = z.enum(['missionary', 'christian'])
 const status = z.enum(['waiting', 'ready', 'active', 'completed', 'expired', 'ended'])
 const stage = z.enum([
+  'paired',
   'scene_setup',
-  'interaction_trigger',
+  'ready_together',
   'opening_dialogue',
   'question_selection',
-  'discussion',
+  'response',
+  'closing',
   'conclusion',
 ])
 const contentId = z.string().check(z.maxLength(40), z.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/))
@@ -24,21 +27,20 @@ const sessionStateSchema = z.object({
   status,
   revision: nonnegativeInt,
   round: positiveInt,
-  my_role: z.enum(['missionary', 'christian']),
+  my_role: role,
+  is_creator: z.boolean(),
   partner_joined: z.boolean(),
   swap_pending: z.boolean(),
   restart_pending: z.optional(z.boolean()),
+  restart_by_me: z.optional(z.boolean()),
   restart_requested_at: z.optional(z.nullable(z.string())),
   stage,
   my_ready: z.boolean(),
   partner_ready: z.boolean(),
-  trigger_initiated: z.boolean(),
   active_question_id: z.nullable(contentId),
-  active_followup_id: z.nullable(contentId),
-  question_asked: z.boolean(),
   partner_fresh: z.nullable(z.boolean()),
   expires_at: z.string(),
-  pair_code: z.nullable(z.string().check(z.regex(/^[A-Z0-9]{6}$/))),
+  pair_code: z.nullable(z.string().check(z.regex(/^[0-9]{6}$/))),
   code_expires_at: z.nullable(z.string()),
 })
 
@@ -77,17 +79,16 @@ function toSnapshot(state: z.infer<typeof sessionStateSchema>): SessionSnapshot 
     revision: state.revision,
     round: state.round,
     myRole: state.my_role,
+    isCreator: state.is_creator,
     partnerJoined: state.partner_joined,
     swapPending: state.swap_pending,
     restartPending: state.restart_pending ?? false,
+    restartByMe: state.restart_by_me ?? false,
     restartRequestedAt: state.restart_requested_at ?? null,
     stage: state.stage,
     meReady: state.my_ready,
     partnerReady: state.partner_ready,
-    triggerInitiated: state.trigger_initiated,
     activeQuestionId: state.active_question_id,
-    activeFollowupId: state.active_followup_id,
-    questionAsked: state.question_asked,
     partnerFresh: state.partner_fresh,
     expiresAt: state.expires_at,
     pairCode: state.pair_code,
@@ -112,6 +113,8 @@ const realtimeRowSchema = z.object({
   scenario_version: positiveInt,
   missionary_user_id: uuid,
   christian_user_id: z.nullable(uuid),
+  creator_user_id: uuid,
+  creator_role: role,
   status,
   // bigint columns can arrive as strings depending on the Realtime encoder.
   revision: z.pipe(z.coerce.number(), nonnegativeInt),
@@ -122,10 +125,7 @@ const realtimeRowSchema = z.object({
   stage,
   missionary_ready: z.boolean(),
   christian_ready: z.boolean(),
-  trigger_initiated: z.boolean(),
   active_question_id: z.nullable(contentId),
-  active_followup_id: z.nullable(contentId),
-  question_asked: z.boolean(),
   expires_at: z.string(),
 })
 
@@ -142,6 +142,8 @@ export function snapshotFromRealtimeRow(row: unknown, viewerId: string): Session
   const value = parsed.data
   const isMissionary = value.missionary_user_id === viewerId
   if (!isMissionary && value.christian_user_id !== viewerId) return null
+  // While waiting, the creator holds the missionary seat whichever role they chose.
+  const myRole = value.status === 'waiting' ? value.creator_role : isMissionary ? 'missionary' : 'christian'
   return {
     id: value.id,
     scenarioId: value.scenario_id,
@@ -149,18 +151,17 @@ export function snapshotFromRealtimeRow(row: unknown, viewerId: string): Session
     status: value.status,
     revision: value.revision,
     round: value.round,
-    myRole: isMissionary ? 'missionary' : 'christian',
+    myRole,
+    isCreator: value.creator_user_id === viewerId,
     partnerJoined: value.christian_user_id !== null,
     swapPending: value.swap_requested_by !== null,
     restartPending: value.restart_requested_by != null && isRestartCurrent(value.restart_requested_at ?? null),
+    restartByMe: value.restart_requested_by != null && value.restart_requested_by === viewerId,
     restartRequestedAt: value.restart_requested_at ?? null,
     stage: value.stage,
     meReady: isMissionary ? value.missionary_ready : value.christian_ready,
     partnerReady: isMissionary ? value.christian_ready : value.missionary_ready,
-    triggerInitiated: value.trigger_initiated,
     activeQuestionId: value.active_question_id,
-    activeFollowupId: value.active_followup_id,
-    questionAsked: value.question_asked,
     partnerFresh: undefined,
     expiresAt: value.expires_at,
     pairCode: undefined,

@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { PAIR_CODE_INPUT_MAX_LENGTH, isWellFormedPairCode, normalizePairCode } from '../lib/pairCode'
-import { Button, Card, TextInput } from './ui'
+import { AppScreen, PairingMeta } from './AppScreen'
+import { Icon } from './art'
+import { Button, TextInput } from './ui'
 import styles from './screens.module.css'
 
 interface JoinFormProps {
@@ -12,9 +14,14 @@ interface JoinFormProps {
 }
 
 export function JoinForm({ initialValue = '', busy, error, onJoin, onBack }: JoinFormProps) {
+  const formId = useId()
   const [value, setValue] = useState(initialValue)
   const [localError, setLocalError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
 
   // Return focus to the field when the server rejects a code (it was disabled while busy).
   useEffect(() => {
@@ -25,7 +32,7 @@ export function JoinForm({ initialValue = '', busy, error, onJoin, onBack }: Joi
     event.preventDefault()
     const normalized = normalizePairCode(value)
     if (!isWellFormedPairCode(normalized)) {
-      setLocalError('Enter the 6-character code shown on your partner’s phone.')
+      setLocalError('Enter all six digits of your partner’s code.')
       inputRef.current?.focus()
       return
     }
@@ -34,46 +41,50 @@ export function JoinForm({ initialValue = '', busy, error, onJoin, onBack }: Joi
   }
 
   return (
-    <Card aria-labelledby="join-heading">
-      <form className={styles.form} onSubmit={submit} noValidate>
-        <p className={styles.meta}>
-          <span>Christian</span>
-          <span>Pairing</span>
-        </p>
-        <h1 id="join-heading" className={styles.heading}>
-          Enter your partner’s code
-        </h1>
+    <AppScreen
+      meta={<PairingMeta label="Before you begin" />}
+      viewKey="join"
+      note="Your partner can find their code on the invitation screen."
+      actions={
+        <>
+          <Button type="submit" form={formId} loading={busy}>
+            Join practice
+          </Button>
+          <Button variant="text" disabled={busy} onClick={onBack}>
+            Back
+          </Button>
+        </>
+      }
+    >
+      <span className={styles.turn}>
+        <Icon />
+        Join a practice
+      </span>
+      <h1 tabIndex={-1}>Find your practice partner.</h1>
+      <p>Enter the six-digit code on your partner’s screen.</p>
+      <form id={formId} className={styles.joinForm} onSubmit={submit} noValidate>
         <TextInput
           ref={inputRef}
-          label="Pair code"
-          hint="Your partner chooses Mormon missionary and sees this code on their phone. Stay in this browser."
+          label="Pairing code"
+          hint="Six digits. Spaces are optional."
           name="pairCode"
           value={value}
           onChange={(event) => {
-            setValue(event.target.value)
+            setValue(event.target.value.replace(/[^0-9\s-]/g, ''))
             if (localError) setLocalError(null)
           }}
           error={localError ?? error}
           maxLength={PAIR_CODE_INPUT_MAX_LENGTH}
           autoComplete="off"
-          autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
-          inputMode="text"
+          inputMode="numeric"
           enterKeyHint="go"
-          placeholder="ABC-DEF"
+          placeholder="000 000"
           translate="no"
           disabled={busy}
         />
-        <div className={styles.stack}>
-          <Button type="submit" block loading={busy}>
-            Join
-          </Button>
-          <Button variant="secondary" block disabled={busy} onClick={onBack}>
-            Back to roles
-          </Button>
-        </div>
       </form>
-    </Card>
+    </AppScreen>
   )
 }

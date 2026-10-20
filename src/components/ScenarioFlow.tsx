@@ -8,24 +8,25 @@ import { ensureIdentity, getExistingUserId } from '../sessions/identity'
 import { messageForError } from '../sessions/messages'
 import { clearPointer, readPointer, writePointer } from '../sessions/pointer'
 import type { Role, SessionSnapshot } from '../sessions/types'
-import { EndedCard } from './EndedCard'
+import { EndedCard, type EndedReason } from './EndedCard'
 import { HumanCheck } from './HumanCheck'
 import { JoinForm } from './JoinForm'
-import { MessageCard } from './MessageCard'
+import { LoadingCard, MessageCard } from './MessageCard'
 import { PageShell } from './PageShell'
 import { RoleSelect } from './RoleSelect'
 import { SessionScreen } from './SessionScreen'
-import styles from './screens.module.css'
+import { Welcome } from './Welcome'
 
-type Intent = { role: 'missionary' } | { role: 'christian'; code: string }
+type Intent = { kind: 'create'; role: Role } | { kind: 'join'; code: string }
 
 type Phase =
   | { kind: 'boot' }
-  | { kind: 'choose' }
+  | { kind: 'welcome' }
+  | { kind: 'create' }
   | { kind: 'join' }
   | { kind: 'captcha'; intent: Intent }
   | { kind: 'session'; userId: string; snapshot: SessionSnapshot; scenario: ScenarioContent }
-  | { kind: 'ended'; reason: 'expired' | 'gone' }
+  | { kind: 'ended'; reason: EndedReason }
   | { kind: 'outdated' }
   | { kind: 'missing' }
   | { kind: 'resumeError' }
@@ -40,7 +41,8 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
   const api = useMemo(() => new SessionApi(client), [client])
   const [phase, setPhase] = useState<Phase>({ kind: 'boot' })
   const [landing, setLanding] = useState<ScenarioContent | null>(null)
-  const [busyRole, setBusyRole] = useState<Role | null>(null)
+  const [busy, setBusy] = useState<Intent['kind'] | null>(null)
+  const [createRole, setCreateRole] = useState<Role>('missionary')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [lastCode, setLastCode] = useState('')
@@ -74,7 +76,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
       }
       if (result.session.status === 'ended') {
         clearPointer(slug)
-        if (!cancelled) setNotice('Your partner ended the session.')
+        if (!cancelled) setNotice('Your partner ended the practice.')
         return null
       }
       const lookup = await fetchScenarioVersion(client, result.session.scenarioId, result.session.scenarioVersion)
@@ -88,7 +90,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
         case 'retired':
         case 'unavailable':
           clearPointer(slug)
-          if (!cancelled) setNotice('This practice was updated. Start a new pair.')
+          if (!cancelled) setNotice('This practice was updated. Start a new one.')
           return null
       }
     }
@@ -103,7 +105,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
       }
       switch (lookup.status) {
         case 'ok':
-          setPhase({ kind: 'choose' })
+          setPhase({ kind: 'welcome' })
           break
         case 'outdated':
           setPhase({ kind: 'outdated' })
@@ -124,13 +126,13 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
 
   const proceed = useCallback(
     async (intent: Intent, captchaToken?: string) => {
-      const fallback: Phase = intent.role === 'missionary' ? { kind: 'choose' } : { kind: 'join' }
+      const fallback: Phase = { kind: intent.kind }
       const fail = (message: string) => {
         setError(message)
         setPhase(fallback)
       }
       setError(null)
-      setBusyRole(intent.role)
+      setBusy(intent.kind)
       try {
         const existing = await getExistingUserId(client)
         if (!existing && config.turnstileSiteKey && !captchaToken) {
@@ -157,14 +159,14 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
 
         // Reuse the request id when retrying after a lost response so the
         // server returns the pair it may already have created or joined.
-        const key = intent.role === 'missionary' ? 'create' : `join:${intent.code}`
+        const key = intent.kind === 'create' ? `create:${intent.role}` : `join:${intent.code}`
         const requestId = requestRef.current?.key === key ? requestRef.current.id : crypto.randomUUID()
         requestRef.current = { key, id: requestId }
 
         const { id: scenarioId, version } = resolved.scenario
         const result =
-          intent.role === 'missionary'
-            ? await api.createPair(scenarioId, version, requestId)
+          intent.kind === 'create'
+            ? await api.createPair(scenarioId, version, requestId, intent.role)
             : await api.joinPair(intent.code, scenarioId, version, requestId)
 
         if (result.ok) {
@@ -176,7 +178,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
         if (result.error !== 'unavailable') requestRef.current = null
         fail(messageForError(result.error))
       } finally {
-        setBusyRole(null)
+        setBusy(null)
       }
     },
     [api, client, config.turnstileSiteKey, slug],
@@ -191,27 +193,30 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
     clearPointer(slug)
     setError(null)
     setNotice(null)
-    if (landing) setPhase({ kind: 'choose' })
+    if (landing) setPhase({ kind: 'welcome' })
     else restartBoot()
   }, [landing, restartBoot, slug])
 
   const leaveEndedSession = useCallback(
-    (byPartner: boolean) => {
+    (byPartner: boolean, duringPairing: boolean) => {
       clearPointer(slug)
       setError(null)
-      setNotice(byPartner ? 'Your partner ended the session.' : null)
-      if (landing) setPhase({ kind: 'choose' })
-      else restartBoot()
+      setNotice(null)
+      // "Change roles" closes the code and returns to the role choice.
+      if (duringPairing && !byPartner) {
+        if (landing) setPhase({ kind: 'create' })
+        else restartBoot()
+        return
+      }
+      setPhase({ kind: 'ended', reason: byPartner ? 'partnerLeft' : 'left' })
     },
     [landing, restartBoot, slug],
   )
 
   const title = phase.kind === 'session' ? phase.scenario.title : landing?.title
-  const introduction = phase.kind === 'choose' || phase.kind === 'boot'
-  const description = introduction ? landing?.subtitle : undefined
 
   return (
-    <PageShell title={title} description={description} compactTitle={!introduction}>
+    <PageShell>
       <title>{title ? `${title} · Doorstep practice` : 'Doorstep practice'}</title>
       {renderPhase()}
     </PageShell>
@@ -220,18 +225,38 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
   function renderPhase() {
     switch (phase.kind) {
       case 'boot':
-        return <p className={styles.muted} role="status">Loading…</p>
-      case 'choose':
+        return <LoadingCard />
+      case 'welcome':
         return (
-          <RoleSelect
-            busyRole={busyRole}
-            error={error}
+          <Welcome
             notice={notice}
-            onChoose={(role) => {
+            onCreate={() => {
               setError(null)
               setNotice(null)
-              if (role === 'missionary') void proceed({ role: 'missionary' })
-              else setPhase({ kind: 'join' })
+              setPhase({ kind: 'create' })
+            }}
+            onJoin={() => {
+              setError(null)
+              setNotice(null)
+              setPhase({ kind: 'join' })
+            }}
+          />
+        )
+      case 'create':
+        if (!landing) return <LoadingCard />
+        return (
+          <RoleSelect
+            scenario={landing}
+            initialRole={createRole}
+            busy={busy === 'create'}
+            error={error}
+            onCreate={(role) => {
+              setCreateRole(role)
+              void proceed({ kind: 'create', role })
+            }}
+            onBack={() => {
+              setError(null)
+              setPhase({ kind: 'welcome' })
             }}
           />
         )
@@ -240,15 +265,15 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
           <JoinForm
             key="join"
             initialValue={lastCode}
-            busy={busyRole === 'christian'}
+            busy={busy === 'join'}
             error={error}
             onJoin={(code) => {
               setLastCode(code)
-              void proceed({ role: 'christian', code })
+              void proceed({ kind: 'join', code })
             }}
             onBack={() => {
               setError(null)
-              setPhase({ kind: 'choose' })
+              setPhase({ kind: 'welcome' })
             }}
           />
         )
@@ -257,7 +282,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
           <HumanCheck
             siteKey={config.turnstileSiteKey}
             onToken={(token) => void proceed(phase.intent, token)}
-            onCancel={() => setPhase(phase.intent.role === 'missionary' ? { kind: 'choose' } : { kind: 'join' })}
+            onCancel={() => setPhase({ kind: phase.intent.kind })}
           />
         ) : null
       case 'session':
@@ -284,15 +309,14 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             actionLabel="Refresh"
             onAction={() => window.location.reload()}
             focusOnMount
-            level="h1"
           >
-            <p className={styles.muted}>A newer version of this scenario is available.</p>
+            <p>A newer version of this scenario is available.</p>
           </MessageCard>
         )
       case 'missing':
         return (
-          <MessageCard heading="This scenario is not available" focusOnMount level="h1">
-            <p className={styles.muted}>Check that you opened the full link your group leader shared.</p>
+          <MessageCard heading="This scenario is not available" focusOnMount>
+            <p>Check that you opened the full link your group leader shared.</p>
           </MessageCard>
         )
       case 'resumeError':
@@ -302,9 +326,8 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             actionLabel="Try again"
             onAction={restartBoot}
             focusOnMount
-            level="h1"
           >
-            <p className={styles.muted}>Check your connection and try again.</p>
+            <p>Check your connection and try again.</p>
           </MessageCard>
         )
     }

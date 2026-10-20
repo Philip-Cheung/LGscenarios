@@ -2,15 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { findBoundaryViolations } from './ui-boundary'
 
 describe('findBoundaryViolations', () => {
-  it('allows vendor imports inside the wrapper layer and vendor stylesheet', () => {
+  it('rejects vendor imports inside the ui primitives too', () => {
     expect(
       findBoundaryViolations([
         { path: 'src/components/ui/Button.tsx', content: "import { Button } from '@openai/apps-sdk-ui/components/Button'" },
-        {
-          path: 'src/styles/vendor-theme.css',
-          content: "@import 'tailwindcss';\n@import '../../node_modules/@openai/apps-sdk-ui/dist/es/styles/base.css';",
-        },
       ]),
+    ).toHaveLength(1)
+  })
+
+  it('allows plain imports', () => {
+    expect(
+      findBoundaryViolations([{ path: 'src/components/ui/Button.tsx', content: "import styles from './Button.module.css'" }]),
     ).toEqual([])
   })
 

@@ -9,17 +9,16 @@ const base: SessionSnapshot = {
   revision: 5,
   round: 1,
   myRole: 'missionary',
+  isCreator: true,
   partnerJoined: true,
   swapPending: false,
   restartPending: false,
+  restartByMe: false,
   restartRequestedAt: null,
   stage: 'question_selection',
   meReady: true,
   partnerReady: true,
-  triggerInitiated: true,
   activeQuestionId: null,
-  activeFollowupId: null,
-  questionAsked: false,
   partnerFresh: true,
   expiresAt: '2026-10-20T12:00:00Z',
   pairCode: null,
@@ -33,8 +32,8 @@ describe('mergeSnapshot', () => {
   })
 
   it('applies a newer revision', () => {
-    const merged = mergeSnapshot(base, { ...base, revision: 6, stage: 'discussion', activeQuestionId: 'nature-of-god' })
-    expect(merged.stage).toBe('discussion')
+    const merged = mergeSnapshot(base, { ...base, revision: 6, stage: 'response', activeQuestionId: 'nature-of-god' })
+    expect(merged.stage).toBe('response')
     expect(merged.activeQuestionId).toBe('nature-of-god')
     expect(merged.revision).toBe(6)
   })
@@ -46,7 +45,7 @@ describe('mergeSnapshot', () => {
   })
 
   it('keeps prior values for fields a Realtime row does not carry', () => {
-    const waiting = { ...base, status: 'waiting' as const, pairCode: 'ABCDEF', codeExpiresAt: '2026-10-20T10:00:00Z' }
+    const waiting = { ...base, status: 'waiting' as const, pairCode: '482716', codeExpiresAt: '2026-10-20T10:00:00Z' }
     const merged = mergeSnapshot(waiting, {
       ...waiting,
       revision: 6,
@@ -56,11 +55,11 @@ describe('mergeSnapshot', () => {
     })
     expect(merged.revision).toBe(6)
     expect(merged.partnerFresh).toBe(true)
-    expect(merged.pairCode).toBe('ABCDEF')
+    expect(merged.pairCode).toBe('482716')
   })
 
   it('clears the pairing code once the session leaves waiting', () => {
-    const waiting = { ...base, status: 'waiting' as const, pairCode: 'ABCDEF', codeExpiresAt: '2026-10-20T10:00:00Z' }
+    const waiting = { ...base, status: 'waiting' as const, pairCode: '482716', codeExpiresAt: '2026-10-20T10:00:00Z' }
     const merged = mergeSnapshot(waiting, { ...waiting, status: 'ready', revision: 6, pairCode: undefined })
     expect(merged.pairCode).toBeNull()
     expect(merged.codeExpiresAt).toBeNull()

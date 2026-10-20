@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 
@@ -71,7 +70,7 @@ function vercelGlobalHeaders(): Record<string, string> {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   return {
-    plugins: [react(), tailwindcss(), cspMetaPlugin(env)],
+    plugins: [react(), cspMetaPlugin(env)],
     preview: {
       headers: vercelGlobalHeaders(),
     },
@@ -81,14 +80,11 @@ export default defineConfig(({ mode }) => {
         output: {
           // Weekly content changes only invalidate the small app chunk; vendor
           // chunks keep their hashes and stay cached on returning devices.
-          // The UI library stays in the app chunk: its CSS must load after
-          // vendor-theme.css declares the cascade layer order, or Tailwind's
-          // base layer would override the library's component layer.
           codeSplitting: {
             groups: [
               { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/, priority: 20 },
               { name: 'supabase', test: /node_modules[\\/](@supabase|iceberg-js|tslib)[\\/]/, priority: 20 },
-              { name: 'vendor', test: /node_modules[\\/](?!@openai[\\/]apps-sdk-ui[\\/])/, priority: 10 },
+              { name: 'vendor', test: /node_modules[\\/]/, priority: 10 },
             ],
           },
         },

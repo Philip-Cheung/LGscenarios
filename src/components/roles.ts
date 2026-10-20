@@ -1,11 +1,9 @@
 import type { Role } from '../sessions/types'
 
-export const ROLE_LABELS: Record<Role, string> = {
-  missionary: 'Mormon missionary',
-  christian: 'Christian',
+/** What each side does, shown above the role name on the role choice. */
+export const ROLE_CAPTIONS: Record<Role, string> = {
+  missionary: 'Start the conversation',
+  christian: 'Listen and respond',
 }
 
-export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  missionary: 'Lead the conversation and choose the questions.',
-  christian: 'Answer in your own words. Reveal a suggested answer if needed.',
-}
+export const otherRole = (role: Role): Role => (role === 'missionary' ? 'christian' : 'missionary')

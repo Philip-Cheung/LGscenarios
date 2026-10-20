@@ -1,70 +1,54 @@
 # Design system
 
-Doorstep Practice has one light theme, adapted from Apple's Human Interface Guidelines for the web: a grouped gray page, white cards, the system font, one prompt per screen, and large tap targets. Phase 2 replaced the original dark theme. There is no theme switch and no automatic dark variant. Visual decisions live in tokens. Any external UI library sits behind a small layer the app owns, so the library can be swapped without touching screens, session logic, RPCs or routing.
+Doorstep Practice uses the approved **Warm Coach** design: a warm canvas, one centred practice panel, a serif heading face, a single teal accent, and calm motion. The source of truth is the design handoff (`ai-developer-handoff/reference/`: `tokens.css`, `style.css`, `app.js`, `index.html`, plus the SVGs in `assets/`). The app reproduces the product panel from that reference. It does not include the reference's preview workbench, its preview controls, or its two-column layout.
 
-The installed guidance is Wondel.ai's `ios-hig-design` skill (v1.5.1, source `wondelai/skills`, content hash `57f41a91308e10b3315ee2ddabea4e9254bf119dc0265d03b37c6afc88e1c009`), copied for Cursor at `~/.agents/skills/ios-hig-design`. It is a third-party reading of the HIG, not an Apple package. Native recommendations are translated to semantic HTML: system font stack instead of a San Francisco download, text labels instead of SF Symbols, buttons and dialogs instead of SwiftUI controls, and no haptics.
-
-## Active library
-
-| Item | Value |
-| --- | --- |
-| Library | [`@openai/apps-sdk-ui`](https://github.com/openai/apps-sdk-ui) `0.2.2` (pinned in `package-lock.json`) |
-| Used for | `Button` and `Input` primitives, plus their theme variables |
-| Required by the library | Tailwind CSS `4.3.3` via `@tailwindcss/vite` (the library's stylesheet is built on it) |
-| ChatGPT runtime | Not required. The components are plain React and need no `AppsSDKUIProvider` for the features used here. |
-| Native fallbacks | `Card` and `StatusMessage` are semantic HTML with local CSS, because the library has no suitable card or live-region primitive. |
-
-No other design system is installed. The app uses no Tailwind utility classes; Tailwind is present only because the library's CSS needs it.
+There is one light theme, no theme switch and no automatic dark variant. No external UI library or Tailwind is installed; the primitives are plain HTML elements styled with CSS modules.
 
 ## Files and boundary
 
 | File | Role |
 | --- | --- |
-| `src/styles/tokens.css` | **Canonical** semantic tokens (`--dp-*`). The only file allowed to contain raw colours. |
-| `src/styles/vendor-theme.css` | The single vendor stylesheet integration point. Imports Tailwind and the library CSS and maps the library's variables (`--color-*`, `--font-sans`) to `--dp-*` tokens. |
-| `src/components/ui/` | App-owned primitives (`Button`, `TextInput`, `Card`, `StatusMessage`) exported from `index.ts`. The only TypeScript allowed to import the library. |
-| `src/styles/app.css` | App-wide globals (body, focus ring, reduced motion), using tokens only. |
-| Feature CSS modules (`src/components/*.module.css`) | Screen layout using tokens only. |
+| `src/styles/tokens.css` | **Canonical** tokens, copied from the reference `tokens.css`. The only file allowed to contain raw colours. |
+| `src/styles/app.css` | Globals: box sizing, body type on the canvas, disabled buttons, the focus ring, and heading type. |
+| `src/components/ui/` | App-owned primitives (`Button`, `TextInput`, `StatusMessage`, `ConfirmDialog`) exported from `index.ts`. |
+| `src/components/screens.module.css` | The panel and every screen, reproduced from the reference `style.css`. |
+| `src/components/AppScreen.tsx` | The panel frame: header, meta, content, note, status, actions. |
+| `src/components/art.tsx` | Icons, the doorway and conversation illustrations (`src/assets/*.svg`, copied from the handoff), the pairing check mark, and the activity dots. |
+| `src/lib/motion.ts` | The saved "Pause motion" preference. |
 
 `npm run lint` runs `scripts/check-ui-boundary.ts`. It fails when:
 
-- any file outside `src/components/ui/` or `src/styles/vendor-theme.css` imports `@openai/apps-sdk-ui`, `tailwindcss`, `@tailwindcss/*`, `radix-ui` or `@radix-ui/*` (through JavaScript imports, CSS `@import` or `@source`), or
+- any file imports `@openai/apps-sdk-ui`, `tailwindcss`, `@tailwindcss/*`, `radix-ui` or `@radix-ui/*` (through JavaScript imports, CSS `@import` or `@source`), or
 - any CSS file other than `tokens.css` contains a raw hex colour.
 
-## Stylesheet ordering
-
-`src/main.tsx` imports, in this order:
-
-1. `styles/vendor-theme.css`: Tailwind, which declares the cascade layers `theme, base, components, utilities`, then the library CSS and the variable mapping.
-2. `styles/tokens.css`: the canonical tokens.
-3. `styles/app.css`: app globals.
-
-Vendor CSS lives in cascade layers, while app CSS (tokens, wrapper modules, feature modules) is unlayered, so app rules always win over library defaults regardless of specificity.
-
-**Constraint:** the library's component CSS must load *after* Tailwind declares its layer order. If the library's CSS ends up in an earlier stylesheet, `components` becomes the first-declared, lowest-priority layer, and Tailwind's base reset (`button { border-radius: 0; color: inherit }`) overrides the library's buttons. For that reason, `vite.config.ts` keeps `@openai/apps-sdk-ui` in the app chunk rather than the `vendor` chunk. The E2E test "the production build keeps the vendor component layer above the CSS reset" guards this against the built app.
-
-**Constraint:** the library's CSS entry (`@openai/apps-sdk-ui/css`) also pulls in KaTeX styles, whose `@font-face` rules point at `cdn.openai.com`. The CSP blocks those requests and the E2E CSP test fails on the resulting violations. `vendor-theme.css` therefore imports the entry's other files directly from `node_modules/@openai/apps-sdk-ui/dist/es/styles/`, leaving out `katex.min.css`. When upgrading the library, compare its `dist/es/styles/index.css` with that list; a moved file fails the build.
+`src/main.tsx` imports `tokens.css`, then `app.css`. All CSS is unlayered.
 
 ## Tokens
 
-All tokens are defined on `:root` in `tokens.css`. Screens and primitives use `var(--dp-…)` and never repeat values. Layout-only values such as `display: flex`, percentages and safe-area `env()` calculations don't need tokens.
+All tokens are defined on `:root` in `tokens.css`, with the reference's names and values. Screens use `var(--…)` and never repeat colour values.
 
-| Group | Tokens | Intended use |
+| Group | Tokens | Values |
 | --- | --- | --- |
-| Surfaces | `--dp-color-page`, `--dp-color-surface`, `--dp-color-surface-raised`, `--dp-color-surface-hover`, `--dp-color-cue`, `--dp-color-scrim`, `--dp-color-selected` | Grouped page (`#F2F2F7`), white cards, answer panel, hover, cue chips, dialog scrim, selected branch |
-| Text | `--dp-color-text`, `--dp-color-text-muted`, `--dp-color-text-placeholder` | Primary `#1C1C1E`, secondary `#51515A`, placeholders |
-| Borders | `--dp-color-border`, `--dp-color-border-strong` | Decorative separators `#D8D8DF`; control outlines `#6E6E76` (≥ 3:1). A separator is never the only sign of a control |
-| Actions | `--dp-color-action-primary-*`, `--dp-color-action-secondary-*`, `--dp-color-action-destructive-*`, `--dp-color-action-text`, `--dp-color-action-disabled-*` | Accent `#005BC4` with white text, red destructive `#B42318` with white text, accent text actions, solid disabled colours |
-| Roles and session header | `--dp-color-role-{missionary,christian}`, `…-hover`, `…-tint`, `--dp-color-destructive-tint`, `--dp-color-destructive-tint-hover`, `--dp-color-progress-track` | Missionary blue `#005BC4`, Christian green `#18794E`, each with a hover shade and a pale tint for the role pill, goal panel and selected topics. The leave icon is destructive red on a red tint. Progress track `#E5E5EA` |
-| Focus and status | `--dp-color-focus-ring`, `--dp-color-error`, `--dp-color-error-border`, `--dp-color-status` | Keyboard focus, error text (also described in words), neutral status text |
-| Typography | `--dp-font-family`, `--dp-font-size-{meta,guidance,body,control,answer,choice,section,prompt,prompt-wide,title,code}`, `--dp-font-weight-{regular,medium,semibold,bold}`, `--dp-line-height-{tight,prompt,body}` | `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Scenario title 32px/700. Spoken prompt 28px (30px from 480px), weight 600, line-height 1.4. Body 17px. No webfont download |
-| Spacing | `--dp-space-{1,2,3,4,5,6,8,10}` | 4/8/12/16/20/24/32/40px |
-| Shape and sizing | `--dp-radius-{card,control,panel,cue,pill}`, `--dp-icon-button-size`, `--dp-icon-size`, `--dp-progress-height`, `--dp-topic-min-height`, `--dp-control-height`, `--dp-control-height-primary`, `--dp-choice-min-height`, `--dp-content-max-width`, `--dp-page-gutter`, `--dp-page-gutter-regular`, `--dp-page-gutter-wide` | Cards 20px, controls 14px. Targets at least 48px; primary actions 52px; the icon-only leave button 44px with a 22px icon; topic buttons at least 64px; progress bar 6px. Role cards at least 140px and allowed to grow. Column 680px. Page padding 16px under 360px, 20px from 360px, 24px from 480px |
-| Motion | `--dp-duration-{press,enter,answer,success,fast}`, `--dp-easing-standard`, `--dp-enter-distance` | Press 100ms scale 0.98, enter 160ms and 4px, answer 150ms, success mark 250ms. All durations and the travel distance are 0 under `prefers-reduced-motion` |
+| Colour | `--color-canvas`, `--color-surface`, `--color-ink`, `--color-muted`, `--color-teal`, `--color-teal-hover`, `--color-sage`, `--color-peach`, `--color-line`, `--color-danger`, `--color-focus`, `--color-backdrop` | Canvas `#faf7f0`, panel `#fffdf8`, ink `#26332f`, muted `#5b655f`, teal `#205c50` (hover `#17483e`), sage `#e7eee6`, peach `#f5e5d8`, line `#d9ddd3`, danger `#a13b32`, focus `#9b493c`, dialog backdrop ink at 40% |
+| Type | `--font-body`, `--font-heading`, `--text-small`, `--text-body`, `--text-title` | System sans for body text; Georgia for headings, quotes and the pairing code. 13px small, 17px body, titles `clamp(1.65rem, 2.5vw, 1.95rem)`. No webfont download |
+| Spacing | `--space-1` … `--space-7` | 4, 8, 12, 16, 24, 32, 48px |
+| Shape | `--radius-control`, `--radius-surface` | Controls 14px, the panel 24px |
+| Motion | `--motion-fast`, `--motion-enter`, `--motion-activity`, `--motion-confirm`, `--motion-ready` | 160ms hover/press, 240ms entrance, 1.8s activity dots and ready pulse, 380ms pairing check |
 
-Measured contrast: primary text on white 17:1, secondary text on white 7.8:1 and on the page 7:1, white on accent 6.4:1, white on destructive 6.6:1, destructive text on white 6.6:1 and on its tint 5.7:1, white on Christian green 5.4:1, Christian green on its tint 4.8:1, placeholder on white 5.2:1, control outline on white 5:1 and on the page 4.5:1. Disabled controls use a solid gray fill and are not the only way to discover an action.
+To change the theme, edit `tokens.css`; screens should not need to change. The E2E test "changing a design token updates the components" checks that a token change reaches the primary `Button`, and "the production build styles the primary action from the design tokens" checks the built CSS.
 
-To change the theme, edit `tokens.css`. Screens should not need to change. The E2E test "changing a design token updates the wrapped components" checks that a token change reaches the vendor-backed `Button`.
+## The panel
+
+`AppScreen` renders one `<article>` inside `<main>` (max width 500px, centred; 24px page padding, 16px at 760px and below). The panel is at least 720px tall (760px from 1200px wide), so actions sit at a steady place at the bottom. From top to bottom:
+
+- **Header**: the "Doorstep practice" wordmark and, once paired, the `···` session menu.
+- **Meta**: before practice, a label ("Before you begin", "Ready to practice") with "Speak · Listen · Connect". During practice, "Practicing: <role>", "N of 6 · Step" (Scene, Ready together, Opening, Questions, Response, Closing, then "Complete"), and a six-segment `progressbar`.
+- **Content**: keyed by the shared step, so each new step replays the entrance motion and resets local state such as the selected question or a revealed answer. Waiting, paired, paused and completion screens use the centred `waiting` layout.
+- **Note**, **status line** and **actions**.
+
+### Session menu
+
+A `<details>` disclosure labelled "Session controls" with: **Restart practice** (either person, while restarting is allowed; the partner confirms), **Pause motion** / **Resume motion**, and **Leave session**. It closes on Escape (focus returns to the `···` button) or a pointer press outside. All controls use the single teal colour; Leave is the only item in the danger colour.
 
 ## Primitives
 
@@ -73,133 +57,77 @@ Import primitives only from `src/components/ui` (or `./ui` from inside `src/comp
 ### `Button`
 
 ```tsx
-import { Button } from './ui'
-
-<Button onClick={next} loading={pending === 'next'} disabled={!canAct}>Next</Button>
-<Button variant="secondary" block onClick={onBack}>Choose a different role</Button>
+<Button onClick={start} loading={pending === 'start_practice'} disabled={!canAct}>Start practice</Button>
+<Button variant="secondary" onClick={onDecline}>Not now</Button>
+<Button variant="text" onClick={onBack}>Back</Button>
 ```
 
 | Prop | Type | Notes |
 | --- | --- | --- |
-| `variant` | `'primary' \| 'secondary' \| 'destructive'` | Defaults to `primary` (accent fill, white text). `secondary` is outlined. `destructive` is a red fill with white text. |
-| `loading` | `boolean` | Disables the button, shows the library's spinner and sets `aria-busy`. |
-| `block` | `boolean` | Full width. |
+| `variant` | `'primary' \| 'secondary' \| 'text'` | Defaults to `primary` (teal fill). `secondary` is outlined; `text` is a teal text button. |
+| `loading` | `boolean` | Disables the button and sets `aria-busy`. |
 | `ref` | `Ref<HTMLButtonElement>` | Forwarded to the native button. |
 | Native button attributes | | `type` defaults to `"button"`. ARIA attributes such as `aria-expanded` pass through. |
 
-States: rest, hover, active, `:focus-visible` ring, disabled (`--dp-color-action-disabled-opacity`) and loading. Labels wrap instead of clipping at large text sizes. Minimum height is `--dp-control-height`.
+Buttons are at least 52px tall; labels wrap instead of clipping. Disabled buttons are 50% opacity.
 
 ### `TextInput`
 
 ```tsx
-<TextInput
-  ref={inputRef}
-  label="Pair code"
-  hint="Your partner sees this code on their phone."
-  error={error}
-  value={value}
-  onChange={(event) => setValue(event.target.value)}
-/>
+<TextInput ref={inputRef} label="Pairing code" hint="Six digits. Spaces are optional." error={error} />
 ```
 
-| Prop | Type | Notes |
-| --- | --- | --- |
-| `label` | `string` | Required. Rendered as a visible `<label htmlFor>`. |
-| `hint` | `string` | Linked through `aria-describedby`. |
-| `error` | `string \| null` | Shown inline with `role="alert"`, sets `aria-invalid`, and is added to `aria-describedby`. |
-| `ref` | `Ref<HTMLInputElement>` | Forwarded to the native input. |
-| Native input attributes | | Except `size`. |
-
-### `Card`
-
-```tsx
-<Card aria-labelledby="role-heading">…</Card>
-```
-
-A bordered surface that renders a `<section>` by default (`element="div"` is also allowed). Layout inside the card belongs to feature components.
+A visible `<label>`, the input, the hint, then an always-mounted `role="alert"` error paragraph. The hint and error are linked through `aria-describedby`, and an error sets `aria-invalid`.
 
 ### `StatusMessage`
 
-```tsx
-<StatusMessage>{statusText}</StatusMessage>
-<StatusMessage tone="error">{error}</StatusMessage>
-```
-
-A persistent live region: `role="status"` for `neutral` and `role="alert"` for `error`. Keep it mounted and change its text so updates are announced. It is one line high (`--dp-status-min-height`) when it has text and collapses when empty. Inside a card footer, the card's minimum height absorbs the change, so the navigation buttons stay put. Heartbeats never write to it.
-
-## Accessibility requirements
-
-- Semantic buttons and headings: one `h1` per page. On the starting screen that is the scenario title. During pairing and play it is the screen's main instruction or the spoken prompt, and the scenario title is a compact label. Error pages that have no scenario title use the app name.
-- A visible `:focus-visible` ring everywhere (`--dp-color-focus-ring`). Focus moves to the new prompt heading on deliberate navigation, but not on the first render or on heartbeats.
-- The pair code input is labelled, validated inline, and gets focus back after an error.
-- The answer reveal uses `aria-expanded` and `aria-controls`. The hidden answer is removed from the accessibility tree with `hidden`.
-- The pair code is shown visually as `ABC-DEF` and announced letter by letter through visually hidden text, and is marked `translate="no"`.
-- Status and error messages use live regions. Colour is never the only signal.
-- Honours `prefers-reduced-motion` with instant state changes and no translation or scaling. Motion never delays focus or the committed session state, and it does not replay on heartbeats.
-- Works at 320px wide and at 200% text size, respects safe-area insets, and has no fixed footer covering content. Cards grow with their content.
-- Touch targets are at least 48px tall with gaps of 8px or more.
-
-## Replacement procedure
-
-1. Install the new library (or remove the dependency and use native elements).
-2. Re-implement `Button.tsx` and `TextInput.tsx` (and their `.module.css` variable mappings) behind the **same props**. Keep native semantics, ref forwarding, `aria-busy` while loading, and the label, hint and error wiring.
-3. Replace the imports and variable mapping in `src/styles/vendor-theme.css`. Map the new library's variables to existing `--dp-*` tokens; don't add new raw values outside `tokens.css`.
-4. Update `VENDOR_PACKAGES` in `scripts/ui-boundary.ts` if the new library has a different package name.
-5. If the new library ships CSS, check the stylesheet-ordering constraint above and adjust `vite.config.ts` chunking if needed.
-6. Run `npm run validate`, `npm run test:e2e`, and a manual pass over role selection, pairing (waiting, joining, errors), both player views, the revealed answer, reconnecting, completion and the role swap at 320, 375 and 430px and on desktop. The dev-only gallery at `/dev/preview?state=<name>` (`npm run dev`) renders every state without a backend.
-
-Screens, session hooks, RPCs, scenario data and routing should not change when only the visual library changes. If they need to, the wrapper API is leaking and should be fixed instead.
-
-## Phase 2 additions
-
-### `CueTag`
-
-A noninteractive stage direction (`SAY`, `WAIT`, `CHALLENGE`, `IF THEY SAY…`). The words carry the meaning. It is not a button, filter, or topic chip. Missionary prompts place a tag immediately before the line it describes. The Christian never sees tags, wait instructions, or unchosen branches.
+A persistent live region: `role="status"` for `neutral` and `role="alert"` for `error`. Keep it mounted and change its text so updates are announced. Heartbeats never write to it.
 
 ### `ConfirmDialog`
 
-An `alertdialog` portaled to `document.body`. Focus starts on **Keep playing**, Tab cycles inside the dialog, Escape and the backdrop cancel, and focus returns to the opener. The page root is `inert` while it is open. **End session** uses the destructive button. A failed or offline end stays in the dialog and does not pretend the partner was notified.
+A native `<dialog>` opened with `showModal()`, so the page behind is inert. It shows a "SESSION CONTROLS" eyebrow, the title and description, then the safe action (**Keep practicing** by default) and the confirm action. Focus starts on the safe action and returns to the opener; Escape and the backdrop cancel unless a request is pending. A failed or offline leave stays in the dialog and does not pretend the partner was notified.
 
-### Role cards
+## Screens
 
-The starting screen is the scenario title (`h1`), one short description, then **Choose your role** and two native card buttons. Each card's name includes its subtitle. There is no extra Continue step.
+Before pairing, the screens follow who creates the practice rather than the role:
 
-### Session actions
-
-Before a partner joins, both pairing screens end with a secondary **Back to roles** button inside the card. For the missionary it closes the pairing code on the server without a dialog, and stays put with an explanation when offline. Once paired, leaving is the red icon button in the session header (see below). **Restart** is a quieter text action for the current missionary during play and after completion. Restart needs the partner's confirmation, expires after 60 seconds on the server, and returns both phones to the scene.
-
-## Guided flow additions
-
-### Role accents
-
-`SessionView` wraps the session in `.roleMissionary` or `.roleChristian`. These classes point the primary action, text action, focus ring and selected colours at the role's blue or green, and set `--dp-role-accent` and `--dp-role-tint` for the header and topic buttons. Colour is never the only role signal: the header pill names the role.
-
-### `SessionHeader`
-
-Shown on both phones from the scene until the wrap-up. From left to right:
-
-- the role pill
-- "Step N of 6 · Label" (Scene, Start, Opening, Questions, Discussion, Wrap-up), with a decorative progress bar (`aria-hidden`, because the text already says it)
-- a 44px icon-only **Leave session** button: red exit icon on a red tint, `aria-label="Leave session"`, which opens the End session confirmation
-
-Labels are short enough to fit a 320px screen without truncation.
-
-### `GuidedStage`
-
-One card per shared stage, rendered only from server state. A small turn label at the top ("Your turn", "Partner's turn", "Your turn to answer") says whose move it is.
-
-| Stage | Missionary | Christian |
+| Screen | Creator | Joiner |
 | --- | --- | --- |
-| Scene | Scene title, optional image, text, goal panel, **I'm ready** | Same, with their own scene |
-| Start | Whoever the scenario names as initiator sees its prompt and action; the other waits, then sees the receiver prompt and action | |
-| Opening | The speaker sees a `SAY` cue, the line, and **Continue** | The listener sees "Listen to your partner" and an optional prompt |
-| Questions | Topic buttons (tag and title) plus **Finish conversation** | "Your partner is choosing a question" (no preview) |
-| Discussion, before asking | `SAY` (or `CHALLENGE` for a follow-up), the script, **Question asked**, and **Choose a different question** | "Listen for your partner's question" |
-| Discussion, after asking | `WAIT` "Listen to their answer", what was asked, follow-up buttons, **Choose another question**, **Finish conversation** | The question, "Answer in your own words first", **Show hint** / **Show scripture**, and the concealed answer |
-| Wrap-up | Closing line with a `SAY` cue, reflection prompt, **Switch roles** | Reflection prompt, swap response |
+| Welcome | "Make room for a conversation." with the doorway art, **Create a practice** and **Join a practice** | Same |
+| Role choice | "Which side will you practice?" with two radio cards (missionary selected by default), the conversation title, **Get a pairing code**, **Back** | Not shown; the joiner takes the other role |
+| Pairing | "Good conversations start with two." with the six-digit code (`482 716`), both roles, waiting dots, **Change roles**, and **Get a new code** after expiry | "Find your practice partner." with the numeric code field, **Join practice**, **Back** |
+| Paired | "You’re paired" summary, **Start practice** | The same summary; waits for the creator |
 
-Images are optional: a missing or failed image is removed and the text carries the scene.
+After pairing, the screens follow the role:
 
-### Reveal answer
+| Screen | Missionary | Christian |
+| --- | --- | --- |
+| Scene | Scene art (role image, else the doorway illustration when the scenario sets it), title, text, goal, **I’m ready** | Same |
+| Ready together | Both roles marked Ready, **Begin conversation** | Waits for the hello |
+| Opening | The opening line as a quote, **I’ve said it** | "Your partner’s turn" |
+| Questions | Question cards (radio, topic, prompt); **I’ve asked it** once one is chosen; **Move to closing** | "Your partner’s turn" with activity dots; no preview of the questions |
+| Response | "Make room to listen" | The asked question, the blurred example answer with **Reveal example answer**, **I’ve shared my thoughts** (returns both to Questions) |
+| Closing | The closing line, **Finish practice** | "A moment to wrap up" |
+| Complete | Reflection, **Practice again** and **Switch roles** | Reflection, **Practice again**; accepts or declines a switch |
 
-The suggested answer is not rendered (not in the page or the accessibility tree) until **Reveal answer** is tapped. Before that, a dashed panel with three decorative lines (`aria-hidden`) shows where it will appear. After reveal, **Hide answer** conceals it again. The help component is keyed by round, question and follow-up, so a new question, a follow-up, a restart, a swap or a reload always starts concealed. Hint and scripture are separate disclosures with `aria-expanded`. **Finish conversation** asks for confirmation ("Keep talking" is the safe default).
+Other states: practice paused while the partner is offline (with **Leave session**), restart requests (the person who asked sees **Cancel request**; the partner confirms with **Start again** or **Keep practicing**), and the ended screens.
+
+### Example answer
+
+The example answer is real text, blurred until revealed. The blurred copy is `aria-hidden`; the readable copy (and any scripture references) is `hidden` until **Reveal example answer** is pressed. The toggle has `aria-expanded` and `aria-controls`. A new question, a restart, a swap or a reload always starts concealed again, because the content is keyed by the shared step.
+
+## Motion
+
+Entrance (fade and rise), the pairing check, the ready pulse and the activity dots come from the reference. All of it stops under `prefers-reduced-motion` or when **Pause motion** is chosen in the session menu (saved in `localStorage` as `doorstep:motion-paused`, applied as the `motion-paused` class on `<html>` before the first render). Motion never delays focus or the committed session state, and it does not replay on heartbeats.
+
+## Accessibility requirements
+
+- One `h1` per screen. On the opening screen it is visually hidden ("Start with a hello") because the quote is the visible focus.
+- A 3px `:focus-visible` ring in `--color-focus` with a 4px offset; radio cards draw the ring around the whole card. Focus moves to the new heading when the shared step changes, but not on the first render or on heartbeats. Programmatically focused headings show no ring.
+- The pairing code is shown as `482 716`, announced digit by digit through visually hidden text, and marked `translate="no"`. The code field opens the numeric keypad.
+- Status and error messages use live regions. Colour is never the only signal.
+- Works at 320px wide and at 200% text size with no horizontal scrolling; controls stay reachable by normal page scrolling. Buttons are at least 44px tall (primary and secondary 52px).
+
+## Checking changes
+
+Run `npm run validate` and `npm run test:e2e`, then compare the screens with the reference at 390×844, 1280×1000 and 320px. The dev-only gallery at `/dev/preview?state=<name>` (`npm run dev`) renders every state without a backend.

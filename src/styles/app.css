@@ -1,30 +1,82 @@
-/* App globals. Consumes tokens.css; no raw design values. */
+/* App globals. Consumes tokens.css; no raw colours. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
-  background: var(--dp-color-page);
+  background: var(--color-canvas);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   /* Focus rings and pressed states provide feedback instead. */
   -webkit-tap-highlight-color: transparent;
 }
 
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font: var(--text-body) / 1.55 var(--font-body);
+}
+
 button,
 input,
-label {
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+button,
+input,
+label,
+select,
+summary,
+a {
   touch-action: manipulation;
 }
 
-body {
-  margin: 0;
-  background: var(--dp-color-page);
-  color: var(--dp-color-text);
-  font-family: var(--dp-font-family);
-  font-size: var(--dp-font-size-body);
-  line-height: var(--dp-line-height-body);
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
 }
 
-:focus-visible {
-  outline: var(--dp-focus-ring-width) solid var(--dp-color-focus-ring);
-  outline-offset: var(--dp-focus-ring-offset);
+/* Headings receive focus from code when the screen changes; they are not controls. */
+[tabindex='-1']:focus {
+  outline: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+h1,
+h2 {
+  font-size: var(--text-title);
+  letter-spacing: -0.025em;
+}
+
+h3 {
+  font-size: 1.25rem;
 }
 
 [hidden] {
@@ -32,12 +84,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  * {
     scroll-behavior: auto !important;
   }
 }

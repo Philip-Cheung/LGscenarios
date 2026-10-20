@@ -102,7 +102,7 @@ describe('unrelated signed-in users', () => {
     expectError(await rpc(outsider, 'get_session', { p_session_id: session.id }), 'not_found')
     expectError(await rpc(outsider, 'heartbeat', { p_session_id: session.id }), 'not_found')
     for (const [fn, args] of [
-      ['guided_event', { p_event: 'trigger_initiate', p_target_id: null, p_expected_revision: session.revision }],
+      ['guided_event', { p_event: 'begin', p_target_id: null, p_expected_revision: session.revision }],
       ['request_swap', { p_expected_revision: session.revision }],
       ['respond_swap', { p_accept: true, p_expected_revision: session.revision }],
       ['regenerate_pair_code', {}],
@@ -121,14 +121,13 @@ describe('unrelated signed-in users', () => {
     expect(participant.status).toBe('SUBSCRIBED')
 
     const current = expectOk(await rpc(missionary, 'get_session', { p_session_id: session.id }))
-    const moved = expectOk(await guided(missionary, current, 'trigger_initiate'))
+    const moved = expectOk(await guided(missionary, current, 'begin'))
 
     for (let i = 0; i < 50 && participant.events.length === 0; i += 1) await wait(200)
     expect(participant.events.length).toBeGreaterThan(0)
     expect(participant.events.at(-1)).toMatchObject({
       id: session.id,
       stage: moved.stage,
-      trigger_initiated: true,
       revision: moved.revision,
     })
     expect(participant.events.at(-1)).not.toHaveProperty('pair_code')
@@ -144,7 +143,7 @@ describe('direct table access', () => {
     const before = await h.sql('select stage, revision from public.sessions where id = $1', [session.id])
     const update = await missionary.client
       .from('sessions')
-      .update({ stage: 'conclusion', question_asked: true })
+      .update({ stage: 'conclusion', active_question_id: null })
       .eq('id', session.id)
       .select()
     expect(update.error).not.toBeNull()
@@ -189,13 +188,15 @@ describe('direct table access', () => {
 })
 
 describe('role permissions', () => {
-  it('only lets the current missionary choose questions, finish, and request a swap', async () => {
+  it('only lets the current missionary lead, choose questions, finish, and request a swap', async () => {
     const current = expectOk(await rpc(christian, 'get_session', { p_session_id: session.id }))
     for (const [event, target] of [
-      ['select_question', QUESTION_ID],
-      ['question_asked', null],
-      ['return_to_questions', null],
-      ['finish_discussion', null],
+      ['start_practice', null],
+      ['begin', null],
+      ['opening_complete', null],
+      ['ask_question', QUESTION_ID],
+      ['move_to_closing', null],
+      ['finish', null],
     ] as const) {
       expectError(await guided(christian, current, event, target), 'forbidden')
     }
@@ -222,19 +223,23 @@ describe('role permissions', () => {
     )
     expect(swapped).toMatchObject({
       my_role: 'missionary',
-      status: 'active',
-      stage: 'scene_setup',
+      status: 'ready',
+      stage: 'paired',
       my_ready: false,
       partner_ready: false,
       active_question_id: null,
       round: 2,
     })
 
+    // Both phones return to the paired summary; the creator still starts the practice.
     const forOld = expectOk(await rpc(m, 'get_session', { p_session_id: state.id }))
-    expect(forOld).toMatchObject({ my_role: 'christian', stage: 'scene_setup' })
-    const atTrigger = await h.bothReady(c, m, swapped)
-    expectError(await guided(m, atTrigger, 'trigger_initiate'), 'forbidden')
-    expectOk(await guided(c, atTrigger, 'trigger_initiate'))
+    expect(forOld).toMatchObject({ my_role: 'christian', is_creator: true, stage: 'paired' })
+    expect(swapped.is_creator).toBe(false)
+    expectError(await guided(c, swapped, 'start_practice'), 'forbidden')
+    const scene = expectOk(await guided(m, forOld, 'start_practice'))
+    const together = await h.bothReady(c, m, scene)
+    expectError(await guided(m, together, 'begin'), 'forbidden')
+    expectOk(await guided(c, together, 'begin'))
   })
 
   it('keeps roles when a swap is declined', async () => {

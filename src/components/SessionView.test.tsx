@@ -1,38 +1,37 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ScenarioContent } from '../lib/content'
-import { coffeeChat, whoIsGod } from '../scenarios/fixtures'
+import { coffeeChat, sampleDoorstep, whoIsGod } from '../scenarios/fixtures'
 import type { SessionSnapshot } from '../sessions/types'
 import type { SessionActions } from '../sessions/useSessionSync'
 import { SessionView } from './SessionView'
 
 const snapshot: SessionSnapshot = {
   id: '00000000-0000-4000-8000-000000000000',
-  scenarioId: whoIsGod.id,
-  scenarioVersion: whoIsGod.version,
+  scenarioId: sampleDoorstep.id,
+  scenarioVersion: sampleDoorstep.version,
   status: 'active',
   revision: 1,
   round: 1,
   myRole: 'missionary',
+  isCreator: true,
   partnerJoined: true,
   swapPending: false,
   restartPending: false,
+  restartByMe: false,
   restartRequestedAt: null,
   stage: 'scene_setup',
   meReady: false,
   partnerReady: false,
-  triggerInitiated: false,
   activeQuestionId: null,
-  activeFollowupId: null,
-  questionAsked: false,
   partnerFresh: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   pairCode: null,
   codeExpiresAt: null,
 }
 
-const discussing: Partial<SessionSnapshot> = { stage: 'discussion', activeQuestionId: 'nature-of-god' }
-const question = whoIsGod.questions[0]
+const responding: Partial<SessionSnapshot> = { stage: 'response', activeQuestionId: 'hope' }
+const hope = sampleDoorstep.questions.find((item) => item.id === 'hope')!
 
 function makeActions(overrides: Partial<SessionActions> = {}): SessionActions {
   const noop = async () => true
@@ -54,7 +53,7 @@ function makeActions(overrides: Partial<SessionActions> = {}): SessionActions {
 function renderView(
   overrides: Partial<SessionSnapshot>,
   actions: SessionActions = makeActions(),
-  scenario: ScenarioContent = whoIsGod,
+  scenario: ScenarioContent = sampleDoorstep,
 ) {
   const props = {
     scenario,
@@ -71,12 +70,17 @@ function renderView(
   }
 }
 
+async function openMenu() {
+  await userEvent.click(screen.getByLabelText('Session controls'))
+}
+
 describe('SessionView while waiting for a partner', () => {
   const waiting: Partial<SessionSnapshot> = {
     status: 'waiting',
+    stage: 'paired',
     partnerJoined: false,
     partnerFresh: null,
-    pairCode: 'K7MPQ3',
+    pairCode: '482716',
     codeExpiresAt: new Date(Date.now() + 900_000).toISOString(),
   }
 
@@ -84,13 +88,27 @@ describe('SessionView while waiting for a partner', () => {
     vi.restoreAllMocks()
   })
 
-  it('offers Back to roles in the card instead of the leave button, and closes the code without a dialog', async () => {
+  it('shows the code with both roles, and no session menu before pairing', () => {
+    renderView(waiting)
+    expect(screen.getByTestId('pair-code')).toHaveTextContent('482 716')
+    expect(screen.getByText('Code: 4 8 2 7 1 6')).toBeInTheDocument()
+    expect(screen.getByText('Join a practice', { selector: 'strong' })).toBeInTheDocument()
+    expect(screen.getByText('Waiting for your partner to join')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Session controls')).not.toBeInTheDocument()
+  })
+
+  it('shows the role the creator chose', () => {
+    renderView({ ...waiting, myRole: 'christian' })
+    const summary = screen.getByText('Your role').parentElement!
+    expect(summary).toHaveTextContent('Christian')
+    expect(screen.getByText('Your partner’s role').parentElement!).toHaveTextContent('Missionary')
+  })
+
+  it('closes the code with Change roles, without a dialog', async () => {
     const end = vi.fn(async () => true)
     renderView(waiting, makeActions({ end }))
-
-    expect(screen.queryByRole('button', { name: 'Leave session' })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Back to roles' }))
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Change roles' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(end).toHaveBeenCalledOnce()
   })
 
@@ -98,134 +116,278 @@ describe('SessionView while waiting for a partner', () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     const end = vi.fn(async () => true)
     renderView(waiting, makeActions({ end }))
-
-    await userEvent.click(screen.getByRole('button', { name: 'Back to roles' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Change roles' }))
     expect(end).not.toHaveBeenCalled()
     expect(screen.getByRole('alert')).toHaveTextContent('Your code cannot be closed until your connection returns.')
     expect(screen.getByTestId('pair-code')).toBeInTheDocument()
   })
 })
 
-describe('SessionView header', () => {
-  it('shows the role, truthful progress, and an icon-only leave button that confirms first', async () => {
-    const end = vi.fn(async () => true)
-    renderView({ stage: 'opening_dialogue' }, makeActions({ end }))
+describe('SessionView paired summary', () => {
+  it('lets only the creator start the practice, whatever their role', async () => {
+    const send = vi.fn(async () => true)
+    const { unmount } = renderView({ status: 'ready', stage: 'paired' }, makeActions({ send }))
+    expect(screen.getByRole('heading', { level: 1, name: 'A little practice, together.' })).toBeInTheDocument()
+    expect(screen.getByText('A conversation at the door', { selector: 'strong' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Start practice' }))
+    expect(send).toHaveBeenCalledWith('start_practice', undefined)
+    unmount()
 
-    expect(screen.getByText('Missionary')).toBeInTheDocument()
-    expect(screen.getByText('Step 3 of 6 · Opening')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Leave session' }))
-    const dialog = screen.getByRole('alertdialog')
-    expect(dialog).toHaveTextContent('This ends the scenario for both players.')
-    expect(end).not.toHaveBeenCalled()
-    await userEvent.click(within(dialog).getByRole('button', { name: 'End session' }))
-    expect(end).toHaveBeenCalledOnce()
+    const joiner = renderView({ status: 'ready', stage: 'paired', myRole: 'christian', isCreator: false })
+    expect(screen.queryByRole('button', { name: 'Start practice' })).not.toBeInTheDocument()
+    expect(screen.getByText('Your partner will start when you’re both ready.')).toBeInTheDocument()
+    joiner.unmount()
+
+    renderView({ status: 'ready', stage: 'paired', myRole: 'christian', isCreator: true })
+    expect(screen.getByRole('button', { name: 'Start practice' })).toBeInTheDocument()
   })
 })
 
-describe('SessionView scene and trigger', () => {
+describe('SessionView progress and session controls', () => {
+  it('shows the role and truthful progress', () => {
+    renderView({ stage: 'opening_dialogue' })
+    expect(screen.getByText('Missionary', { selector: 'b' })).toBeInTheDocument()
+    expect(screen.getByText('3 of 6 · Opening')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Practice progress' })).toHaveAttribute('aria-valuenow', '3')
+  })
+
+  it('confirms before leaving', async () => {
+    const end = vi.fn(async () => true)
+    renderView({ stage: 'opening_dialogue' }, makeActions({ end }))
+    await openMenu()
+    await userEvent.click(screen.getByRole('button', { name: 'Leave session' }))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('This will close the practice for both people.')
+    expect(end).not.toHaveBeenCalled()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Leave session' }))
+    expect(end).toHaveBeenCalledOnce()
+  })
+
+  it('offers Restart practice to either person once the practice is active', async () => {
+    const requestRestart = vi.fn(async () => true)
+    const { unmount } = renderView({ stage: 'question_selection' }, makeActions({ requestRestart }))
+    await openMenu()
+    await userEvent.click(screen.getByRole('button', { name: 'Restart practice' }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Start again' }))
+    expect(requestRestart).toHaveBeenCalledOnce()
+    unmount()
+
+    const christian = renderView({ stage: 'question_selection', myRole: 'christian', isCreator: false })
+    await openMenu()
+    expect(screen.getByRole('button', { name: 'Restart practice' })).toBeInTheDocument()
+    christian.unmount()
+
+    renderView({ status: 'ready', stage: 'scene_setup' })
+    expect(screen.queryByRole('button', { name: 'Restart practice' })).not.toBeInTheDocument()
+  })
+
+  it('saves the motion preference from the menu', async () => {
+    renderView({ stage: 'question_selection' })
+    await openMenu()
+    await userEvent.click(screen.getByRole('button', { name: 'Pause motion' }))
+    expect(document.documentElement).toHaveClass('motion-paused')
+    expect(window.localStorage.getItem('doorstep:motion-paused')).toBe('1')
+    await userEvent.click(screen.getByRole('button', { name: 'Resume motion' }))
+    expect(document.documentElement).not.toHaveClass('motion-paused')
+  })
+})
+
+describe('SessionView scene and readiness', () => {
   it('shows each role its own scene and sends Ready once', async () => {
     const send = vi.fn(async () => true)
     renderView({ status: 'ready' }, makeActions({ send }))
-
-    expect(screen.getByRole('heading', { level: 1, name: whoIsGod.roles.missionary.sceneTitle })).toBeInTheDocument()
-    expect(screen.queryByText(whoIsGod.roles.christian.sceneText)).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /open green door/ })).toBeInTheDocument()
+    expect(screen.getByText(sampleDoorstep.roles.missionary.goal)).toBeInTheDocument()
+    expect(screen.queryByText(sampleDoorstep.roles.christian.sceneText)).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'I’m ready' }))
     expect(send).toHaveBeenCalledWith('ready', undefined)
   })
 
   it('waits for the partner after Ready instead of offering it again', () => {
     renderView({ status: 'ready', myRole: 'christian', meReady: true })
-    expect(screen.getByRole('heading', { level: 1, name: whoIsGod.roles.christian.sceneTitle })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'I’m ready' })).not.toBeInTheDocument()
-    expect(screen.getByText('Waiting for your partner to get ready…')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'You’re ready · Waiting for partner' })).toBeDisabled()
   })
 
-  it('uses the configured initiator and labels, not a hardcoded knock', async () => {
+  it('omits the illustration for scenarios without one', () => {
+    renderView({ status: 'ready' }, makeActions(), coffeeChat)
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
+
+  it('lets the missionary begin once both are ready', async () => {
     const send = vi.fn(async () => true)
-    const { unmount } = renderView({ stage: 'interaction_trigger', myRole: 'christian' }, makeActions({ send }), coffeeChat)
-    await userEvent.click(screen.getByRole('button', { name: 'Wave them over' }))
-    expect(send).toHaveBeenCalledWith('trigger_initiate', undefined)
-    expect(screen.queryByText(/knock/i)).not.toBeInTheDocument()
+    const { unmount } = renderView({ stage: 'ready_together', meReady: true, partnerReady: true }, makeActions({ send }))
+    await userEvent.click(screen.getByRole('button', { name: 'Begin conversation' }))
+    expect(send).toHaveBeenCalledWith('begin', undefined)
     unmount()
 
-    renderView({ stage: 'interaction_trigger', myRole: 'missionary' }, makeActions(), coffeeChat)
-    expect(screen.getByRole('heading', { level: 1, name: 'Waiting for your partner' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Walk over and sit down' })).not.toBeInTheDocument()
+    renderView({ stage: 'ready_together', myRole: 'christian', meReady: true, partnerReady: true })
+    expect(screen.queryByRole('button', { name: 'Begin conversation' })).not.toBeInTheDocument()
+    expect(screen.getByText('Your partner will begin with a short hello.')).toBeInTheDocument()
   })
+})
 
-  it('lets the receiver respond only after the initiator acts', async () => {
+describe('SessionView opening', () => {
+  it('gives the missionary the script and the Christian a listening prompt', async () => {
     const send = vi.fn(async () => true)
-    renderView({ stage: 'interaction_trigger', myRole: 'christian', triggerInitiated: true }, makeActions({ send }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Someone is knocking at your door.' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Open the door' }))
-    expect(send).toHaveBeenCalledWith('trigger_acknowledge', undefined)
+    const { unmount } = renderView({ stage: 'opening_dialogue' }, makeActions({ send }))
+    expect(screen.getByText(`“${sampleDoorstep.openingDialogue.script}”`)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'I’ve said it' }))
+    expect(send).toHaveBeenCalledWith('opening_complete', undefined)
+    unmount()
+
+    renderView({ stage: 'opening_dialogue', myRole: 'christian' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Your partner’s turn' })).toBeInTheDocument()
+    expect(screen.queryByText(`“${sampleDoorstep.openingDialogue.script}”`)).not.toBeInTheDocument()
   })
 })
 
 describe('SessionView question loop', () => {
-  it('lets the missionary pick a question while the Christian sees no preview', async () => {
+  it('keeps the choice on the missionary’s phone until it has been asked', async () => {
     const send = vi.fn(async () => true)
-    const { unmount } = renderView({ stage: 'question_selection' }, makeActions({ send }))
-    await userEvent.click(screen.getByRole('button', { name: /Who is God\?/ }))
-    expect(send).toHaveBeenCalledWith('select_question', 'nature-of-god')
-    unmount()
+    renderView({ stage: 'question_selection' }, makeActions({ send }))
+    const asked = screen.getByRole('button', { name: 'I’ve asked it' })
+    expect(asked).toBeDisabled()
+    await userEvent.click(screen.getByRole('radio', { name: /What gives you hope\?/ }))
+    expect(send).not.toHaveBeenCalled()
+    await userEvent.click(asked)
+    expect(send).toHaveBeenCalledWith('ask_question', 'hope')
+  })
 
+  it('lets the missionary move to closing at any time', async () => {
+    const send = vi.fn(async () => true)
+    renderView({ stage: 'question_selection' }, makeActions({ send }))
+    await userEvent.click(screen.getByRole('button', { name: 'Move to closing' }))
+    expect(send).toHaveBeenCalledWith('move_to_closing', undefined)
+  })
+
+  it('shows the Christian no preview while the missionary chooses', () => {
     renderView({ stage: 'question_selection', myRole: 'christian' })
-    expect(screen.getByRole('heading', { level: 1, name: 'Your partner is choosing a question' })).toBeInTheDocument()
-    for (const item of whoIsGod.questions) expect(screen.queryByText(item.title)).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Your partner’s turn' })).toBeInTheDocument()
+    for (const item of sampleDoorstep.questions) expect(screen.queryByText(item.prompt)).not.toBeInTheDocument()
   })
 
-  it('keeps the question from the Christian until the missionary has asked it', () => {
-    renderView({ ...discussing, myRole: 'christian' })
-    expect(screen.queryByText(question.missionaryScript)).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Reveal answer' })).not.toBeInTheDocument()
-  })
+  it('blurs the example answer for sighted users and hides it from screen readers until revealed', async () => {
+    const send = vi.fn(async () => true)
+    const { rerenderWith } = renderView({ ...responding, myRole: 'christian' }, makeActions({ send }))
+    expect(screen.getByText(`“${hope.prompt}”`)).toBeInTheDocument()
 
-  it('renders the hidden answer only after Reveal answer, and hides it again for a new round', async () => {
-    const { rerenderWith } = renderView({ ...discussing, myRole: 'christian', questionAsked: true })
-    expect(screen.getByRole('heading', { level: 1, name: question.missionaryScript })).toBeInTheDocument()
-    expect(screen.queryByText(question.christian.hiddenAnswer)).not.toBeInTheDocument()
-    expect(document.body.textContent).not.toContain(question.christian.hiddenAnswer)
+    const quoted = `“${hope.exampleAnswer}”`
+    const copies = screen.getAllByText(quoted)
+    expect(copies).toHaveLength(2)
+    const blurred = copies.find((node) => node.getAttribute('aria-hidden') === 'true')
+    const readable = copies.find((node) => node !== blurred)
+    expect(blurred).toBeVisible()
+    expect(readable).not.toBeVisible()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Show hint' }))
-    expect(screen.getByText(question.christian.hint ?? '')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Reveal answer' }))
-    expect(screen.getByText(question.christian.hiddenAnswer)).toBeInTheDocument()
+    const toggle = screen.getByRole('button', { name: 'Reveal example answer' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(toggle)
+    expect(screen.getByRole('button', { name: 'Hide example answer' })).toHaveAttribute('aria-expanded', 'true')
+    expect(blurred).not.toBeVisible()
+    expect(readable).toBeVisible()
+
+    await userEvent.click(screen.getByRole('button', { name: 'I’ve shared my thoughts' }))
+    expect(send).toHaveBeenCalledWith('share_complete', undefined)
 
     rerenderWith({ round: 2 })
-    expect(screen.queryByText(question.christian.hiddenAnswer)).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Reveal answer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reveal example answer' })).toBeInTheDocument()
   })
 
-  it('never shows the Christian help to the missionary', () => {
-    renderView({ ...discussing, questionAsked: true })
-    expect(document.body.textContent).not.toContain(question.christian.hiddenAnswer)
-    expect(screen.queryByRole('button', { name: 'Reveal answer' })).not.toBeInTheDocument()
+  it('shows scripture references only after the reveal', async () => {
+    renderView({ stage: 'response', activeQuestionId: 'nature-of-god', myRole: 'christian' }, makeActions(), whoIsGod)
+    const scripture = screen.getByText(/^Scripture:/)
+    expect(scripture).not.toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Reveal example answer' }))
+    expect(scripture).toBeVisible()
   })
 
-  it('offers follow-ups, another question, and a confirmed finish', async () => {
-    const send = vi.fn(async () => true)
-    renderView({ ...discussing, questionAsked: true }, makeActions({ send }))
-
-    await userEvent.click(screen.getByRole('button', { name: 'Why does Jesus pray to the Father?' }))
-    expect(send).toHaveBeenCalledWith('select_followup', 'jesus-prays')
-    await userEvent.click(screen.getByRole('button', { name: 'Choose another question' }))
-    expect(send).toHaveBeenCalledWith('return_to_questions', undefined)
-
-    await userEvent.click(screen.getByRole('button', { name: 'Finish conversation' }))
-    const dialog = screen.getByRole('alertdialog')
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Finish' }))
-    expect(send).toHaveBeenCalledWith('finish_discussion')
+  it('never shows the example answer to the missionary', () => {
+    renderView(responding)
+    expect(document.body.textContent).not.toContain(hope.exampleAnswer)
+    expect(screen.getByRole('heading', { level: 1, name: 'Make room to listen' })).toBeInTheDocument()
   })
 })
 
-describe('SessionView when the partner is disconnected', () => {
-  it('lets the connected player end the session without waiting for them', async () => {
+describe('SessionView closing and completion', () => {
+  it('lets the missionary finish with the closing line', async () => {
+    const send = vi.fn(async () => true)
+    renderView({ stage: 'closing' }, makeActions({ send }))
+    expect(screen.getByText(`“${sampleDoorstep.conclusion.closingPrompt}”`)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Finish practice' }))
+    expect(send).toHaveBeenCalledWith('finish', undefined)
+  })
+
+  it('offers Practice again and Switch roles to the missionary', async () => {
+    const requestRestart = vi.fn(async () => true)
+    const requestSwap = vi.fn(async () => true)
+    renderView({ status: 'completed', stage: 'conclusion' }, makeActions({ requestRestart, requestSwap }))
+    expect(screen.getByText('Complete', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByText(sampleDoorstep.conclusion.reflectionPrompt ?? '')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Switch roles' }))
+    expect(requestSwap).toHaveBeenCalledOnce()
+    await userEvent.click(screen.getByRole('button', { name: 'Practice again' }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Start again' }))
+    expect(requestRestart).toHaveBeenCalledOnce()
+  })
+
+  it('offers the Christian Practice again but not Switch roles', async () => {
+    const requestRestart = vi.fn(async () => true)
+    renderView({ status: 'completed', stage: 'conclusion', myRole: 'christian' }, makeActions({ requestRestart }))
+    expect(screen.queryByRole('button', { name: 'Switch roles' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Practice again' }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Start again' }))
+    expect(requestRestart).toHaveBeenCalledOnce()
+  })
+
+  it('asks the Christian to accept a switch', async () => {
+    const acceptSwap = vi.fn(async () => true)
+    renderView({ status: 'completed', stage: 'conclusion', myRole: 'christian', swapPending: true }, makeActions({ acceptSwap }))
+    expect(screen.getByText(/You’d practice as the Missionary/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Switch roles' }))
+    expect(acceptSwap).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument()
+  })
+})
+
+describe('SessionView restart request', () => {
+  it('lets the person who asked cancel while waiting', async () => {
+    const cancelRestart = vi.fn(async () => true)
+    renderView(
+      {
+        ...responding,
+        myRole: 'christian',
+        restartPending: true,
+        restartByMe: true,
+        restartRequestedAt: new Date().toISOString(),
+      },
+      makeActions({ cancelRestart }),
+    )
+    expect(screen.getByRole('heading', { level: 1, name: 'Waiting for your partner' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel request' }))
+    expect(cancelRestart).toHaveBeenCalledOnce()
+  })
+
+  it('asks the partner to confirm a restart', async () => {
+    const acceptRestart = vi.fn(async () => true)
+    renderView(
+      { ...responding, myRole: 'christian', restartPending: true, restartRequestedAt: new Date().toISOString() },
+      makeActions({ acceptRestart }),
+    )
+    expect(screen.getByRole('heading', { level: 1, name: 'Start again?' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Start again' }))
+    expect(acceptRestart).toHaveBeenCalledOnce()
+  })
+})
+
+describe('SessionView when the partner is offline', () => {
+  it('pauses the practice and lets the connected player leave without waiting', async () => {
     const end = vi.fn(async () => true)
     render(
       <SessionView
-        scenario={whoIsGod}
-        snapshot={{ ...snapshot, ...discussing, partnerFresh: false }}
+        scenario={sampleDoorstep}
+        snapshot={{ ...snapshot, ...responding, partnerFresh: false }}
         connection="live"
         pending={null}
         notice={null}
@@ -234,16 +396,14 @@ describe('SessionView when the partner is disconnected', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Your partner is disconnected' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Question asked' })).toBeDisabled()
-    expect(screen.queryByText('Waiting for your partner to reconnect.')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Your partner is offline' })).toBeInTheDocument()
+    expect(screen.getByText('Practice paused')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'End session' }))
-    const dialog = screen.getByRole('alertdialog')
-    expect(dialog).toHaveTextContent('Your partner is disconnected. This closes the scenario for both of you.')
-    expect(dialog).not.toHaveTextContent('Waiting for your partner to reconnect.')
-
-    await userEvent.click(within(dialog).getByRole('button', { name: 'End session' }))
+    const leave = screen.getAllByRole('button', { name: 'Leave session' }).find((button) => !button.closest('details'))
+    await userEvent.click(leave!)
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('Your partner is offline. This will close the practice for both of you.')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Leave session' }))
     expect(end).toHaveBeenCalledOnce()
   })
 })

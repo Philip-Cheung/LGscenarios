@@ -1,32 +1,34 @@
 import { MessageCard } from './MessageCard'
-import styles from './screens.module.css'
+
+export type EndedReason = 'left' | 'partnerLeft' | 'expired' | 'gone'
 
 interface EndedCardProps {
-  reason: 'expired' | 'gone'
+  reason: EndedReason
   onStartOver(): void
 }
 
+const COPY: Record<EndedReason, { heading: string; body: string }> = {
+  left: { heading: 'You’ve left the practice.', body: 'Thank you for making time to connect.' },
+  partnerLeft: { heading: 'Your partner ended the practice.', body: 'Thank you for making time to connect.' },
+  expired: { heading: 'This practice has ended.', body: 'Practices close after a while. Start a new one when you’re ready.' },
+  gone: {
+    heading: 'This practice isn’t available on this device.',
+    body: 'If browser data was cleared or you switched browsers, start a new practice.',
+  },
+}
+
 export function EndedCard({ reason, onStartOver }: EndedCardProps) {
-  if (reason === 'expired') {
-    return (
-      <MessageCard
-        heading="This session has ended. Start a new pair."
-        actionLabel="Start a new pair"
-        onAction={onStartOver}
-        focusOnMount
-        level="h1"
-      />
-    )
-  }
+  const { heading, body } = COPY[reason]
   return (
     <MessageCard
-      heading="This pair is no longer available on this device"
-      actionLabel="Start a new pair"
+      heading={heading}
+      actionLabel="Start a new practice"
       onAction={onStartOver}
       focusOnMount
-      level="h1"
+      metaLabel="Session ended"
+      illustrated
     >
-      <p className={styles.muted}>If browser data was cleared or you switched browsers, start a new pair.</p>
+      <p>{body}</p>
     </MessageCard>
   )
 }

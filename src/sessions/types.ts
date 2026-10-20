@@ -2,26 +2,30 @@ export type Role = 'missionary' | 'christian'
 
 export type SessionStatus = 'waiting' | 'ready' | 'active' | 'completed' | 'expired' | 'ended'
 
-/** Shared conversation stage. Question selection and discussion loop until the missionary finishes. */
+/**
+ * Shared practice stage. `paired` comes before the six steps; question
+ * selection and response loop until the missionary moves to closing.
+ */
 export type GuidedStage =
+  | 'paired'
   | 'scene_setup'
-  | 'interaction_trigger'
+  | 'ready_together'
   | 'opening_dialogue'
   | 'question_selection'
-  | 'discussion'
+  | 'response'
+  | 'closing'
   | 'conclusion'
 
 /** Commands accepted by the `guided_event` RPC. */
 export type GuidedEvent =
+  | 'start_practice'
   | 'ready'
-  | 'trigger_initiate'
-  | 'trigger_acknowledge'
+  | 'begin'
   | 'opening_complete'
-  | 'select_question'
-  | 'question_asked'
-  | 'select_followup'
-  | 'return_to_questions'
-  | 'finish_discussion'
+  | 'ask_question'
+  | 'share_complete'
+  | 'move_to_closing'
+  | 'finish'
 
 /** Authoritative session state as seen by the current participant. */
 export interface SessionSnapshot {
@@ -32,24 +36,25 @@ export interface SessionSnapshot {
   revision: number
   round: number
   myRole: Role
+  /** True for the person who created the practice; they start it from the paired summary. */
+  isCreator: boolean
   partnerJoined: boolean
   swapPending: boolean
   restartPending: boolean
+  /** True when this participant asked for the pending restart. */
+  restartByMe: boolean
   /** ISO time the restart was requested, or null when none is pending. */
   restartRequestedAt: string | null
   stage: GuidedStage
   /** Ready taps during scene setup. */
   meReady: boolean
   partnerReady: boolean
-  triggerInitiated: boolean
+  /** The question the missionary has asked; set only during the response. */
   activeQuestionId: string | null
-  activeFollowupId: string | null
-  /** The missionary has asked the active question or follow-up aloud. */
-  questionAsked: boolean
   /** null when there is no partner yet; undefined when not yet known (Realtime rows). */
   partnerFresh: boolean | null | undefined
   expiresAt: string
-  /** Only present for the missionary while waiting; never sent over Realtime. */
+  /** Only present for the creator while waiting; never sent over Realtime. */
   pairCode: string | null | undefined
   codeExpiresAt: string | null | undefined
 }

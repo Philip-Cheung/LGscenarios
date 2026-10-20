@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { Button } from './Button'
 import styles from './ConfirmDialog.module.css'
 
@@ -8,7 +7,6 @@ export interface ConfirmDialogProps {
   description: string
   confirmLabel: string
   cancelLabel?: string
-  destructive?: boolean
   pending?: boolean
   error?: string | null
   onConfirm(): void
@@ -16,15 +14,15 @@ export interface ConfirmDialogProps {
 }
 
 /**
- * Accessible confirmation. Focus starts on the safe action, Escape and the
- * backdrop cancel, and focus returns to whatever opened the dialog.
+ * Modal confirmation on the native <dialog>. The page behind is inert while it
+ * is open, focus starts on the safe action, Escape and the backdrop cancel, and
+ * focus returns to whatever opened the dialog.
  */
 export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Keep playing',
-  destructive = false,
+  cancelLabel = 'Keep practicing',
   pending = false,
   error = null,
   onConfirm,
@@ -32,8 +30,8 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const titleId = useId()
   const descriptionId = useId()
+  const dialogRef = useRef<HTMLDialogElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
-  const dialogRef = useRef<HTMLDivElement>(null)
   const onCancelRef = useRef(onCancel)
   const pendingRef = useRef(pending)
 
@@ -43,59 +41,47 @@ export function ConfirmDialog({
   }, [onCancel, pending])
 
   useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const root = document.getElementById('root')
-    root?.setAttribute('inert', '')
+    if (typeof dialog.showModal === 'function') dialog.showModal()
+    else dialog.setAttribute('open', '')
     cancelRef.current?.focus()
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        if (pendingRef.current) return
-        event.preventDefault()
-        onCancelRef.current()
-        return
-      }
-      if (event.key !== 'Tab' || !dialogRef.current) return
-      const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled])')]
-      if (focusable.length === 0) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      const active = document.activeElement
-      if (event.shiftKey && active === first) {
-        event.preventDefault()
-        last?.focus()
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault()
-        first?.focus()
-      }
+    const onNativeCancel = (event: Event) => {
+      event.preventDefault()
+      if (!pendingRef.current) onCancelRef.current()
     }
-    document.addEventListener('keydown', onKeyDown)
+    dialog.addEventListener('cancel', onNativeCancel)
     return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      root?.removeAttribute('inert')
-      previouslyFocused?.focus()
+      dialog.removeEventListener('cancel', onNativeCancel)
+      if (typeof dialog.close === 'function' && dialog.open) dialog.close()
+      if (previouslyFocused?.isConnected) previouslyFocused.focus()
     }
   }, [])
 
-  return createPortal(
-    <div
-      className={styles.scrim}
+  return (
+    <dialog
+      ref={dialogRef}
+      className={styles.dialog}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       onMouseDown={(event) => {
+        // Clicks on the backdrop target the dialog element itself.
         if (event.target === event.currentTarget && !pending) onCancel()
       }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape') return
+        event.preventDefault()
+        if (!pending) onCancel()
+      }}
     >
-      <div
-        ref={dialogRef}
-        className={styles.dialog}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-      >
-        <h2 id={titleId} className={styles.title} tabIndex={-1}>
+      <div className={styles.body}>
+        <p className={styles.eyebrow}>SESSION CONTROLS</p>
+        <h2 id={titleId} className={styles.title}>
           {title}
         </h2>
-        <p id={descriptionId} className={styles.body}>
+        <p id={descriptionId} className={styles.description}>
           {description}
         </p>
         {error ? (
@@ -107,12 +93,11 @@ export function ConfirmDialog({
           <Button ref={cancelRef} variant="secondary" disabled={pending} onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button variant={destructive ? 'destructive' : 'primary'} loading={pending} onClick={onConfirm}>
+          <Button loading={pending} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>
       </div>
-    </div>,
-    document.body,
+    </dialog>
   )
 }

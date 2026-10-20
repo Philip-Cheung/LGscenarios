@@ -1,446 +1,438 @@
 import { useId, useState, type ReactNode, type Ref } from 'react'
-import { findDiscussionItem, type ChristianHelp, type ScenarioContent, type ScenarioImage } from '../lib/content'
+import { findQuestion, type ScenarioContent, type ScenarioImage, type ScenarioQuestion } from '../lib/content'
 import { scenarioImageUrl } from '../scenarios/catalog'
-import type { GuidedEvent, SessionSnapshot } from '../sessions/types'
+import type { GuidedEvent, Role, SessionSnapshot } from '../sessions/types'
 import type { PendingAction } from '../sessions/useSessionSync'
-import { Button, Card, CueTag, StatusMessage } from './ui'
+import { AppScreen, type ScreenFrame } from './AppScreen'
+import { ActivityDots, BubblesArt, DoorArt, Icon, PairCheck } from './art'
+import { otherRole } from './roles'
+import { Button } from './ui'
 import styles from './screens.module.css'
 
 export interface GuidedStageProps {
   scenario: ScenarioContent
   snapshot: SessionSnapshot
-  statusText: string
-  /** Live, nothing pending, partner present, and no restart request open. */
+  frame: ScreenFrame
+  viewKey: string
   canAct: boolean
   pending: PendingAction | null
   headingRef: Ref<HTMLHeadingElement>
+  /** Supabase URL that serves setting images from Storage. */
   imageBaseUrl: string
   onSend(event: GuidedEvent, targetId?: string): void
-  /** Opens the finish confirmation. */
-  onFinish(): void
 }
 
-/** The participant's view of the current shared stage, rendered from server state only. */
+const DEFAULT_PARTNER_NOTE = 'Take a moment. You don’t need a perfect answer.'
+const DEFAULT_LISTENER_PROMPT = 'They’ll start with a short hello. Listen, then let them know you’re ready.'
+
+/** The shared practice, from the paired summary through the closing line. */
 export function GuidedStage(props: GuidedStageProps) {
-  switch (props.snapshot.stage) {
+  const { scenario, snapshot } = props
+  const isMissionary = snapshot.myRole === 'missionary'
+  switch (snapshot.stage) {
+    case 'paired':
+      return <Paired {...props} />
     case 'scene_setup':
-      return <SceneSetup {...props} />
-    case 'interaction_trigger':
-      return <InteractionTrigger {...props} />
+      return <Scene {...props} />
+    case 'ready_together':
+      return <ReadyTogether {...props} />
     case 'opening_dialogue':
-      return <OpeningDialogue {...props} />
+      return isMissionary ? (
+        <Opening {...props} />
+      ) : (
+        <PartnerTurn
+          {...props}
+          title="Your partner’s turn"
+          description={scenario.openingDialogue.listenerPrompt ?? DEFAULT_LISTENER_PROMPT}
+          note="This is a practice conversation. You can take your time."
+        />
+      )
     case 'question_selection':
-      return <QuestionSelection {...props} />
-    case 'discussion':
-      return <Discussion {...props} />
+      return isMissionary ? (
+        <Questions {...props} />
+      ) : (
+        <PartnerTurn
+          {...props}
+          title="Your partner’s turn"
+          description="They’re choosing a question. Listen when they ask it. The question will appear here next."
+          active
+        />
+      )
+    case 'response':
+      return isMissionary ? (
+        <PartnerTurn
+          {...props}
+          title="Make room to listen"
+          description="Your partner is considering your question. Let them finish in their own time."
+          note="Curiosity is more helpful than a perfect next line."
+        />
+      ) : (
+        <Response {...props} />
+      )
+    case 'closing':
+      return isMissionary ? (
+        <Closing {...props} />
+      ) : (
+        <PartnerTurn
+          {...props}
+          title="A moment to wrap up"
+          description="Your partner will close the conversation. Thank you for sharing your perspective."
+          note="You’ve both made space for a conversation."
+        />
+      )
     case 'conclusion':
       return null
   }
 }
 
-function StageCard({ headingId, turn, children }: { headingId: string; turn: string; children: ReactNode }) {
+/** The reference "waiting" view shown while the other person speaks or chooses. */
+export function PartnerTurn({
+  frame,
+  viewKey,
+  headingRef,
+  title,
+  description,
+  note = DEFAULT_PARTNER_NOTE,
+  active = false,
+}: Pick<GuidedStageProps, 'frame' | 'viewKey' | 'headingRef'> & {
+  title: string
+  description: string
+  note?: string
+  /** Shows the activity dots while the partner is choosing. */
+  active?: boolean
+}) {
   return (
-    <Card className={styles.enter} aria-labelledby={headingId}>
-      <div className={styles.cardBody}>
-        {turn ? <p className={styles.turn}>{turn}</p> : null}
-        {children}
-      </div>
-    </Card>
-  )
-}
-
-function SceneSetup({ scenario, snapshot, statusText, canAct, pending, headingRef, imageBaseUrl, onSend }: GuidedStageProps) {
-  const headingId = useId()
-  const scene = scenario.roles[snapshot.myRole]
-  let waiting = ''
-  if (snapshot.meReady) waiting = 'Waiting for your partner to get ready…'
-  else if (snapshot.partnerReady) waiting = 'Your partner is ready.'
-
-  return (
-    <StageCard headingId={headingId} turn={snapshot.meReady ? 'Partner’s turn' : 'Your turn'}>
-      <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>
-        {scene.sceneTitle}
+    <AppScreen {...frame} viewKey={viewKey} waiting note={note}>
+      <BubblesArt />
+      <span className={styles.connectionTag}>Partner connected</span>
+      <h1 ref={headingRef} tabIndex={-1}>
+        {title}
       </h1>
-      <SceneImage image={scene.image} baseUrl={imageBaseUrl} />
-      <p className={styles.text}>{scene.sceneText}</p>
-      <div className={styles.goal}>
-        <p className={styles.goalLabel}>Your goal</p>
-        <p className={styles.text}>{scene.goal}</p>
-      </div>
-      <div className={styles.footer}>
-        <StatusMessage>{statusText || waiting}</StatusMessage>
-        {snapshot.meReady ? null : (
-          <Button block disabled={!canAct} loading={pending === 'ready'} onClick={() => onSend('ready')}>
-            I’m ready
-          </Button>
-        )}
-      </div>
-    </StageCard>
+      <p>{description}</p>
+      {active ? <ActivityDots /> : null}
+    </AppScreen>
   )
 }
 
-function InteractionTrigger({ scenario, snapshot, statusText, canAct, pending, headingRef, onSend }: GuidedStageProps) {
-  const headingId = useId()
-  const trigger = scenario.interactionTrigger
-  const initiator = snapshot.myRole === trigger.initiatingRole
-
-  if (initiator) {
-    return (
-      <StageCard headingId={headingId} turn={snapshot.triggerInitiated ? 'Partner’s turn' : 'Your turn'}>
-        <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.prompt}>
-          {trigger.initiatorPrompt}
-        </h1>
-        <div className={styles.footer}>
-          <StatusMessage>
-            {statusText || (snapshot.triggerInitiated ? 'Waiting for your partner to respond…' : '')}
-          </StatusMessage>
-          {snapshot.triggerInitiated ? null : (
-            <Button block disabled={!canAct} loading={pending === 'trigger_initiate'} onClick={() => onSend('trigger_initiate')}>
-              {trigger.initiatorActionLabel}
-            </Button>
-          )}
-        </div>
-      </StageCard>
-    )
-  }
-
+function TurnTag({ children }: { children: ReactNode }) {
   return (
-    <StageCard headingId={headingId} turn={snapshot.triggerInitiated ? 'Your turn' : 'Partner’s turn'}>
-      <h1 id={headingId} ref={headingRef} tabIndex={-1} className={snapshot.triggerInitiated ? styles.prompt : styles.heading}>
-        {snapshot.triggerInitiated ? trigger.receiverPrompt : 'Waiting for your partner'}
+    <span className={styles.turn}>
+      <Icon />
+      {children}
+    </span>
+  )
+}
+
+function Paired({ scenario, snapshot, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  const { isCreator } = snapshot
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      note={
+        isCreator
+          ? 'You’ll both see the scene before the conversation begins.'
+          : 'Your partner will start when you’re both ready.'
+      }
+      actions={
+        isCreator ? (
+          <Button disabled={!canAct} loading={pending === 'start_practice'} onClick={() => onSend('start_practice')}>
+            Start practice
+          </Button>
+        ) : undefined
+      }
+    >
+      <BubblesArt />
+      <span className={styles.turn}>
+        <PairCheck />
+        You’re paired
+      </span>
+      <h1 ref={headingRef} tabIndex={-1}>
+        A little practice, together.
       </h1>
-      {snapshot.triggerInitiated ? null : <p className={styles.muted}>Your partner makes the first move.</p>}
-      <div className={styles.footer}>
-        <StatusMessage>{statusText}</StatusMessage>
-        {snapshot.triggerInitiated ? (
-          <Button
-            block
-            disabled={!canAct}
-            loading={pending === 'trigger_acknowledge'}
-            onClick={() => onSend('trigger_acknowledge')}
-          >
-            {trigger.receiverActionLabel}
-          </Button>
-        ) : null}
-      </div>
-    </StageCard>
+      <p>You’ll take turns speaking and listening. There’s no need to get every word right.</p>
+      <PairSummary
+        rows={[
+          ['You’re practicing', scenario.roles[snapshot.myRole].label],
+          ['Your partner', scenario.roles[otherRole(snapshot.myRole)].label],
+          ['Conversation', scenario.title],
+        ]}
+      />
+    </AppScreen>
   )
 }
 
-function OpeningDialogue({ scenario, snapshot, statusText, canAct, pending, headingRef, onSend }: GuidedStageProps) {
-  const headingId = useId()
-  const opening = scenario.openingDialogue
-  const speaker = snapshot.myRole === opening.speakerRole
-
-  if (speaker) {
-    return (
-      <StageCard headingId={headingId} turn="Your turn">
-        <div className={styles.beat}>
-          <CueTag kind="say" />
-          <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.prompt}>
-            {opening.script}
-          </h1>
-        </div>
-        <p className={styles.guidance}>Say this in your own words, then continue.</p>
-        <div className={styles.footer}>
-          <StatusMessage>{statusText}</StatusMessage>
-          <Button block disabled={!canAct} loading={pending === 'opening_complete'} onClick={() => onSend('opening_complete')}>
-            Continue
-          </Button>
-        </div>
-      </StageCard>
-    )
-  }
-
+export function PairSummary({ rows }: { rows: readonly (readonly [string, string])[] }) {
   return (
-    <StageCard headingId={headingId} turn="Partner’s turn">
-      <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>
-        Listen to your partner
-      </h1>
-      <p className={styles.text}>{opening.listenerPrompt ?? 'Respond naturally, as you would in real life.'}</p>
-      <div className={styles.footer}>
-        <StatusMessage>{statusText || 'Your partner continues when they’re done.'}</StatusMessage>
-      </div>
-    </StageCard>
-  )
-}
-
-function QuestionSelection({ scenario, snapshot, statusText, canAct, pending, headingRef, onSend, onFinish }: GuidedStageProps) {
-  const headingId = useId()
-
-  if (snapshot.myRole !== 'missionary') {
-    return (
-      <StageCard headingId={headingId} turn="Partner’s turn">
-        <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>
-          Your partner is choosing a question
-        </h1>
-        <p className={styles.muted}>You’ll see it once they have asked it.</p>
-        <div className={styles.footer}>
-          <StatusMessage>{statusText}</StatusMessage>
+    <div className={styles.pairSummary}>
+      {rows.map(([label, value]) => (
+        <div key={label}>
+          <span>{label}</span>
+          <strong>{value}</strong>
         </div>
-      </StageCard>
-    )
-  }
-
-  return (
-    <StageCard headingId={headingId} turn="Your turn">
-      <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>
-        Choose a question
-      </h1>
-      <p className={styles.muted}>Pick the topic you want to raise next.</p>
-      <ul className={styles.topicList}>
-        {scenario.questions.map((question) => (
-          <li key={question.id}>
-            <button
-              type="button"
-              className={styles.topic}
-              disabled={!canAct}
-              onClick={() => onSend('select_question', question.id)}
-            >
-              {question.topicTag ? <span className={styles.topicTag}>{question.topicTag}</span> : null}
-              <span className={styles.topicTitle}>{question.title}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className={styles.footer}>
-        <StatusMessage>{statusText || (pending === 'select_question' ? 'Opening the question…' : '')}</StatusMessage>
-        <Button variant="secondary" block disabled={!canAct} onClick={onFinish}>
-          Finish conversation
-        </Button>
-      </div>
-    </StageCard>
-  )
-}
-
-function Discussion({ scenario, snapshot, statusText, canAct, pending, headingRef, onSend, onFinish }: GuidedStageProps) {
-  const headingId = useId()
-  const item = findDiscussionItem(scenario, snapshot.activeQuestionId, snapshot.activeFollowupId)
-
-  if (!item) {
-    return (
-      <StageCard headingId={headingId} turn="">
-        <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>
-          This question is not available
-        </h1>
-        <p className={styles.muted}>Refresh the page to load the latest scenario.</p>
-      </StageCard>
-    )
-  }
-
-  const { question, followUp } = item
-  const script = followUp?.missionaryScript ?? question.missionaryScript
-  const topic = question.topicTag ?? question.title
-  const isMissionary = snapshot.myRole === 'missionary'
-
-  if (isMissionary && !snapshot.questionAsked) {
-    return (
-      <StageCard headingId={headingId} turn="Your turn">
-        <p className={styles.step}>{followUp ? `Follow-up · ${topic}` : topic}</p>
-        <div className={styles.beat}>
-          <CueTag kind={followUp ? 'challenge' : 'say'} />
-          <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.prompt}>
-            {script}
-          </h1>
-        </div>
-        <p className={styles.guidance}>Read it aloud, then tap Question asked.</p>
-        <div className={styles.footer}>
-          <StatusMessage>{statusText}</StatusMessage>
-          <Button block disabled={!canAct} loading={pending === 'question_asked'} onClick={() => onSend('question_asked')}>
-            Question asked
-          </Button>
-          <button
-            type="button"
-            className={styles.textAction}
-            disabled={!canAct}
-            onClick={() => onSend('return_to_questions')}
-          >
-            Choose a different question
-          </button>
-        </div>
-      </StageCard>
-    )
-  }
-
-  if (isMissionary) {
-    const nextFollowUps = (question.followUps ?? []).filter((item) => item.id !== followUp?.id)
-    return (
-      <StageCard headingId={headingId} turn="Your turn">
-        <p className={styles.step}>{topic}</p>
-        <div className={styles.beat}>
-          <CueTag kind="wait" />
-          <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>
-            Listen to their answer
-          </h1>
-        </div>
-        <div className={styles.asked}>
-          <p className={styles.answerLabel}>You asked</p>
-          <p className={styles.text}>{script}</p>
-        </div>
-        {nextFollowUps.length > 0 ? (
-          <section className={styles.stack} aria-labelledby={`${headingId}-followups`}>
-            <h2 id={`${headingId}-followups`} className={styles.subheading}>
-              Follow up
-            </h2>
-            <ul className={styles.topicList}>
-              {nextFollowUps.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className={styles.topic}
-                    disabled={!canAct}
-                    onClick={() => onSend('select_followup', item.id)}
-                  >
-                    <span className={styles.topicTitle}>{item.label ?? item.missionaryScript}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-        <div className={styles.footer}>
-          <StatusMessage>{statusText}</StatusMessage>
-          <Button
-            variant="secondary"
-            block
-            disabled={!canAct}
-            loading={pending === 'return_to_questions'}
-            onClick={() => onSend('return_to_questions')}
-          >
-            Choose another question
-          </Button>
-          <Button variant="secondary" block disabled={!canAct} onClick={onFinish}>
-            Finish conversation
-          </Button>
-        </div>
-      </StageCard>
-    )
-  }
-
-  if (!snapshot.questionAsked) {
-    return (
-      <StageCard headingId={headingId} turn="Partner’s turn">
-        <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>
-          Listen for your partner’s question
-        </h1>
-        <p className={styles.muted}>It appears here after they have asked it.</p>
-        <div className={styles.footer}>
-          <StatusMessage>{statusText}</StatusMessage>
-        </div>
-      </StageCard>
-    )
-  }
-
-  return (
-    <StageCard headingId={headingId} turn="Your turn to answer">
-      <p className={styles.step}>{followUp ? `Follow-up · ${topic}` : topic}</p>
-      <h1 id={headingId} ref={headingRef} tabIndex={-1} className={styles.prompt}>
-        {script}
-      </h1>
-      <p className={styles.muted}>Answer in your own words first.</p>
-      <AnswerHelp key={`${snapshot.round}:${question.id}:${followUp?.id ?? ''}`} help={followUp?.christian ?? question.christian} />
-      <div className={styles.footer}>
-        <StatusMessage>{statusText || 'Your partner chooses what comes next.'}</StatusMessage>
-      </div>
-    </StageCard>
-  )
-}
-
-/**
- * Optional help for the Christian. Nothing is rendered until requested, so the
- * suggested answer is not in the page or the accessibility tree before Reveal.
- * The parent remounts this per question, round, and role, which hides it again.
- */
-function AnswerHelp({ help }: { help: ChristianHelp }) {
-  const id = useId()
-  const [hintOpen, setHintOpen] = useState(false)
-  const [scripturesOpen, setScripturesOpen] = useState(false)
-  const [revealed, setRevealed] = useState(false)
-
-  return (
-    <div className={styles.help}>
-      {help.hint || help.scriptures ? (
-        <div className={styles.helpRow}>
-          {help.hint ? (
-            <button
-              type="button"
-              className={styles.textAction}
-              aria-expanded={hintOpen}
-              aria-controls={`${id}-hint`}
-              onClick={() => setHintOpen((open) => !open)}
-            >
-              {hintOpen ? 'Hide hint' : 'Show hint'}
-            </button>
-          ) : null}
-          {help.scriptures ? (
-            <button
-              type="button"
-              className={styles.textAction}
-              aria-expanded={scripturesOpen}
-              aria-controls={`${id}-scriptures`}
-              onClick={() => setScripturesOpen((open) => !open)}
-            >
-              {scripturesOpen ? 'Hide scripture' : 'Show scripture'}
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-      <div id={`${id}-hint`}>
-        {hintOpen && help.hint ? (
-          <div className={styles.answer}>
-            <p className={styles.answerLabel}>Hint</p>
-            <p className={styles.text}>{help.hint}</p>
-          </div>
-        ) : null}
-      </div>
-      <div id={`${id}-scriptures`}>
-        {scripturesOpen && help.scriptures ? (
-          <div className={styles.answer}>
-            <p className={styles.answerLabel}>Scripture</p>
-            <ul className={styles.scriptureList}>
-              {help.scriptures.map((reference) => (
-                <li key={reference}>{reference}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-      {revealed ? (
-        <div className={styles.answer}>
-          <p className={styles.answerLabel}>Suggested answer</p>
-          <p className={styles.answerText}>{help.hiddenAnswer}</p>
-          <button type="button" className={styles.textAction} onClick={() => setRevealed(false)}>
-            Hide answer
-          </button>
-        </div>
-      ) : (
-        <div className={styles.concealed}>
-          <p className={styles.answerLabel}>Suggested answer</p>
-          <div className={styles.concealedLines} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <Button variant="secondary" block onClick={() => setRevealed(true)}>
-            Reveal answer
-          </Button>
-        </div>
-      )}
+      ))}
     </div>
   )
 }
 
-function SceneImage({ image, baseUrl }: { image: ScenarioImage | undefined; baseUrl: string }) {
-  const [failed, setFailed] = useState(false)
-  if (!image || failed) return null
+function Scene({ scenario, snapshot, frame, viewKey, canAct, pending, headingRef, imageBaseUrl, onSend }: GuidedStageProps) {
+  const scene = scenario.roles[snapshot.myRole]
+  let note: string | undefined
+  if (snapshot.meReady) note = 'Your partner can continue when they’re ready.'
+  else if (snapshot.partnerReady) note = 'Your partner is ready.'
   return (
-    <img
-      className={styles.sceneImage}
-      src={scenarioImageUrl(baseUrl, image.path)}
-      alt={image.alt}
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
-    />
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      note={note}
+      actions={
+        snapshot.meReady ? (
+          <Button variant="secondary" disabled>
+            You’re ready · Waiting for partner
+          </Button>
+        ) : (
+          <Button disabled={!canAct} loading={pending === 'ready'} onClick={() => onSend('ready')}>
+            I’m ready
+          </Button>
+        )
+      }
+    >
+      <SceneArt image={scene.image} illustration={scenario.illustration} baseUrl={imageBaseUrl} />
+      <h1 ref={headingRef} tabIndex={-1}>
+        {scene.sceneTitle}
+      </h1>
+      <p>{scene.sceneText}</p>
+      <div className={styles.goal}>
+        <Icon kind="goal" />
+        <div>
+          <small>YOUR GOAL</small>
+          <p>{scene.goal}</p>
+        </div>
+      </div>
+    </AppScreen>
   )
+}
+
+function ReadyTogether({ scenario, snapshot, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  const isMissionary = snapshot.myRole === 'missionary'
+  const roles: readonly Role[] = ['missionary', 'christian']
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      note={isMissionary ? undefined : 'Your partner will begin with a short hello.'}
+      actions={
+        isMissionary ? (
+          <Button disabled={!canAct} loading={pending === 'begin'} onClick={() => onSend('begin')}>
+            Begin conversation
+          </Button>
+        ) : undefined
+      }
+    >
+      <TurnTag>Ready together</TurnTag>
+      <h1 ref={headingRef} tabIndex={-1}>
+        A moment to settle in.
+      </h1>
+      <p>This is practice. Speak naturally, listen carefully, and give each other room.</p>
+      <div className={styles.readyList}>
+        {roles.map((role) => (
+          <div key={role}>
+            <span>{scenario.roles[role].label}</span>
+            <span className={`${styles.connectionTag} ${styles.readyTag}`}>
+              <span className={styles.readyDot} aria-hidden="true" />
+              Ready
+            </span>
+          </div>
+        ))}
+      </div>
+      {isMissionary ? <p className={styles.hint}>You’ll begin with a short hello.</p> : null}
+    </AppScreen>
+  )
+}
+
+function Opening({ scenario, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      actions={
+        <Button disabled={!canAct} loading={pending === 'opening_complete'} onClick={() => onSend('opening_complete')}>
+          I’ve said it
+        </Button>
+      }
+    >
+      <TurnTag>Your turn · Opening</TurnTag>
+      <h1 ref={headingRef} tabIndex={-1} className={styles.srOnly}>
+        Start with a hello
+      </h1>
+      <blockquote className={styles.quote}>“{scenario.openingDialogue.script}”</blockquote>
+      <p>Try it in your own words.</p>
+      <p className={styles.hint}>Continue when you’ve finished speaking.</p>
+    </AppScreen>
+  )
+}
+
+function Questions({ scenario, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  // The choice stays on the missionary's phone until the question is asked aloud.
+  const [selected, setSelected] = useState<string | null>(null)
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      actions={
+        <>
+          <Button
+            disabled={!canAct || !selected}
+            loading={pending === 'ask_question'}
+            onClick={() => {
+              if (selected) onSend('ask_question', selected)
+            }}
+          >
+            I’ve asked it
+          </Button>
+          <Button
+            variant="text"
+            disabled={!canAct}
+            loading={pending === 'move_to_closing'}
+            onClick={() => onSend('move_to_closing')}
+          >
+            Move to closing
+          </Button>
+        </>
+      }
+    >
+      <TurnTag>Your turn · Questions</TurnTag>
+      <h1 ref={headingRef} tabIndex={-1}>
+        What would you like to ask?
+      </h1>
+      <p>Choose a topic that feels natural.</p>
+      <fieldset className={styles.choices}>
+        <legend className={styles.srOnly}>Choose a question</legend>
+        {scenario.questions.map((question) => (
+          <label key={question.id} className={styles.choice}>
+            <span className={styles.optionIcon}>
+              <Icon kind={question.icon ?? 'chat'} />
+            </span>
+            <span>
+              <small>{question.topic}</small>
+              <strong>{question.prompt}</strong>
+            </span>
+            <input
+              type="radio"
+              name="question"
+              value={question.id}
+              checked={selected === question.id}
+              onChange={() => setSelected(question.id)}
+            />
+          </label>
+        ))}
+      </fieldset>
+      <p className={styles.hint}>Say your question aloud, then continue.</p>
+    </AppScreen>
+  )
+}
+
+function Response({ scenario, snapshot, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  const question = findQuestion(scenario, snapshot.activeQuestionId)
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      actions={
+        <Button disabled={!canAct} loading={pending === 'share_complete'} onClick={() => onSend('share_complete')}>
+          I’ve shared my thoughts
+        </Button>
+      }
+    >
+      <TurnTag>Your turn · Response</TurnTag>
+      <h1 ref={headingRef} tabIndex={-1}>
+        Share what comes to mind.
+      </h1>
+      {question ? (
+        <div className={styles.conversation}>
+          <small>Your partner asked</small>
+          <blockquote>“{question.prompt}”</blockquote>
+        </div>
+      ) : null}
+      <p>There’s no set answer. Speak from your own experience.</p>
+      {question ? <ExampleAnswer question={question} /> : null}
+    </AppScreen>
+  )
+}
+
+/**
+ * The example answer is real text, blurred until revealed. The blurred copy is
+ * hidden from assistive technology; the readable copy is hidden until revealed.
+ */
+function ExampleAnswer({ question }: { question: ScenarioQuestion }) {
+  const id = useId()
+  const [revealed, setRevealed] = useState(false)
+  return (
+    <aside className={styles.exampleAnswer} aria-label="Optional example answer">
+      <div className={styles.exampleHeading}>Need a starting point?</div>
+      <p className={styles.hint}>One possible response. Make it your own.</p>
+      <p className={styles.exampleBlur} aria-hidden="true" hidden={revealed}>
+        “{question.exampleAnswer}”
+      </p>
+      <div id={id} hidden={!revealed}>
+        <p className={styles.exampleText}>“{question.exampleAnswer}”</p>
+        {question.scriptures ? <p className={styles.hint}>Scripture: {question.scriptures.join(' · ')}</p> : null}
+      </div>
+      <Button
+        variant="text"
+        className={styles.exampleToggle}
+        aria-expanded={revealed}
+        aria-controls={id}
+        onClick={() => setRevealed((value) => !value)}
+      >
+        {revealed ? 'Hide example answer' : 'Reveal example answer'}
+      </Button>
+    </aside>
+  )
+}
+
+function Closing({ scenario, frame, viewKey, canAct, pending, headingRef, onSend }: GuidedStageProps) {
+  return (
+    <AppScreen
+      {...frame}
+      viewKey={viewKey}
+      actions={
+        <Button disabled={!canAct} loading={pending === 'finish'} onClick={() => onSend('finish')}>
+          Finish practice
+        </Button>
+      }
+    >
+      <TurnTag>Your turn · Closing</TurnTag>
+      <h1 ref={headingRef} tabIndex={-1}>
+        End with a little kindness.
+      </h1>
+      <blockquote className={styles.quote}>“{scenario.conclusion.closingPrompt}”</blockquote>
+      <p>Use your own words, then finish together.</p>
+    </AppScreen>
+  )
+}
+
+/** A role's own image when set, otherwise the scenario illustration, otherwise nothing. */
+function SceneArt({
+  image,
+  illustration,
+  baseUrl,
+}: {
+  image: ScenarioImage | undefined
+  illustration: ScenarioContent['illustration']
+  baseUrl: string
+}) {
+  const [failed, setFailed] = useState(false)
+  if (image && !failed) {
+    return (
+      <img
+        className={`${styles.sceneArt} ${styles.sceneImage}`}
+        src={scenarioImageUrl(baseUrl, image.path)}
+        alt={image.alt}
+        decoding="async"
+        onError={() => setFailed(true)}
+      />
+    )
+  }
+  return illustration === 'doorway' ? <DoorArt /> : null
 }
