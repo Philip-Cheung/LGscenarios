@@ -47,10 +47,10 @@ export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, 
     >
       <span className={styles.turn}>
         <Icon />
-        Create a practice
+        Start a practice
       </span>
-      <h1 tabIndex={-1}>Which side will you practice?</h1>
-      <p>Choose your role. Your partner will take the other perspective.</p>
+      <h1 tabIndex={-1}>Which role will you practise?</h1>
+      <p>One person practises as the Christian. The other plays the missionary to help their partner prepare.</p>
       <fieldset className={styles.choices} disabled={busy}>
         <legend className={styles.srOnly}>Your practice role</legend>
         {ROLES.map((value) => (

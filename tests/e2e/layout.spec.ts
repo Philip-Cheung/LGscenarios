@@ -72,11 +72,11 @@ test('guided screens stay usable at 200% text size on a 320px screen', async ({ 
 
 test('the role screen is keyboard reachable with a visible focus indicator', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
-  await page.getByRole('button', { name: 'Create a practice' }).click()
-  await expect(page.getByRole('radio', { name: /Missionary$/ })).toBeChecked()
+  await page.getByRole('button', { name: 'Start a practice' }).click()
+  await expect(page.getByRole('radio', { name: /Latter-day Saint missionary$/ })).toBeChecked()
   await page.keyboard.press('Tab')
   const focused = page.locator(':focus-visible')
-  await expect(focused).toHaveAccessibleName(/Missionary$/)
+  await expect(focused).toHaveAccessibleName(/Latter-day Saint missionary$/)
   // The radio's card draws the ring around the whole choice.
   const outline = await focused.evaluate((el) => getComputedStyle(el.closest('label') ?? el).outlineStyle)
   expect(outline).not.toBe('none')
@@ -88,7 +88,7 @@ test('the role screen is keyboard reachable with a visible focus indicator', asy
 test('the production build styles the primary action from the design tokens', async ({ page }) => {
   // Guards against chunking that drops or reorders the token and component CSS.
   await page.goto(SCENARIO_PATH)
-  const button = page.getByRole('button', { name: 'Create a practice' })
+  const button = page.getByRole('button', { name: 'Start a practice' })
   const styles = await button.evaluate((el) => ({
     radius: getComputedStyle(el).borderTopLeftRadius,
     text: getComputedStyle(el).color,
@@ -103,7 +103,7 @@ test('the production build styles the primary action from the design tokens', as
 
 test('changing a design token updates the components', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
-  const button = page.getByRole('button', { name: 'Create a practice' })
+  const button = page.getByRole('button', { name: 'Start a practice' })
   const fill = () => button.evaluate((el) => getComputedStyle(el).backgroundColor)
   const before = await fill()
 
@@ -111,4 +111,34 @@ test('changing a design token updates the components', async ({ page }) => {
   await page.evaluate(() => document.documentElement.style.setProperty('--color-teal', 'rgb(1, 2, 3)'))
   await expect.poll(fill).toBe('rgb(1, 2, 3)')
   expect(before).not.toBe('rgb(1, 2, 3)')
+})
+
+test('the doorway opens once, settles on the original frame, and stays still when motion is off', async ({ page }) => {
+  const doorLeaf = page.getByRole('img', { name: /open green door/ }).locator('g').first()
+  const timings = () =>
+    doorLeaf.evaluate((el) =>
+      el.getAnimations().map((animation) => {
+        const timing = animation.effect?.getTiming()
+        return { duration: timing?.duration, delay: timing?.delay, iterations: timing?.iterations }
+      }),
+    )
+
+  await page.goto(SCENARIO_PATH)
+  expect(await timings()).toEqual([{ duration: 1100, delay: 80, iterations: 1 }])
+  await expect.poll(() => doorLeaf.evaluate((el) => getComputedStyle(el).transform)).toBe('matrix(1, 0, 0, 1, 0, 0)')
+
+  // The saved Pause motion preference applies before the first render.
+  await page.evaluate(() => window.localStorage.setItem('doorstep:motion-paused', '1'))
+  await page.reload()
+  await expect(heading(page, SCREENS.welcome)).toBeVisible()
+  expect(await timings()).toEqual([])
+  expect(await doorLeaf.evaluate((el) => getComputedStyle(el).transform)).toBe('matrix(1, 0, 0, 1, 0, 0)')
+
+  await page.evaluate(() => window.localStorage.removeItem('doorstep:motion-paused'))
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.reload()
+  await expect(heading(page, SCREENS.welcome)).toBeVisible()
+  expect(await timings()).toEqual([])
+  const light = page.getByRole('img', { name: /open green door/ }).locator('path[fill="#f9edce"]')
+  expect(await light.evaluate((el) => [el.getAnimations().length, getComputedStyle(el).opacity])).toEqual([0, '1'])
 })

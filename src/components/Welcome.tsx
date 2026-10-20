@@ -10,36 +10,34 @@ interface WelcomeProps {
   onJoin(): void
 }
 
-/** One person creates a practice and shares a code; the other joins with it. */
+/** One person starts a practice and shares a code; the other joins with it. */
 export function Welcome({ notice = null, onCreate, onJoin }: WelcomeProps) {
   return (
     <AppScreen
       meta={<PairingMeta label="Before you begin" />}
       viewKey="welcome"
-      note="One person creates a practice. The other joins with a code."
+      note="One person starts the practice. The other joins using a code."
       status={<StatusMessage className={styles.statusLine}>{notice}</StatusMessage>}
       actions={
         <>
-          <Button onClick={onCreate}>Create a practice</Button>
+          <Button onClick={onCreate}>Start a practice</Button>
           <Button variant="secondary" onClick={onJoin}>
-            Join a practice
+            Join your partner
           </Button>
         </>
       }
     >
       <DoorArt />
-      <h1 tabIndex={-1}>Make room for a conversation.</h1>
-      <p>A friendly way to practice speaking, listening, and sharing your perspective.</p>
-      <div className={styles.welcomeDetails}>
-        <span>
-          <Icon />
-          Practice with a partner
-        </span>
-        <span>
-          <Icon kind="leaf" />
-          Take it one turn at a time
-        </span>
-      </div>
+      <span className={styles.turn}>
+        <Icon />
+        Conversation practice for Christians
+      </span>
+      <h1 tabIndex={-1}>Practice talking with Mormon missionaries.</h1>
+      <p>Build confidence in explaining your faith, asking thoughtful questions, and responding with kindness.</p>
+      <p>
+        Practise with a partner. One person takes the Christian role; the other plays a Latter-day Saint (Mormon)
+        missionary.
+      </p>
     </AppScreen>
   )
 }

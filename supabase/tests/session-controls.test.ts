@@ -218,7 +218,10 @@ describe('restart', () => {
 describe('restart during a response', () => {
   it('clears the asked question on both phones and refuses the old round', async () => {
     await h.resetRateLimits(missionary, christian)
-    const choosing = await h.walkToQuestions(missionary, christian, await h.activePair(missionary, christian))
+    const first = await h.walkToQuestions(missionary, christian, await h.activePair(missionary, christian))
+    const answeredOne = expectOk(await guided(missionary, first, 'ask_question', OTHER_QUESTION_ID))
+    const choosing = expectOk(await guided(christian, answeredOne, 'share_complete'))
+    expect(choosing.answered_question_ids).toEqual([OTHER_QUESTION_ID])
     const asked = expectOk(await guided(missionary, choosing, 'ask_question', QUESTION_ID))
     expect(asked).toMatchObject({ stage: 'response', active_question_id: QUESTION_ID })
 
@@ -237,12 +240,13 @@ describe('restart during a response', () => {
       status: 'active',
       stage: 'scene_setup',
       active_question_id: null,
+      answered_question_ids: [],
       my_ready: false,
       partner_ready: false,
       round: choosing.round + 1,
     })
     const missionaryView = expectOk(await rpc(missionary, 'get_session', { p_session_id: choosing.id }))
-    expect(missionaryView).toMatchObject({ stage: 'scene_setup', active_question_id: null })
+    expect(missionaryView).toMatchObject({ stage: 'scene_setup', active_question_id: null, answered_question_ids: [] })
 
     // A command from the previous round is refused instead of resurrecting the old question.
     expectError(await guided(missionary, choosing, 'ask_question', OTHER_QUESTION_ID), 'conflict')

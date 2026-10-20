@@ -173,28 +173,53 @@
   object-fit: cover;
 }
 
+/* Doorway: the unanimated styles are the settled frame. */
+.sceneArt .doorLeaf {
+  transform-box: view-box;
+  transform-origin: 146px 16px;
+  transform: matrix(1, 0, 0, 1, 0, 0);
+}
+
+.sceneArt .doorLight {
+  transform-box: view-box;
+  transform-origin: 146px 175px;
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.sceneArt.animateDoor .doorLeaf {
+  animation: door-open var(--motion-door) var(--motion-door-ease) var(--motion-door-delay) 1 both;
+}
+
+.sceneArt.animateDoor .doorLight {
+  animation: door-light-arrive var(--motion-door) var(--motion-door-ease) var(--motion-door-delay) 1 both;
+}
+
+@keyframes door-open {
+  from {
+    transform: matrix(1.28, -0.22, 0, 1, 0, 0);
+  }
+
+  to {
+    transform: matrix(1, 0, 0, 1, 0, 0);
+  }
+}
+
+@keyframes door-light-arrive {
+  from {
+    opacity: 0.25;
+    transform: scaleX(0.65);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
 .waitingArt {
   width: 190px;
   height: 140px;
-  flex-shrink: 0;
-}
-
-.welcomeDetails {
-  display: grid;
-  gap: 12px;
-  padding-top: 4px;
-  color: var(--color-muted);
-  font-size: 0.9375rem;
-}
-
-.welcomeDetails span {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.welcomeDetails svg {
-  color: var(--color-teal);
   flex-shrink: 0;
 }
 
@@ -314,6 +339,27 @@
 
 .choice input:focus-visible {
   outline: none;
+}
+
+/* Answered questions stay legible: muted and struck through rather than faded. */
+.choice.choiceAnswered:has(input:disabled) {
+  opacity: 1;
+  background: transparent;
+  color: var(--color-muted);
+}
+
+.choiceAnswered strong {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.choiceAnswered .optionIcon {
+  background: var(--color-sage);
+}
+
+/* Still announced as a disabled option; the check icon carries the visual state. */
+.choiceAnswered input {
+  opacity: 0;
 }
 
 .choice small {
@@ -696,7 +742,9 @@
 :global(.motion-paused) .content,
 :global(.motion-paused) .activityDots i,
 :global(.motion-paused) .pairSuccess path,
-:global(.motion-paused) .readyDot::after {
+:global(.motion-paused) .readyDot::after,
+:global(.motion-paused) .sceneArt .doorLeaf,
+:global(.motion-paused) .sceneArt .doorLight {
   animation: none !important;
 }
 
@@ -733,7 +781,9 @@
   .content,
   .activityDots i,
   .pairSuccess path,
-  .readyDot::after {
+  .readyDot::after,
+  .sceneArt.animateDoor .doorLeaf,
+  .sceneArt.animateDoor .doorLight {
     animation: none !important;
   }
 

@@ -38,11 +38,14 @@ test('a pair completes a guided round, keeps answers concealed until revealed, a
 
   // Sharing returns both phones to the questions, and the next answer starts concealed again.
   await shareComplete(pair)
+  await expect(missionary.page.getByRole('radio', { name: /Answered.*What gives you hope\?/ })).toBeDisabled()
   await askQuestion(pair, 'faith')
   await shareComplete(pair)
+  // With every question answered, closing is the only way forward.
+  await expect(missionary.page.getByRole('button', { name: 'I’ve asked it' })).toHaveCount(0)
   await finishConversation(pair)
   await expect(missionary.page.getByText(DOORSTEP.reflection)).toBeVisible()
-  await expect(christian.page.getByRole('button', { name: 'Practice again' })).toBeVisible()
+  await expect(christian.page.getByRole('button', { name: 'Practise again' })).toBeVisible()
   await expect(christian.page.getByRole('button', { name: 'Switch roles' })).toHaveCount(0)
 
   await missionary.page.getByRole('button', { name: 'Switch roles' }).click()
@@ -72,7 +75,7 @@ test('either person can ask to restart, and a declined restart keeps the place',
   await dialog.getByRole('button', { name: 'Start again' }).click()
   await expect(heading(missionary.page, 'Waiting for your partner')).toBeVisible()
   await expect(heading(christian.page, 'Start again?')).toBeVisible()
-  await christian.page.getByRole('button', { name: 'Keep practicing' }).click()
+  await christian.page.getByRole('button', { name: 'Keep practising' }).click()
   for (const phone of [missionary, christian]) await expect(heading(phone.page, SCREENS.readyTogether)).toBeVisible()
 
   // The Christian can ask too; the missionary answers.
@@ -170,7 +173,7 @@ test('leaving from the session menu ends the session for both phones after confi
 
   await chooseMenuItem(christian.page, 'Leave session')
   const dialog = christian.page.getByRole('dialog', { name: 'Leave this session?' })
-  await dialog.getByRole('button', { name: 'Keep practicing' }).click()
+  await dialog.getByRole('button', { name: 'Keep practising' }).click()
   await expect(dialog).toHaveCount(0)
   await expect(heading(christian.page, SCREENS.readyTogether)).toBeVisible()
 
@@ -215,7 +218,7 @@ test('the creator can change roles before anyone joins', async ({ browser }) => 
   await createPractice(missionary.page)
   await missionary.page.getByRole('button', { name: 'Change roles' }).click()
   await expect(heading(missionary.page, SCREENS.chooseRole)).toBeVisible()
-  await expect(missionary.page.getByRole('radio', { name: /Missionary$/ })).toBeChecked()
+  await expect(missionary.page.getByRole('radio', { name: /Latter-day Saint missionary$/ })).toBeChecked()
   await missionary.context.close()
 })
 
@@ -240,7 +243,7 @@ test('a creator who chooses the Christian starts the practice, and the joiner le
 
 test('pairing leads to a summary only the creator can start', async ({ browser }) => {
   const pair = await pairPhones(browser)
-  await expect(pair.missionary.page.getByText('Ready to practice')).toBeVisible()
+  await expect(pair.missionary.page.getByText('Ready to practise')).toBeVisible()
   await expect(pair.christian.page.getByText('Your partner will start when you’re both ready.')).toBeVisible()
   await closePair(pair)
 })

@@ -19,6 +19,7 @@ const contentId = z.string().check(z.maxLength(40), z.regex(/^[a-z0-9]+(-[a-z0-9
 const scenarioId = z.string().check(z.maxLength(64))
 const positiveInt = z.int().check(z.positive())
 const nonnegativeInt = z.int().check(z.nonnegative())
+const answeredIds = z.array(contentId).check(z.maxLength(12))
 
 const sessionStateSchema = z.object({
   id: uuid,
@@ -38,6 +39,7 @@ const sessionStateSchema = z.object({
   my_ready: z.boolean(),
   partner_ready: z.boolean(),
   active_question_id: z.nullable(contentId),
+  answered_question_ids: answeredIds,
   partner_fresh: z.nullable(z.boolean()),
   expires_at: z.string(),
   pair_code: z.nullable(z.string().check(z.regex(/^[0-9]{6}$/))),
@@ -89,6 +91,7 @@ function toSnapshot(state: z.infer<typeof sessionStateSchema>): SessionSnapshot 
     meReady: state.my_ready,
     partnerReady: state.partner_ready,
     activeQuestionId: state.active_question_id,
+    answeredQuestionIds: state.answered_question_ids,
     partnerFresh: state.partner_fresh,
     expiresAt: state.expires_at,
     pairCode: state.pair_code,
@@ -126,6 +129,7 @@ const realtimeRowSchema = z.object({
   missionary_ready: z.boolean(),
   christian_ready: z.boolean(),
   active_question_id: z.nullable(contentId),
+  answered_question_ids: answeredIds,
   expires_at: z.string(),
 })
 
@@ -162,6 +166,7 @@ export function snapshotFromRealtimeRow(row: unknown, viewerId: string): Session
     meReady: isMissionary ? value.missionary_ready : value.christian_ready,
     partnerReady: isMissionary ? value.christian_ready : value.missionary_ready,
     activeQuestionId: value.active_question_id,
+    answeredQuestionIds: value.answered_question_ids,
     partnerFresh: undefined,
     expiresAt: value.expires_at,
     pairCode: undefined,

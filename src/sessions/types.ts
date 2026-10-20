@@ -51,6 +51,8 @@ export interface SessionSnapshot {
   partnerReady: boolean
   /** The question the missionary has asked; set only during the response. */
   activeQuestionId: string | null
+  /** Questions the Christian has finished sharing on this round, in order. */
+  answeredQuestionIds: readonly string[]
   /** null when there is no partner yet; undefined when not yet known (Realtime rows). */
   partnerFresh: boolean | null | undefined
   expiresAt: string

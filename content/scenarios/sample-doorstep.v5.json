@@ -1,0 +1,51 @@
+{
+  "$schema": "../scenario.schema.json",
+  "schemaVersion": "2.0",
+  "id": "sample-doorstep",
+  "version": 5,
+  "status": "published",
+  "title": "A Mormon missionary at your door",
+  "subtitle": "Practise a short doorstep conversation about faith and hope.",
+  "estimatedMinutes": 5,
+  "difficulty": "beginner",
+  "illustration": "doorway",
+  "roles": {
+    "missionary": {
+      "label": "Latter-day Saint missionary",
+      "sceneTitle": "A Mormon missionary at your door",
+      "sceneText": "You’re playing a Latter-day Saint missionary visiting someone at home. Use the prompts to help your partner practise the conversation.",
+      "goal": "Play the missionary’s part and give your partner room to respond."
+    },
+    "christian": {
+      "label": "Christian",
+      "sceneTitle": "A Mormon missionary at your door",
+      "sceneText": "A Latter-day Saint missionary has knocked on your door. You have a few minutes to talk.",
+      "goal": "Practise explaining your beliefs clearly and responding with confidence and kindness."
+    }
+  },
+  "openingDialogue": {
+    "script": "Hello. May I ask you one short question?",
+    "listenerPrompt": "They’ll start with a short hello. Listen, then let them know you’re ready."
+  },
+  "questions": [
+    {
+      "id": "hope",
+      "topic": "Hope",
+      "icon": "leaf",
+      "prompt": "What gives you hope?",
+      "exampleAnswer": "My hope is rooted in Jesus. Prayer and the people in my church help me remember that difficult seasons aren’t the end of the story."
+    },
+    {
+      "id": "faith",
+      "topic": "Faith",
+      "icon": "book",
+      "prompt": "What does faith mean to you?",
+      "exampleAnswer": "For me, faith means trusting God even when I don’t have every answer. Following Jesus helps me put that trust into practice through how I treat other people."
+    }
+  ],
+  "conclusion": {
+    "closingPrompt": "Thank you for sharing. I’m glad we had a chance to talk.",
+    "reflectionPrompt": "What helped you explain your beliefs clearly and keep the conversation respectful?"
+  },
+  "sourceNotes": "Sample content from the Warm Coach design handoff with the approved copy changes (illustrative copy, not curriculum)."
+}

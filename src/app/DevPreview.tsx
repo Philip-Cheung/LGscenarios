@@ -32,6 +32,7 @@ const base: SessionSnapshot = {
   meReady: false,
   partnerReady: false,
   activeQuestionId: null,
+  answeredQuestionIds: [],
   partnerFresh: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   pairCode: null,
@@ -110,6 +111,10 @@ const STATES: Record<string, PreviewState> = {
   'opening-missionary': { snapshot: { stage: 'opening_dialogue' } },
   'opening-christian': { snapshot: { stage: 'opening_dialogue', myRole: 'christian' } },
   'questions-missionary': { snapshot: { stage: 'question_selection' } },
+  'questions-one-answered': { snapshot: { stage: 'question_selection', answeredQuestionIds: ['hope'] } },
+  'questions-all-answered': {
+    snapshot: { stage: 'question_selection', answeredQuestionIds: sampleDoorstep.questions.map((item) => item.id) },
+  },
   'questions-christian': { snapshot: { stage: 'question_selection', myRole: 'christian' } },
   'questions-who-is-god': { scenario: whoIsGod, snapshot: { stage: 'question_selection' } },
   'response-missionary': { snapshot: responding },

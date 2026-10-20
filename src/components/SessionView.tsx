@@ -8,7 +8,7 @@ import type { ConnectionState, PendingAction, SessionActions } from '../sessions
 import { AppScreen, PairingMeta, ProgressMeta, SessionMenu, type ScreenFrame } from './AppScreen'
 import { ActivityDots, BubblesArt, Icon } from './art'
 import { GuidedStage, PairSummary } from './GuidedStage'
-import { otherRole } from './roles'
+import { otherRole, ROLE_SHORT_LABELS } from './roles'
 import { Button, ConfirmDialog, StatusMessage } from './ui'
 import { useDelayedFlag } from './useDelayedFlag'
 import styles from './screens.module.css'
@@ -89,10 +89,10 @@ export function SessionView({
     if (!ok) setExitFailed(true)
   }
 
-  const roleLabel = scenario.roles[snapshot.myRole].label
+  const roleLabel = ROLE_SHORT_LABELS[snapshot.myRole]
   let meta
   if (snapshot.status === 'waiting') meta = <PairingMeta label="Before you begin" />
-  else if (snapshot.stage === 'paired') meta = <PairingMeta label="Ready to practice" />
+  else if (snapshot.stage === 'paired') meta = <PairingMeta label="Ready to practise" />
   else meta = <ProgressMeta roleLabel={roleLabel} stage={snapshot.stage} />
 
   const frame: ScreenFrame = {
@@ -231,7 +231,7 @@ export function SessionView({
                 loading={pending === 'declineRestart'}
                 onClick={actions.declineRestart}
               >
-                Keep practicing
+                Keep practising
               </Button>
             </>
           }
@@ -360,7 +360,7 @@ function WaitingScreen({
       ) : (
         <>
           <p>
-            Ask your partner to choose <strong>Join a practice</strong> and enter this code.
+            Ask your partner to choose <strong>Join your partner</strong> and enter this code.
           </p>
           {snapshot.pairCode ? (
             <div className={styles.pairCode} translate="no">
@@ -415,7 +415,7 @@ function Completion({
   const isMissionary = snapshot.myRole === 'missionary'
   const practiceAgain = (
     <Button disabled={!canAct} onClick={onPracticeAgain}>
-      Practice again
+      Practise again
     </Button>
   )
   let note: string | undefined
@@ -434,7 +434,7 @@ function Completion({
       )
     }
   } else if (snapshot.swapPending) {
-    note = `Your partner would like to switch. You’d practice as the ${scenario.roles.missionary.label}.`
+    note = `Your partner would like to switch. You’d practise as the ${scenario.roles.missionary.label}.`
     footer = (
       <>
         <Button disabled={!canAct} loading={pending === 'acceptSwap'} onClick={actions.acceptSwap}>
@@ -454,7 +454,7 @@ function Completion({
       <BubblesArt />
       <span className={styles.turn}>Practice complete</span>
       <h1 ref={headingRef} tabIndex={-1}>
-        A conversation worth having.
+        Take a moment to reflect.
       </h1>
       <p>You made time to speak, listen, and understand a little more.</p>
       <div className={styles.reflection}>

@@ -44,4 +44,7 @@
   --motion-activity: 1800ms;
   --motion-confirm: 380ms;
   --motion-ready: 1800ms;
+  --motion-door: 1100ms;
+  --motion-door-delay: 80ms;
+  --motion-door-ease: cubic-bezier(0.2, 0.7, 0.25, 1);
 }
