@@ -42,7 +42,7 @@ To change the theme, edit `tokens.css`; screens should not need to change. The E
 `AppScreen` renders one `<article>` inside `<main>` (max width 500px, centred; 24px page padding, 16px at 760px and below). The panel is at least 720px tall (760px from 1200px wide), so actions sit at a steady place at the bottom. From top to bottom:
 
 - **Header**: the "Doorstep practice" wordmark and, once paired, the `···` session menu.
-- **Meta**: before practice, a label ("Before you begin", "Ready to practise") with "Speak · Listen · Connect". During practice, "Practising: <role>" (the short role name, such as "Missionary"), "N of 6 · Step" (Scene, Ready together, Opening, Questions, Response, Closing, then "Complete"), and a six-segment `progressbar`.
+- **Meta**: before practice, a label ("Before you begin", "Ready to practise") with "Speak · Listen · Connect". During practice, "Practising: <role>" (the short role name, "Mormon" or "Christian"), "N of 6 · Step" (Scene, Ready together, Opening, Questions, Response, Closing, then "Complete"), and a six-segment `progressbar`.
 - **Content**: keyed by the shared step, so each new step replays the entrance motion and resets local state such as the selected question or a revealed answer. Waiting, paired, paused and completion screens use the centred `waiting` layout.
 - **Note**, **status line** and **actions**.
 
@@ -94,7 +94,7 @@ Before pairing, the screens follow who creates the practice rather than the role
 | Screen | Creator | Joiner |
 | --- | --- | --- |
 | Welcome | The doorway art, a "Conversation practice for Christians" chip, "Practice talking with Mormon missionaries.", two short paragraphs, **Start a practice** and **Join your partner** | Same |
-| Role choice | "Which role will you practise?" with two radio cards (missionary selected by default), the conversation title, **Get a pairing code**, **Back** | Not shown; the joiner takes the other role |
+| Role choice | "Which role will you practise?" with two radio cards titled with the short role names "Mormon" and "Christian" (Mormon selected by default), "This week’s scenario" with the scenario title, **Get a pairing code**, **Back** | Not shown; the joiner takes the other role |
 | Pairing | "Good conversations start with two." with the six-digit code (`482 716`), both roles, waiting dots, **Change roles**, and **Get a new code** after expiry | "Find your practice partner." with the numeric code field, **Join practice**, **Back** |
 | Paired | "You’re paired" summary, **Start practice** | The same summary; waits for the creator |
 

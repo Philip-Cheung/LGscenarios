@@ -38,9 +38,9 @@ export const SCREENS = {
   complete: 'Take a moment to reflect.',
 } as const
 
-/** Accessible names of the role radios; each ends with the role's full label. */
+/** Accessible names of the role radios; each ends with the role's short name. */
 export const ROLE_NAMES = {
-  Missionary: /Latter-day Saint missionary$/,
+  Missionary: /Mormon$/,
   Christian: /Christian$/,
 } as const
 

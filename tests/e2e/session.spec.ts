@@ -218,7 +218,7 @@ test('the creator can change roles before anyone joins', async ({ browser }) => 
   await createPractice(missionary.page)
   await missionary.page.getByRole('button', { name: 'Change roles' }).click()
   await expect(heading(missionary.page, SCREENS.chooseRole)).toBeVisible()
-  await expect(missionary.page.getByRole('radio', { name: /Latter-day Saint missionary$/ })).toBeChecked()
+  await expect(missionary.page.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
   await missionary.context.close()
 })
 

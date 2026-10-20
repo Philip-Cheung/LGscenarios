@@ -6,9 +6,9 @@ export const ROLE_CAPTIONS: Record<Role, string> = {
   christian: 'Practise explaining your beliefs and responding to a missionary.',
 }
 
-/** Short role names for the compact progress line, once the full names have been introduced. */
+/** Short role names for the role cards and the compact progress line. */
 export const ROLE_SHORT_LABELS: Record<Role, string> = {
-  missionary: 'Missionary',
+  missionary: 'Mormon',
   christian: 'Christian',
 }
 
