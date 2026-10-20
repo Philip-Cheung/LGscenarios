@@ -17,6 +17,7 @@ export interface PromptCardProps {
   statusText: string
   canAct: boolean
   canSelect: boolean
+  partnerAway?: boolean
   pending: PendingAction | null
   headingRef: Ref<HTMLHeadingElement>
   onBack(): void
@@ -38,6 +39,7 @@ export function PromptCard({
   statusText,
   canAct,
   canSelect,
+  partnerAway = false,
   pending,
   headingRef,
   onBack,
@@ -114,7 +116,7 @@ export function PromptCard({
           <>
             {needsChoice ? (
               <p className={styles.guidance}>Choose a response before continuing.</p>
-            ) : (
+            ) : partnerAway ? null : (
               <p className={styles.guidance}>Wait for your partner to answer.</p>
             )}
             <div className={styles.nav}>
@@ -132,7 +134,7 @@ export function PromptCard({
               )}
             </div>
           </>
-        ) : (
+        ) : partnerAway ? null : (
           <p className={`${styles.guidance} ${styles.reserved}`}>Your partner moves to the next prompt.</p>
         )}
       </div>

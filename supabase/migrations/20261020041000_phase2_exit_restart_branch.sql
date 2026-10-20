@@ -477,6 +477,8 @@ begin
   if v_session.status not in ('waiting', 'ready', 'active', 'completed') then
     return app_private.fail('invalid_state', app_private.session_state(v_session, v_uid));
   end if;
+  -- Either member may end while the other is disconnected. Progress commands
+  -- still require a fresh partner; ending does not.
 
   update public.sessions s
   set status = 'ended',
