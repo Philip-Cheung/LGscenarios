@@ -1,0 +1,46 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-2);
+}
+
+.label {
+  color: var(--dp-color-text);
+  font-size: var(--dp-font-size-body);
+  font-weight: var(--dp-font-weight-medium);
+}
+
+.hint {
+  margin: 0;
+  color: var(--dp-color-text-muted);
+  font-size: var(--dp-font-size-meta);
+  line-height: var(--dp-line-height-body);
+}
+
+/* Maps the vendor Input's variables to app tokens. Vendor-specific by design. */
+.control {
+  --input-size: var(--dp-control-height);
+  --input-radius: var(--dp-radius-control);
+  --input-font-size: var(--dp-font-size-control);
+  --input-text-color: var(--dp-color-text);
+  --input-placeholder-text-color: var(--dp-color-text-placeholder);
+  --input-outline-border-color: var(--dp-color-border-strong);
+  --input-outline-border-color-hover: var(--dp-color-border-strong);
+  --input-outline-border-color-focus: var(--dp-color-focus-ring);
+  --input-border-color-invalid: var(--dp-color-error-border);
+  min-height: var(--dp-control-height);
+  background-color: var(--dp-color-page);
+  font-family: var(--dp-font-family-mono);
+}
+
+.control:focus-within {
+  outline: var(--dp-focus-ring-width) solid var(--dp-color-focus-ring);
+  outline-offset: var(--dp-focus-ring-offset);
+}
+
+.error {
+  margin: 0;
+  color: var(--dp-color-error);
+  font-size: var(--dp-font-size-meta);
+  line-height: var(--dp-line-height-body);
+}

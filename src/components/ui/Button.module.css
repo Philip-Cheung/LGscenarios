@@ -1,0 +1,45 @@
+/* Maps the vendor Button's variables to app tokens. Vendor-specific by design. */
+.button {
+  --button-size: var(--dp-control-height);
+  --button-gutter: var(--dp-space-5);
+  --button-font-size: var(--dp-font-size-control);
+  --button-font-weight: var(--dp-font-weight-medium);
+  --button-radius: var(--dp-radius-control);
+  --button-ring-color: var(--dp-color-focus-ring);
+  --button-ring-offset: var(--dp-focus-ring-offset);
+
+  /* Allow labels to wrap under large text zoom instead of clipping. */
+  height: auto;
+  min-height: var(--dp-control-height);
+  padding-block: var(--dp-space-2);
+  line-height: var(--dp-line-height-tight);
+  white-space: normal;
+  text-align: center;
+  font-family: var(--dp-font-family);
+}
+
+.button > span {
+  white-space: normal;
+}
+
+.primary {
+  --button-background-color: var(--dp-color-action-primary-bg);
+  --button-background-color-hover: var(--dp-color-action-primary-bg-hover);
+  --button-background-color-active: var(--dp-color-action-primary-bg-hover);
+  --button-text-color: var(--dp-color-action-primary-text);
+  --button-text-color-hover: var(--dp-color-action-primary-text);
+}
+
+.secondary {
+  --button-background-color: var(--dp-color-action-secondary-bg);
+  --button-background-color-hover: var(--dp-color-action-secondary-bg-hover);
+  --button-background-color-active: var(--dp-color-action-secondary-bg-hover);
+  --button-text-color: var(--dp-color-action-secondary-text);
+  --button-text-color-hover: var(--dp-color-action-secondary-text);
+  --button-border-color: var(--dp-color-action-secondary-border);
+  --button-border-color-hover: var(--dp-color-action-secondary-border);
+}
+
+.button:disabled {
+  opacity: var(--dp-color-action-disabled-opacity);
+}

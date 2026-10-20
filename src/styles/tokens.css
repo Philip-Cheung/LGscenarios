@@ -1,0 +1,92 @@
+/*
+ * Canonical semantic design tokens for Doorstep Practice.
+ * Screens and UI primitives consume these variables; do not repeat raw design
+ * values elsewhere. See docs/design-system.md.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --dp-color-page: #181818;
+  --dp-color-surface: #222222;
+  --dp-color-surface-raised: #2a2a2a;
+  --dp-color-surface-hover: #303030;
+
+  /* Text */
+  --dp-color-text: #ececec;
+  --dp-color-text-muted: #b5b5b5;
+  --dp-color-text-placeholder: #8f8f8f;
+
+  /* Borders */
+  --dp-color-border: #3e3e3e;
+  /* Control outlines: at least 3:1 against page and surface (WCAG 1.4.11). */
+  --dp-color-border-strong: #767676;
+
+  /* Actions */
+  --dp-color-action-primary-bg: #f2f2f2;
+  --dp-color-action-primary-bg-hover: #d9d9d9;
+  --dp-color-action-primary-text: #121212;
+  --dp-color-action-secondary-bg: transparent;
+  --dp-color-action-secondary-bg-hover: #2f2f2f;
+  --dp-color-action-secondary-border: #767676;
+  --dp-color-action-secondary-text: #ececec;
+  --dp-color-action-disabled-opacity: 0.45;
+
+  /* Focus and status */
+  --dp-color-focus-ring: #8ab4ff;
+  --dp-color-error: #ff9b8f;
+  --dp-color-error-border: #d9665a;
+  --dp-color-status: #b5b5b5;
+
+  /* Typography */
+  --dp-font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --dp-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --dp-font-size-meta: 0.875rem;
+  --dp-font-size-body: 1rem;
+  --dp-font-size-control: 1rem;
+  --dp-font-size-prompt: 1.375rem;
+  --dp-font-size-prompt-wide: 1.5rem;
+  --dp-font-size-title: 1.75rem;
+  --dp-font-size-code: 2rem;
+  --dp-font-weight-regular: 400;
+  --dp-font-weight-medium: 500;
+  --dp-font-weight-semibold: 600;
+  --dp-line-height-tight: 1.25;
+  --dp-line-height-body: 1.5;
+  --dp-letter-spacing-code: 0.12em;
+
+  /* Spacing */
+  --dp-space-1: 0.25rem;
+  --dp-space-2: 0.5rem;
+  --dp-space-3: 0.75rem;
+  --dp-space-4: 1rem;
+  --dp-space-5: 1.25rem;
+  --dp-space-6: 1.5rem;
+  --dp-space-8: 2rem;
+  --dp-space-10: 2.5rem;
+
+  /* Shape and sizing */
+  --dp-radius-card: 18px;
+  --dp-radius-control: 12px;
+  --dp-radius-panel: 12px;
+  --dp-border-width: 1px;
+  --dp-focus-ring-width: 2px;
+  --dp-focus-ring-offset: 2px;
+  --dp-control-height: 48px;
+  --dp-content-max-width: 680px;
+  --dp-page-gutter: 16px;
+  --dp-page-gutter-wide: 24px;
+  --dp-card-min-height: 22rem;
+  --dp-status-min-height: 1.5rem;
+
+  /* Motion */
+  --dp-duration-fast: 120ms;
+  --dp-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dp-duration-fast: 0ms;
+  }
+}

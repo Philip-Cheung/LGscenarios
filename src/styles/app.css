@@ -1,0 +1,43 @@
+/* App globals. Consumes tokens.css; no raw design values. */
+html {
+  background: var(--dp-color-page);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Focus rings and pressed states provide feedback instead. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+label {
+  touch-action: manipulation;
+}
+
+body {
+  margin: 0;
+  background: var(--dp-color-page);
+  color: var(--dp-color-text);
+  font-family: var(--dp-font-family);
+  font-size: var(--dp-font-size-body);
+  line-height: var(--dp-line-height-body);
+}
+
+:focus-visible {
+  outline: var(--dp-focus-ring-width) solid var(--dp-color-focus-ring);
+  outline-offset: var(--dp-focus-ring-offset);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
