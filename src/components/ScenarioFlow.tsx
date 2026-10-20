@@ -43,6 +43,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
   const [landing, setLanding] = useState<ScenarioContent | null>(null)
   const [busy, setBusy] = useState<Intent['kind'] | null>(null)
   const [createRole, setCreateRole] = useState<Role>('missionary')
+  const [joinFrom, setJoinFrom] = useState<'welcome' | 'create'>('welcome')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [lastCode, setLastCode] = useState('')
@@ -238,6 +239,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             onJoin={() => {
               setError(null)
               setNotice(null)
+              setJoinFrom('welcome')
               setPhase({ kind: 'join' })
             }}
           />
@@ -250,8 +252,14 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             initialRole={createRole}
             busy={busy === 'create'}
             error={error}
-            onCreate={(role) => {
+            onContinue={(role) => {
               setCreateRole(role)
+              if (role === 'christian') {
+                setError(null)
+                setJoinFrom('create')
+                setPhase({ kind: 'join' })
+                return
+              }
               void proceed({ kind: 'create', role })
             }}
             onBack={() => {
@@ -273,7 +281,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             }}
             onBack={() => {
               setError(null)
-              setPhase({ kind: 'welcome' })
+              setPhase({ kind: joinFrom })
             }}
           />
         )

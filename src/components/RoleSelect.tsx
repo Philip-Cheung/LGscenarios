@@ -12,17 +12,17 @@ interface RoleSelectProps {
   initialRole?: Role
   busy: boolean
   error: string | null
-  onCreate(role: Role): void
+  onContinue(role: Role): void
   onBack(): void
 }
 
 const ROLES: readonly Role[] = ['missionary', 'christian']
 
 /**
- * The person creating the practice chooses their role; whoever joins with the
- * code takes the other one. The server assigns the seats.
+ * The Mormon gets a pairing code to share; the Christian goes on to enter
+ * their partner's code.
  */
-export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, onCreate, onBack }: RoleSelectProps) {
+export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, onContinue, onBack }: RoleSelectProps) {
   const [role, setRole] = useState<Role>(initialRole)
 
   return (
@@ -36,8 +36,8 @@ export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, 
       }
       actions={
         <>
-          <Button loading={busy} onClick={() => onCreate(role)}>
-            Get a pairing code
+          <Button loading={busy} onClick={() => onContinue(role)}>
+            {role === 'missionary' ? 'Get a pairing code' : 'Enter a pairing code'}
           </Button>
           <Button variant="text" disabled={busy} onClick={onBack}>
             Back

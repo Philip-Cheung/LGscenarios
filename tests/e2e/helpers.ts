@@ -26,6 +26,7 @@ export const SCREENS = {
   welcome: 'Practice talking with Mormon missionaries.',
   chooseRole: 'Which role will you practise?',
   invite: 'Good conversations start with two.',
+  join: 'Find your practice partner.',
   paired: 'A little practice, together.',
   readyTogether: 'A moment to settle in.',
   opening: 'Start with a hello',
@@ -73,11 +74,11 @@ export async function readPairCode(page: Page): Promise<string> {
   return (await visible.textContent()) ?? ''
 }
 
-/** From the welcome screen, creates a practice in the chosen role and returns its code. */
-export async function createPractice(page: Page, role: 'Missionary' | 'Christian' = 'Missionary'): Promise<string> {
+/** From the welcome screen, creates a practice as the Mormon and returns its code. */
+export async function createPractice(page: Page): Promise<string> {
   await page.getByRole('button', { name: 'Start a practice' }).click()
   await expect(heading(page, SCREENS.chooseRole)).toBeVisible()
-  await page.getByRole('radio', { name: ROLE_NAMES[role] }).check()
+  await page.getByRole('radio', { name: ROLE_NAMES.Missionary }).check()
   await page.getByRole('button', { name: 'Get a pairing code' }).click()
   await expect(heading(page, SCREENS.invite)).toBeVisible()
   return readPairCode(page)

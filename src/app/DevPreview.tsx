@@ -159,7 +159,7 @@ export default function DevPreview() {
       />
     )
   } else if (entry.screen === 'role-select') {
-    content = <RoleSelect scenario={scenario} busy={false} error={null} onCreate={() => {}} onBack={() => {}} />
+    content = <RoleSelect scenario={scenario} busy={false} error={null} onContinue={() => {}} onBack={() => {}} />
   } else if (entry.screen === 'join') {
     content = <JoinForm busy={false} error={null} onJoin={() => {}} onBack={() => {}} />
   } else if (entry.screen === 'join-error') {
