@@ -23,33 +23,32 @@ describe('Welcome', () => {
 })
 
 describe('RoleSelect', () => {
-  it('starts on the Mormon, who gets a pairing code', async () => {
-    const onContinue = vi.fn()
-    render(<RoleSelect scenario={sampleDoorstep} busy={false} error={null} onContinue={onContinue} onBack={() => {}} />)
+  it('starts on the missionary and creates with the chosen role', async () => {
+    const onCreate = vi.fn()
+    render(<RoleSelect scenario={sampleDoorstep} busy={false} error={null} onCreate={onCreate} onBack={() => {}} />)
     expect(screen.getByRole('heading', { level: 1, name: 'Which role will you practise?' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
     expect(screen.getByText('THIS WEEK’S SCENARIO')).toBeInTheDocument()
     expect(screen.getByText(sampleDoorstep.title)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Get a pairing code' }))
-    expect(onContinue).toHaveBeenCalledWith('missionary')
+    expect(onCreate).toHaveBeenCalledWith('missionary')
   })
 
-  it('sends the Christian on to enter a code, or goes back', async () => {
-    const onContinue = vi.fn()
+  it('lets the creator practice as the Christian, or go back', async () => {
+    const onCreate = vi.fn()
     const onBack = vi.fn()
-    render(<RoleSelect scenario={sampleDoorstep} busy={false} error={null} onContinue={onContinue} onBack={onBack} />)
+    render(<RoleSelect scenario={sampleDoorstep} busy={false} error={null} onCreate={onCreate} onBack={onBack} />)
     await userEvent.click(screen.getByRole('radio', { name: /Christian$/ }))
-    expect(screen.queryByRole('button', { name: 'Get a pairing code' })).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Enter a pairing code' }))
-    expect(onContinue).toHaveBeenCalledWith('christian')
+    await userEvent.click(screen.getByRole('button', { name: 'Get a pairing code' }))
+    expect(onCreate).toHaveBeenCalledWith('christian')
     await userEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(onBack).toHaveBeenCalledOnce()
   })
 
   it('keeps the previous choice and disables the form while creating', () => {
     render(
-      <RoleSelect scenario={sampleDoorstep} initialRole="christian" busy error={null} onContinue={() => {}} onBack={() => {}} />,
+      <RoleSelect scenario={sampleDoorstep} initialRole="christian" busy error={null} onCreate={() => {}} onBack={() => {}} />,
     )
     expect(screen.getByRole('radio', { name: /Christian$/ })).toBeChecked()
     expect(screen.getByRole('radio', { name: /Christian$/ })).toBeDisabled()
