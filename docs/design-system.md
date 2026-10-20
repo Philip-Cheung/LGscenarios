@@ -95,7 +95,7 @@ Before pairing, the screens follow who creates the practice rather than the role
 | --- | --- | --- |
 | Welcome | The doorway art, a "Conversation practice for Christians" chip, "Practice talking with Mormon missionaries.", two short paragraphs, **Create a room** and **Join your partner** | Same |
 | Role choice | "Select a role" with two radio cards titled with the short role names "Mormon" and "Christian" (Mormon selected by default), "This week’s scenario" with the scenario title, **Get a pairing code**, **Back** | Not shown; the joiner takes the other role |
-| Pairing | "Good conversations start with two." with the six-digit code (`482 716`), both roles, waiting dots, **Change roles**, and **Get a new code** after expiry. Reopening the link in the creator's browser shows the same code and asks for the partner to join "on their own phone". | "Find your practice partner." with the numeric code field, **Join practice**, **Back** |
+| Pairing | The "Invite your partner" chip (the `h1` "Invite your partner" is visually hidden), the six-digit code (`482 716`), both roles, waiting dots, **Change roles**, and **Get a new code** after expiry ("This code has expired." becomes the visible heading). Reopening the link in the creator's browser shows the same code and asks for the partner to join "on their own phone". | "Find your practice partner." with the numeric code field, **Join practice**, **Back** |
 | Paired | "You’re paired" summary, **Start practice** | The same summary; waits for the creator |
 
 After pairing, the screens follow the role:
@@ -104,17 +104,27 @@ After pairing, the screens follow the role:
 | --- | --- | --- |
 | Scene | Scene art (role image, else the doorway illustration when the scenario sets it), title, text, goal, **I’m ready** | Same |
 | Ready together | Both roles marked Ready, **Begin conversation** | Waits for the hello |
-| Opening | The opening line as a quote, **I’ve said it** | "Your partner’s turn" |
-| Questions | Question cards (radio, topic, prompt); answered questions show a check, "Answered" and a struck-through prompt, and can't be chosen again; **I’ve asked it** once one is chosen; **Move to closing**, which becomes the only (primary) action once every question is answered | "Your partner’s turn" with activity dots; no preview of the questions |
-| Response | "Make room to listen" | "Respond in your own words.", the asked question, the blurred example answer with **Reveal example answer**, **I’ve shared my thoughts** (returns both to Questions) |
-| Closing | The closing line, **Finish practice** | "A moment to wrap up" |
-| Complete | "Take a moment to reflect." with the scenario's reflection prompt, **Practise again** and **Switch roles** | The same, **Practise again**; accepts or declines a switch |
+| Opening | The opening line as a quote, **I’ve said it**. With an opening question (schema 2.1): the line, an optional script note, the question, and **I’ve asked it**; then "Make room to listen" | "Your partner’s turn"; after the question is asked, "A little about you" with the question, the hidden example (with More help) and **I’ve shared my thoughts**, which opens the topics |
+| Questions | Question cards (radio, topic, prompt); answered questions show a check, "Answered" and a struck-through prompt, and can't be chosen again; **I’ve asked it** once one is chosen; **Move to closing**, which becomes the only (primary) action once every question is answered. After an opening question, the first topic list also shows the acknowledgment to adapt. A Bible reference in the chosen prompt appears as a button below the cards | "Your partner’s turn" with activity dots; no preview of the questions |
+| Questions · Follow-up | "Ask a follow-up", "Use what your partner actually said. Adapt the wording if needed.", the suggested follow-up, optional missionary note and More help; **I’ve asked it**, **Next topic** (skips the follow-up and marks the topic Answered), **Move to closing** | "Your partner’s turn": "Listen for their follow-up question." with no preview |
+| Response | "Make room to listen" | "Respond in your own words.", the asked question, the blurred example answer with **Reveal example answer**, **I’ve shared my thoughts**. If the topic has a follow-up this returns the missionary to the follow-up; otherwise both return to Questions |
+| Response · Follow-up | "Make room to listen" | "Respond to the follow-up", the follow-up, a fresh hidden example with More help, **I’ve shared my thoughts** (marks the topic Answered) |
+| Closing | The closing line, **Finish practice** | "A moment to wrap up", with the scenario's optional suggested reply |
+| Complete | "Take a moment to reflect." with the scenario's reflection prompt (and optional second question), **Practise again** and **Switch roles** | The same, **Practise again**; accepts or declines a switch |
+
+The progress row keeps six steps; a follow-up adds the sublabel "Follow-up" (for example "4 of 6 · Questions · Follow-up").
 
 Other states: practice paused while the partner is offline (with **Leave session**), restart requests (the person who asked sees **Cancel request**; the partner confirms with **Start again** or **Keep practising**), and the ended screens.
 
 ### Example answer
 
-The example answer is real text, blurred until revealed. The blurred copy is `aria-hidden`; the readable copy (and any scripture references) is `hidden` until **Reveal example answer** is pressed. The toggle has `aria-expanded` and `aria-controls`. A new question, a restart, a swap or a reload always starts concealed again, because the content is keyed by the shared step.
+The example answer is real text, blurred until revealed. The blurred copy is plain text and `aria-hidden`; the readable copy (with its Bible reference buttons, scripture references and a collapsed **More help** `<details>`) is `hidden` until **Reveal example answer** is pressed. The toggle has `aria-expanded` and `aria-controls`. A new question, a follow-up, a restart, a swap or a reload always starts concealed again with More help collapsed, because the content is keyed by the shared step.
+
+### Bible passages and source links
+
+Scenario text marks Bible references as `[James 1:5](ref:james-1-5)` and historical sources as `[label](https://www.churchofjesuschrist.org/…)`. A reference renders as an inline text button that opens the passage reader; a source renders as a link with "↗" and visually hidden "(external source, opens in a new tab)".
+
+The passage reader is a native modal `<dialog>`: a bottom sheet on phones and a centred dialog from 761px. It shows the exact reference as its heading, the translation label, the bundled verses with verse numbers, **Read surrounding verses** / **Show selected verses** when the reference has a context range (selected verses keep a sage background and teal edge, plus visually hidden "Selected verse"), and **Close**. The page behind is inert; Escape and the backdrop close it; focus returns to the reference without scrolling the page. Long passages scroll inside the reader while the actions stay pinned, with the safe-area inset below them. It lives inside the screen's keyed content, so a new shared step, restart request, pause or end closes it. An unknown reference shows "Passage unavailable" and never another passage. The sheet's entrance stops under reduced motion and **Pause motion**.
 
 ## Motion
 

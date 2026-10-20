@@ -22,10 +22,16 @@ export type GuidedEvent =
   | 'ready'
   | 'begin'
   | 'opening_complete'
+  | 'ask_opening_question'
   | 'ask_question'
   | 'share_complete'
+  | 'ask_follow_up'
+  | 'next_topic'
   | 'move_to_closing'
   | 'finish'
+
+/** Whether the active topic is on its first question or its follow-up. */
+export type Exchange = 'initial' | 'follow_up'
 
 /** Authoritative session state as seen by the current participant. */
 export interface SessionSnapshot {
@@ -49,10 +55,16 @@ export interface SessionSnapshot {
   /** Ready taps during scene setup. */
   meReady: boolean
   partnerReady: boolean
-  /** The question the missionary has asked; set only during the response. */
+  /**
+   * The topic in progress: set during a response, and while a follow-up waits
+   * to be asked or skipped back at the topic list.
+   */
   activeQuestionId: string | null
-  /** Questions the Christian has finished sharing on this round, in order. */
+  /** Topics finished on this round (follow-up answered or skipped), in order. */
   answeredQuestionIds: readonly string[]
+  /** The missionary has asked the scenario's opening question. */
+  openingQuestionAsked: boolean
+  exchange: Exchange
   /** null when there is no partner yet; undefined when not yet known (Realtime rows). */
   partnerFresh: boolean | null | undefined
   expiresAt: string

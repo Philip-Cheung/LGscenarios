@@ -495,6 +495,18 @@
   line-height: 1.4;
 }
 
+.content .conversation blockquote p {
+  color: var(--color-ink);
+}
+
+.conversation blockquote p + p {
+  margin-top: 0.6em;
+}
+
+.conversation .hint {
+  margin-top: 8px;
+}
+
 .exampleAnswer {
   padding: 20px;
   border-radius: var(--radius-control);
@@ -522,6 +534,88 @@
   filter: blur(5px);
   user-select: none;
   pointer-events: none;
+}
+
+.content .exampleText p {
+  color: var(--color-ink);
+}
+
+.exampleText p + p {
+  margin-top: 0.6em;
+}
+
+.exampleRevealed {
+  display: grid;
+  gap: 12px;
+}
+
+.exampleRevealed[hidden] {
+  display: none;
+}
+
+/* More help: collapsed by default, local to this screen. */
+.exampleRevealed .moreHelp {
+  border-top: 1px solid var(--color-line);
+  padding-top: 4px;
+}
+
+.moreHelp summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 550;
+  color: var(--color-teal);
+  list-style: none;
+  border-radius: 6px;
+}
+
+.moreHelp summary::-webkit-details-marker {
+  display: none;
+}
+
+.moreHelp summary::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--motion-fast) ease;
+}
+
+.moreHelp[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.moreHelp summary:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.helpSections {
+  display: grid;
+  gap: 16px;
+  padding: 4px 0 8px;
+}
+
+.content .helpSections p {
+  color: var(--color-ink);
+  font-size: 0.9375rem;
+}
+
+.helpSections p + p {
+  margin-top: 0.6em;
+}
+
+.content .helpHeading {
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+  margin: 0 0 4px;
 }
 
 .exampleAnswer .exampleToggle {
@@ -739,7 +833,8 @@
   animation: none !important;
 }
 
-:global(.motion-paused) .choice {
+:global(.motion-paused) .choice,
+:global(.motion-paused) .moreHelp summary::before {
   transition: none;
 }
 
@@ -778,7 +873,8 @@
     animation: none !important;
   }
 
-  .choice {
+  .choice,
+  .moreHelp summary::before {
     transition: none;
   }
 }

@@ -24,6 +24,8 @@ export interface TestUser {
 
 export interface SessionState {
   id: string
+  scenario_id: string
+  scenario_version: number
   status: string
   stage: string
   revision: number
@@ -38,6 +40,8 @@ export interface SessionState {
   partner_ready: boolean
   active_question_id: string | null
   answered_question_ids: string[]
+  opening_question_asked: boolean
+  exchange: 'initial' | 'follow_up'
   partner_fresh: boolean | null
   pair_code: string | null
   code_expires_at: string | null

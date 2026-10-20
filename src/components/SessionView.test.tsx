@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ScenarioContent } from '../lib/content'
-import { coffeeChat, sampleDoorstep, whoIsGod } from '../scenarios/fixtures'
+import { coffeeChat, sampleDoorstep, weekOne, whoIsGod } from '../scenarios/fixtures'
 import type { SessionSnapshot } from '../sessions/types'
 import type { SessionActions } from '../sessions/useSessionSync'
 import { SessionView } from './SessionView'
@@ -25,6 +25,8 @@ const snapshot: SessionSnapshot = {
   partnerReady: false,
   activeQuestionId: null,
   answeredQuestionIds: [],
+  openingQuestionAsked: false,
+  exchange: 'initial',
   partnerFresh: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   pairCode: null,
@@ -96,6 +98,8 @@ describe('SessionView while waiting for a partner', () => {
     expect(screen.getByText('Join your partner', { selector: 'strong' })).toBeInTheDocument()
     expect(screen.getByText('Waiting for your partner to join')).toBeInTheDocument()
     expect(screen.queryByLabelText('Session controls')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Invite your partner' })).toBeInTheDocument()
+    expect(screen.queryByText('Good conversations start with two.')).not.toBeInTheDocument()
   })
 
   it('reminds a creator who reopens the code that the partner joins on their own phone', () => {
@@ -464,5 +468,180 @@ describe('SessionView when the partner is offline', () => {
     expect(dialog).toHaveTextContent('Your partner is offline. This will close the practice for both of you.')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Leave session' }))
     expect(end).toHaveBeenCalledOnce()
+  })
+})
+
+describe('SessionView Week One opening question and follow-ups', () => {
+  const opening = weekOne.openingDialogue.question!
+  const faith = weekOne.questions.find((item) => item.id === 'faith')!
+  const firstVision = weekOne.questions.find((item) => item.id === 'first-vision')!
+  const accounts = weekOne.questions.find((item) => item.id === 'accounts')!
+  const week = (overrides: Partial<SessionSnapshot>, actions: SessionActions = makeActions()) =>
+    renderView({ scenarioId: weekOne.id, scenarioVersion: weekOne.version, ...overrides }, actions, weekOne)
+
+  it('gives the missionary the introduction and the church question in one step', async () => {
+    const send = vi.fn(async () => true)
+    week({ stage: 'opening_dialogue' }, makeActions({ send }))
+    expect(screen.getByText(`“${weekOne.openingDialogue.script}”`)).toBeInTheDocument()
+    expect(screen.getByText(weekOne.openingDialogue.scriptNote!)).toBeInTheDocument()
+    expect(screen.getByText(`“${opening.prompt}”`)).toBeInTheDocument()
+    expect(screen.getByText('3 of 6 · Opening')).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain(opening.exampleAnswer)
+    await userEvent.click(screen.getByRole('button', { name: 'I’ve asked it' }))
+    expect(send).toHaveBeenCalledWith('ask_opening_question', undefined)
+  })
+
+  it('keeps the Christian listening until the question is asked, then lets them answer within Opening', async () => {
+    const send = vi.fn(async () => true)
+    const { rerenderWith } = week({ stage: 'opening_dialogue', myRole: 'christian' }, makeActions({ send }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Your partner’s turn' })).toBeInTheDocument()
+    expect(screen.queryByText(`“${opening.prompt}”`)).not.toBeInTheDocument()
+
+    rerenderWith({ openingQuestionAsked: true })
+    expect(screen.getByRole('heading', { level: 1, name: 'A little about you' })).toBeInTheDocument()
+    expect(screen.getByText(`“${opening.prompt}”`)).toBeInTheDocument()
+    expect(screen.getByText('3 of 6 · Opening')).toBeInTheDocument()
+    expect(screen.getByText('More help', { selector: 'summary' })).not.toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'I’ve shared my thoughts' }))
+    expect(send).toHaveBeenCalledWith('share_complete', undefined)
+  })
+
+  it('has the missionary listen while the Christian answers the opening question', () => {
+    week({ stage: 'opening_dialogue', openingQuestionAsked: true })
+    expect(screen.getByRole('heading', { level: 1, name: 'Make room to listen' })).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain(opening.exampleAnswer)
+  })
+
+  it('shows the acknowledgment on the first topic list only', () => {
+    const { rerenderWith } = week({ stage: 'question_selection', openingQuestionAsked: true })
+    expect(screen.getByText(`“${opening.acknowledgment}”`)).toBeInTheDocument()
+    expect(screen.getAllByRole('radio').map((radio) => radio.getAttribute('value'))).toEqual([
+      'faith',
+      'first-vision',
+      'accounts',
+      'prayer',
+    ])
+    rerenderWith({ answeredQuestionIds: ['faith'] })
+    expect(screen.queryByText(`“${opening.acknowledgment}”`)).not.toBeInTheDocument()
+  })
+
+  it('offers the passage in a selected prompt without putting a button inside the option', async () => {
+    week({ stage: 'question_selection', openingQuestionAsked: true })
+    expect(screen.queryByRole('button', { name: 'James 1:5' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: /The First Vision/ }))
+    expect(screen.getByRole('button', { name: 'James 1:5' })).toBeInTheDocument()
+  })
+
+  it('asks the missionary for the matching follow-up, with skip and closing, and no answer key', async () => {
+    const send = vi.fn(async () => true)
+    week({ stage: 'question_selection', activeQuestionId: 'faith', exchange: 'follow_up' }, makeActions({ send }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Ask a follow-up' })).toBeInTheDocument()
+    expect(screen.getByText('Use what your partner actually said. Adapt the wording if needed.')).toBeInTheDocument()
+    expect(screen.getByText(`“${faith.followUp!.prompt}”`)).toBeInTheDocument()
+    expect(screen.getByText('4 of 6 · Questions · Follow-up')).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain(faith.followUp!.exampleAnswer)
+    expect(document.body.textContent).not.toContain(faith.exampleAnswer)
+
+    await userEvent.click(screen.getByRole('button', { name: 'I’ve asked it' }))
+    expect(send).toHaveBeenCalledWith('ask_follow_up', undefined)
+    await userEvent.click(screen.getByRole('button', { name: 'Next topic' }))
+    expect(send).toHaveBeenCalledWith('next_topic', undefined)
+    await userEvent.click(screen.getByRole('button', { name: 'Move to closing' }))
+    expect(send).toHaveBeenCalledWith('move_to_closing', undefined)
+  })
+
+  it('shows the Christian no preview of the follow-up', () => {
+    week({ stage: 'question_selection', activeQuestionId: 'faith', exchange: 'follow_up', myRole: 'christian' })
+    expect(screen.getByText('Listen for their follow-up question. It will appear here next.')).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain(faith.followUp!.prompt)
+  })
+
+  it('gives the Christian the follow-up with its own hidden example', async () => {
+    week({ stage: 'response', activeQuestionId: 'faith', exchange: 'follow_up', myRole: 'christian' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Respond to the follow-up' })).toBeInTheDocument()
+    expect(screen.getByText('5 of 6 · Response · Follow-up')).toBeInTheDocument()
+    expect(screen.getAllByText(`“${faith.followUp!.exampleAnswer}”`)).toHaveLength(2)
+    expect(document.body.textContent).not.toContain(faith.exampleAnswer)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reveal example answer' }))
+    const help = screen.getByText('More help', { selector: 'summary' })
+    expect(help.parentElement).not.toHaveAttribute('open')
+    await userEvent.click(help)
+    expect(help.parentElement).toHaveAttribute('open')
+    expect(screen.getByRole('button', { name: 'Acts 17:10–12' })).toBeVisible()
+  })
+
+  it('labels the historical accounts as external sources, not Bible passages', async () => {
+    week({ stage: 'response', activeQuestionId: 'accounts', myRole: 'christian' })
+    await userEvent.click(screen.getByRole('button', { name: 'Reveal example answer' }))
+    await userEvent.click(screen.getByText('More help', { selector: 'summary' }))
+    const link = screen.getByRole('link', { name: /1832 transcript/ })
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(link).toHaveAccessibleName(/opens in a new tab/)
+    expect(screen.getByRole('link', { name: /Joseph Smith—History 1:17/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Joseph Smith/ })).not.toBeInTheDocument()
+    expect(accounts.moreHelp).toBeDefined()
+  })
+
+  it('opens the KJV passage with surrounding verses, then returns focus and keeps the revealed example', async () => {
+    week({ stage: 'response', activeQuestionId: 'first-vision', myRole: 'christian' })
+    await userEvent.click(screen.getByRole('button', { name: 'Reveal example answer' }))
+    await userEvent.click(screen.getByText('More help', { selector: 'summary' }))
+
+    const trigger = screen.getAllByRole('button', { name: 'James 1:2–8' })[0]
+    await userEvent.click(trigger)
+    let dialog = screen.getByRole('dialog', { name: 'James 1:2–8' })
+    expect(dialog).toHaveTextContent('King James Version (KJV)')
+    expect(within(dialog).queryByRole('button', { name: 'Read surrounding verses' })).not.toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'James 1:5' })[0])
+    dialog = screen.getByRole('dialog', { name: 'James 1:5' })
+    expect(dialog).toHaveTextContent('If any of you lack wisdom, let him ask of God')
+    expect(dialog).not.toHaveTextContent('My brethren, count it all joy')
+    const expand = within(dialog).getByRole('button', { name: 'Read surrounding verses' })
+    expect(expand).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.click(expand)
+    expect(dialog).toHaveTextContent('My brethren, count it all joy')
+    expect(within(dialog).getByText('Selected verse')).toBeInTheDocument()
+    expect(within(dialog).getByRole('heading', { name: 'James 1:5' })).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Show selected verses' }))
+    expect(dialog).not.toHaveTextContent('My brethren, count it all joy')
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    expect(screen.getByRole('button', { name: 'Hide example answer' })).toBeInTheDocument()
+    expect(screen.getByText('More help', { selector: 'summary' }).parentElement).toHaveAttribute('open')
+    expect(firstVision.followUp).toBeDefined()
+  })
+
+  it('closes an open passage when the shared turn changes', async () => {
+    const { rerenderWith } = week({ stage: 'response', activeQuestionId: 'first-vision', myRole: 'christian' })
+    await userEvent.click(screen.getAllByRole('button', { name: 'James 1:5' })[0])
+    expect(screen.getByRole('dialog', { name: 'James 1:5' })).toBeInTheDocument()
+    rerenderWith({ stage: 'question_selection', exchange: 'follow_up' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Your partner’s turn' })).toHaveFocus()
+  })
+
+  it('shows a concise failure, never another passage, for an unknown reference', async () => {
+    const broken = { ...weekOne, bible: { ...weekOne.bible!, references: [] } }
+    renderView({ stage: 'response', activeQuestionId: 'first-vision', myRole: 'christian' }, makeActions(), broken)
+    await userEvent.click(screen.getAllByRole('button', { name: 'James 1:5' })[0])
+    const dialog = screen.getByRole('dialog', { name: 'Passage unavailable' })
+    expect(dialog).toHaveTextContent('This passage couldn’t be loaded.')
+    expect(dialog).not.toHaveTextContent('King James Version')
+    expect(within(dialog).getByRole('button', { name: 'Close' })).toBeInTheDocument()
+  })
+
+  it('offers the Christian a closing reply and both reflection questions', () => {
+    const { rerenderWith } = week({ stage: 'closing', myRole: 'christian' })
+    expect(screen.getByText(weekOne.conclusion.listenerReply!)).toBeInTheDocument()
+    rerenderWith({ status: 'completed', stage: 'conclusion' })
+    expect(screen.getByText(weekOne.conclusion.reflectionPrompt!)).toBeInTheDocument()
+    expect(screen.getByText(weekOne.conclusion.reflectionFollowUp!)).toBeInTheDocument()
   })
 })

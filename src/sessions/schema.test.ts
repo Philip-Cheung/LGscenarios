@@ -24,6 +24,8 @@ const state = {
   partner_ready: false,
   active_question_id: null,
   answered_question_ids: [],
+  opening_question_asked: false,
+  exchange: 'initial',
   partner_fresh: null,
   expires_at: '2026-10-20T12:00:00Z',
   pair_code: '482716',
@@ -60,6 +62,12 @@ describe('parseRpcResult', () => {
     expect(parseRpcResult({ ok: true, session: { ...state, stage: 'discussion' } }).ok).toBe(false)
     expect(parseRpcResult({ ok: true, session: { ...state, stage: 'ready_together' } }).ok).toBe(true)
   })
+
+  it('carries the opening question and follow-up state, rejecting unknown exchanges', () => {
+    const result = parseRpcResult({ ok: true, session: { ...state, opening_question_asked: true, exchange: 'follow_up' } })
+    expect(result).toMatchObject({ ok: true, session: { openingQuestionAsked: true, exchange: 'follow_up' } })
+    expect(parseRpcResult({ ok: true, session: { ...state, exchange: 'third' } }).ok).toBe(false)
+  })
 })
 
 describe('snapshotFromRealtimeRow', () => {
@@ -82,6 +90,8 @@ describe('snapshotFromRealtimeRow', () => {
     christian_ready: false,
     active_question_id: 'nature-of-god',
     answered_question_ids: ['hope'],
+    opening_question_asked: true,
+    exchange: 'follow_up',
     expires_at: '2026-10-20T12:00:00Z',
   }
 
@@ -93,6 +103,8 @@ describe('snapshotFromRealtimeRow', () => {
       stage: 'response',
       activeQuestionId: 'nature-of-god',
       answeredQuestionIds: ['hope'],
+      openingQuestionAsked: true,
+      exchange: 'follow_up',
       partnerJoined: true,
     })
     expect(snapshot?.pairCode).toBeUndefined()

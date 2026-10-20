@@ -51,12 +51,24 @@ const PRACTICE_STEPS: readonly { stage: GuidedStage; name: string }[] = [
   { stage: 'closing', name: 'Closing' },
 ]
 
-/** "Practising: Christian · 2 of 6 · Ready together" with six segments. */
-export function ProgressMeta({ roleLabel, stage }: { roleLabel: string; stage: GuidedStage }) {
+/**
+ * "Practising: Christian · 2 of 6 · Ready together" with six segments. A topic's
+ * follow-up reuses Questions and Response with a "Follow-up" sublabel.
+ */
+export function ProgressMeta({
+  roleLabel,
+  stage,
+  followUp = false,
+}: {
+  roleLabel: string
+  stage: GuidedStage
+  followUp?: boolean
+}) {
   const complete = stage === 'conclusion'
   const index = PRACTICE_STEPS.findIndex((step) => step.stage === stage)
   const step = complete ? PRACTICE_STEPS.length : index + 1
-  const name = complete ? 'Complete' : (PRACTICE_STEPS[index]?.name ?? '')
+  const stepName = PRACTICE_STEPS[index]?.name ?? ''
+  const name = complete ? 'Complete' : followUp ? `${stepName} · Follow-up` : stepName
   return (
     <>
       <div className={styles.sessionMeta}>
