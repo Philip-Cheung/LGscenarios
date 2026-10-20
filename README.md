@@ -62,6 +62,7 @@ Migrations live in `supabase/migrations/` and are applied in timestamp order:
 | `…_core_schema.sql` | Scenario registry, sessions, private tables (`app_private`), explicit grants, row-level security |
 | `…_session_rpcs.sql` | `create_pair`, `join_pair`, `regenerate_pair_code`, `start_pair`, `navigate`, `finish_pair`, `request_swap`, `respond_swap`, `heartbeat`, `get_session`. All are `SECURITY DEFINER`, check the revision, and are executable by `authenticated` only. |
 | `…_phase2_exit_restart_branch.sql` | Adds `ended`, restart requests, and `select_branch`. `end_session`, `request_restart`, `respond_restart`, and `cancel_restart` follow the same revision and membership rules. |
+| `…_phase2_branch_required_guard.sql` | `navigate` and `finish_pair` refuse to leave a conditional prompt until a response is chosen |
 | `…_realtime_and_cleanup.sql` | Adds `public.sessions` (only) to the `supabase_realtime` publication; cleanup functions; `pg_cron` schedules |
 | `…_registry_sample_doorstep_v1_publish.sql` | Generated registry entry for the sample scenario, published |
 
