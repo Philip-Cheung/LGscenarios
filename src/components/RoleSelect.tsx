@@ -1,52 +1,75 @@
+import { useState } from 'react'
+import type { ScenarioContent } from '../lib/content'
 import type { Role } from '../sessions/types'
-import { ROLE_DESCRIPTIONS, ROLE_LABELS } from './roles'
-import { StatusMessage } from './ui'
+import { AppScreen, PairingMeta } from './AppScreen'
+import { Icon } from './art'
+import { ROLE_CAPTIONS } from './roles'
+import { Button, StatusMessage } from './ui'
 import styles from './screens.module.css'
 
 interface RoleSelectProps {
-  busyRole: Role | null
+  scenario: ScenarioContent
+  initialRole?: Role
+  busy: boolean
   error: string | null
-  notice?: string | null
-  onChoose(role: Role): void
+  onCreate(role: Role): void
+  onBack(): void
 }
 
-/** The initial role choice is only a request; the server assigns seats. */
-export function RoleSelect({ busyRole, error, notice = null, onChoose }: RoleSelectProps) {
-  return (
-    <section className={styles.roleSection} aria-labelledby="role-heading">
-      <h2 id="role-heading" className={styles.heading}>
-        Choose your role
-      </h2>
-      <div className={styles.choices}>
-        <RoleCard role="missionary" busyRole={busyRole} onChoose={onChoose} />
-        <RoleCard role="christian" busyRole={busyRole} onChoose={onChoose} />
-      </div>
-      <StatusMessage>{notice}</StatusMessage>
-      <StatusMessage tone="error">{error}</StatusMessage>
-    </section>
-  )
-}
+const ROLES: readonly Role[] = ['missionary', 'christian']
 
-function RoleCard({
-  role,
-  busyRole,
-  onChoose,
-}: {
-  role: Role
-  busyRole: Role | null
-  onChoose(role: Role): void
-}) {
-  const busy = busyRole === role
+/**
+ * The person creating the practice chooses their role; whoever joins with the
+ * code takes the other one. The server assigns the seats.
+ */
+export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, onCreate, onBack }: RoleSelectProps) {
+  const [role, setRole] = useState<Role>(initialRole)
+
   return (
-    <button
-      type="button"
-      className={styles.choice}
-      disabled={busyRole !== null}
-      aria-busy={busy || undefined}
-      onClick={() => onChoose(role)}
+    <AppScreen
+      meta={<PairingMeta label="Before you begin" />}
+      viewKey="roles"
+      status={
+        <StatusMessage tone="error" className={styles.statusLine}>
+          {error}
+        </StatusMessage>
+      }
+      actions={
+        <>
+          <Button loading={busy} onClick={() => onCreate(role)}>
+            Get a pairing code
+          </Button>
+          <Button variant="text" disabled={busy} onClick={onBack}>
+            Back
+          </Button>
+        </>
+      }
     >
-      <span className={styles.choiceTitle}>{ROLE_LABELS[role]}</span>
-      <span className={styles.choiceBody}>{ROLE_DESCRIPTIONS[role]}</span>
-    </button>
+      <span className={styles.turn}>
+        <Icon />
+        Create a practice
+      </span>
+      <h1 tabIndex={-1}>Which side will you practice?</h1>
+      <p>Choose your role. Your partner will take the other perspective.</p>
+      <fieldset className={styles.choices} disabled={busy}>
+        <legend className={styles.srOnly}>Your practice role</legend>
+        {ROLES.map((value) => (
+          <label key={value} className={styles.choice}>
+            <span>
+              <small>{ROLE_CAPTIONS[value]}</small>
+              <strong>{scenario.roles[value].label}</strong>
+            </span>
+            <input type="radio" name="role" value={value} checked={role === value} onChange={() => setRole(value)} />
+          </label>
+        ))}
+      </fieldset>
+      <div className={styles.goal}>
+        <Icon kind="goal" />
+        <div>
+          <small>YOUR CONVERSATION</small>
+          <p>{scenario.title}</p>
+        </div>
+      </div>
+    </AppScreen>
   )
 }

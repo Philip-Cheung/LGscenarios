@@ -1,11 +1,11 @@
-import coffeeChatV1 from '../../content/scenarios/coffee-chat.v1.json'
-import sampleDoorstepV3 from '../../content/scenarios/sample-doorstep.v3.json'
+import coffeeChatV2 from '../../content/scenarios/coffee-chat.v2.json'
+import sampleDoorstepV4 from '../../content/scenarios/sample-doorstep.v4.json'
 import whoIsGodV1 from '../../content/scenarios/who-is-god.v1.json'
-import { whoIsGod } from '../scenarios/fixtures'
-import { findDiscussionItem, scenarioFileSchema, toStoredContent, validateScenarioFiles } from './content'
+import { sampleDoorstep } from '../scenarios/fixtures'
+import { findQuestion, scenarioFileSchema, toStoredContent, validateScenarioFiles } from './content'
 
 const valid = {
-  schemaVersion: '1.0',
+  schemaVersion: '2.0',
   id: 'test-scenario',
   version: 1,
   status: 'draft',
@@ -14,23 +14,8 @@ const valid = {
     missionary: { label: 'Missionary', sceneTitle: 'Outside', sceneText: 'A street.', goal: 'Talk.' },
     christian: { label: 'Christian', sceneTitle: 'Inside', sceneText: 'A home.', goal: 'Answer.' },
   },
-  interactionTrigger: {
-    initiatingRole: 'missionary',
-    initiatorPrompt: 'You arrive.',
-    initiatorActionLabel: 'Knock',
-    receiverPrompt: 'Someone knocks.',
-    receiverActionLabel: 'Open',
-  },
-  openingDialogue: { speakerRole: 'missionary', script: 'Hello.' },
-  questions: [
-    {
-      id: 'one',
-      title: 'One',
-      missionaryScript: 'Question?',
-      christian: { hiddenAnswer: 'Answer.' },
-      followUps: [{ id: 'more', missionaryScript: 'More?', christian: { hiddenAnswer: 'More.' } }],
-    },
-  ],
+  openingDialogue: { script: 'Hello.' },
+  questions: [{ id: 'one', topic: 'One', icon: 'leaf', prompt: 'Question?', exampleAnswer: 'Answer.' }],
   conclusion: { closingPrompt: 'Thanks.' },
 }
 
@@ -38,34 +23,37 @@ const question = valid.questions[0]
 
 describe('validateScenarioFiles', () => {
   it('accepts the scenario files in content/scenarios', () => {
-    expect(validateScenarioFiles([whoIsGodV1, coffeeChatV1, sampleDoorstepV3]).errors).toEqual([])
+    expect(validateScenarioFiles([whoIsGodV1, coffeeChatV2, sampleDoorstepV4]).errors).toEqual([])
   })
 
   it('rejects markup and unknown fields', () => {
-    const report = validateScenarioFiles([
-      { ...valid, questions: [{ ...question, missionaryScript: '<b>Hi</b>', html: true }] },
-    ])
+    const report = validateScenarioFiles([{ ...valid, questions: [{ ...question, prompt: '<b>Hi</b>', html: true }] }])
     expect(report.errors.join('\n')).toMatch(/angle brackets/)
     expect(report.errors.join('\n')).toMatch(/html/)
   })
 
-  it('rejects duplicate question and follow-up ids, and empty question lists', () => {
-    const duplicateQuestion = validateScenarioFiles([{ ...valid, questions: [question, question] }])
-    expect(duplicateQuestion.errors.join('\n')).toMatch(/Duplicate question id/)
-    const duplicateFollowUp = validateScenarioFiles([
-      { ...valid, questions: [{ ...question, followUps: [question.followUps[0], question.followUps[0]] }] },
-    ])
-    expect(duplicateFollowUp.errors.join('\n')).toMatch(/Duplicate follow-up id/)
+  it('rejects duplicate question ids and empty question lists', () => {
+    const duplicate = validateScenarioFiles([{ ...valid, questions: [question, question] }])
+    expect(duplicate.errors.join('\n')).toMatch(/Duplicate question id/)
     expect(validateScenarioFiles([{ ...valid, questions: [] }]).errors).not.toEqual([])
   })
 
-  it('rejects unknown roles, schema versions, and statuses', () => {
+  it('rejects old schema versions, unknown icons and illustrations, and unknown statuses', () => {
     const report = validateScenarioFiles([
-      { ...valid, schemaVersion: '2.0' },
+      { ...valid, schemaVersion: '1.0' },
       { ...valid, version: 2, status: 'live' },
-      { ...valid, version: 3, openingDialogue: { speakerRole: 'narrator', script: 'Hello.' } },
+      { ...valid, version: 3, questions: [{ ...question, icon: 'star' }] },
+      { ...valid, version: 4, illustration: 'garden' },
     ])
-    expect(report.errors).toHaveLength(3)
+    expect(report.errors).toHaveLength(4)
+  })
+
+  it('rejects the retired trigger and follow-up fields', () => {
+    const report = validateScenarioFiles([
+      { ...valid, interactionTrigger: { initiatingRole: 'missionary' } },
+      { ...valid, version: 2, questions: [{ ...question, followUps: [] }] },
+    ])
+    expect(report.errors).toHaveLength(2)
   })
 
   it('rejects duplicate versions', () => {
@@ -73,7 +61,7 @@ describe('validateScenarioFiles', () => {
   })
 
   it('warns, without failing, when text is long for a phone screen', () => {
-    const report = validateScenarioFiles([{ ...valid, questions: [{ ...question, missionaryScript: 'a'.repeat(300) }] }])
+    const report = validateScenarioFiles([{ ...valid, questions: [{ ...question, exampleAnswer: 'a'.repeat(400) }] }])
     expect(report.errors).toEqual([])
     expect(report.warnings).toHaveLength(1)
   })
@@ -88,11 +76,10 @@ describe('toStoredContent', () => {
   })
 })
 
-describe('findDiscussionItem', () => {
-  it('finds the active question and follow-up, and nothing for unknown ids', () => {
-    expect(findDiscussionItem(whoIsGod, 'nature-of-god', null)?.question.title).toBe('Who is God?')
-    expect(findDiscussionItem(whoIsGod, 'nature-of-god', 'jesus-prays')?.followUp?.id).toBe('jesus-prays')
-    expect(findDiscussionItem(whoIsGod, 'nature-of-god', 'image-of-god')).toBeNull()
-    expect(findDiscussionItem(whoIsGod, 'missing', null)).toBeNull()
+describe('findQuestion', () => {
+  it('finds the asked question, and nothing for unknown or missing ids', () => {
+    expect(findQuestion(sampleDoorstep, 'hope')?.prompt).toBe('What gives you hope?')
+    expect(findQuestion(sampleDoorstep, 'missing')).toBeNull()
+    expect(findQuestion(sampleDoorstep, null)).toBeNull()
   })
 })

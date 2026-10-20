@@ -1,136 +1,47 @@
 /*
- * Canonical semantic design tokens for Doorstep Practice.
- * Phase 2 is a light, iOS-inspired theme. Screens and UI primitives consume
- * these variables; do not repeat raw design values elsewhere.
- * See docs/design-system.md.
+ * Design tokens for Doorstep Practice ("Warm coach"). Values match the
+ * approved reference (ai-developer-handoff/reference/tokens.css). This is the
+ * only file that may contain raw colours; everything else uses these
+ * variables. See docs/design-system.md.
  */
 :root {
   color-scheme: light;
 
-  /* Surfaces. Grouped gray page, white cards, no decorative depth. */
-  --dp-color-page: #f2f2f7;
-  --dp-color-surface: #ffffff;
-  --dp-color-surface-raised: #f7f7fa;
-  --dp-color-surface-hover: #e8e8ed;
-  --dp-color-cue: #e5e5ea;
-  --dp-color-scrim: color-mix(in srgb, #1c1c1e 40%, transparent);
+  --color-canvas: #faf7f0;
+  --color-surface: #fffdf8;
+  --color-ink: #26332f;
+  --color-muted: #5b655f;
+  --color-teal: #205c50;
+  --color-teal-hover: #17483e;
+  --color-sage: #e7eee6;
+  --color-peach: #f5e5d8;
+  --color-line: #d9ddd3;
+  --color-danger: #a13b32;
+  --color-focus: #9b493c;
+  /* Dialog backdrop: ink at 40% opacity. */
+  --color-backdrop: #26332f66;
 
-  /* Text */
-  --dp-color-text: #1c1c1e;
-  --dp-color-text-muted: #51515a;
-  --dp-color-text-placeholder: #6c6c76;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: Georgia, 'Times New Roman', serif;
 
-  /* Borders. Separators are not the only sign that something is tappable. */
-  --dp-color-border: #d8d8df;
-  /* Control outlines: at least 3:1 against page and surface (WCAG 1.4.11). */
-  --dp-color-border-strong: #6e6e76;
+  --text-small: 0.8125rem;
+  --text-body: 1.0625rem;
+  --text-title: clamp(1.65rem, 2.5vw, 1.95rem);
 
-  /* Actions */
-  --dp-color-action-primary-bg: #005bc4;
-  --dp-color-action-primary-bg-hover: #004a9f;
-  --dp-color-action-primary-text: #ffffff;
-  --dp-color-action-secondary-bg: transparent;
-  --dp-color-action-secondary-bg-hover: #e8e8ed;
-  --dp-color-action-secondary-border: #6e6e76;
-  --dp-color-action-secondary-text: #1c1c1e;
-  --dp-color-action-destructive-bg: #b42318;
-  --dp-color-action-destructive-bg-hover: #8e1b13;
-  --dp-color-action-destructive-text: #ffffff;
-  --dp-color-action-text: #005bc4;
-  --dp-color-action-disabled-bg: #e5e5ea;
-  --dp-color-action-disabled-text: #6c6c76;
-  --dp-color-action-disabled-opacity: 1;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
 
-  /* Focus and status */
-  --dp-color-focus-ring: #005bc4;
-  --dp-color-error: #b42318;
-  --dp-color-error-border: #b42318;
-  --dp-color-status: #51515a;
-  --dp-color-selected: #e8f1fc;
-  --dp-color-destructive-tint: #fdecea;
-  --dp-color-destructive-tint-hover: #f9d7d3;
-  --dp-color-progress-track: #e5e5ea;
+  --radius-control: 14px;
+  --radius-surface: 24px;
 
-  /* Roles. Accents only; the role is always also named in text. */
-  --dp-color-role-missionary: #005bc4;
-  --dp-color-role-missionary-hover: #004a9f;
-  --dp-color-role-missionary-tint: #e8f1fc;
-  --dp-color-role-christian: #18794e;
-  --dp-color-role-christian-hover: #11603d;
-  --dp-color-role-christian-tint: #e6f4ec;
-
-  /* Typography. System fonts only; San Francisco is not downloaded. */
-  --dp-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --dp-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
-  --dp-font-size-meta: 0.875rem;
-  --dp-font-size-guidance: 0.9375rem;
-  --dp-font-size-body: 1.0625rem;
-  --dp-font-size-control: 1.0625rem;
-  --dp-font-size-answer: 1.1875rem;
-  --dp-font-size-choice: 1.25rem;
-  --dp-font-size-section: 1.375rem;
-  --dp-font-size-prompt: 1.75rem;
-  --dp-font-size-prompt-wide: 1.875rem;
-  --dp-font-size-title: 2rem;
-  --dp-font-size-code: 2.5rem;
-  --dp-font-weight-regular: 400;
-  --dp-font-weight-medium: 500;
-  --dp-font-weight-semibold: 600;
-  --dp-font-weight-bold: 700;
-  --dp-line-height-tight: 1.2;
-  --dp-line-height-prompt: 1.4;
-  --dp-line-height-body: 1.5;
-  --dp-letter-spacing-code: 0.08em;
-
-  /* Spacing */
-  --dp-space-1: 0.25rem;
-  --dp-space-2: 0.5rem;
-  --dp-space-3: 0.75rem;
-  --dp-space-4: 1rem;
-  --dp-space-5: 1.25rem;
-  --dp-space-6: 1.5rem;
-  --dp-space-8: 2rem;
-  --dp-space-10: 2.5rem;
-
-  /* Shape and sizing */
-  --dp-radius-card: 20px;
-  --dp-radius-control: 14px;
-  --dp-radius-panel: 12px;
-  --dp-radius-cue: 8px;
-  --dp-border-width: 1px;
-  --dp-focus-ring-width: 2px;
-  --dp-focus-ring-offset: 2px;
-  --dp-control-height: 48px;
-  --dp-control-height-primary: 52px;
-  --dp-icon-button-size: 44px;
-  --dp-icon-size: 22px;
-  --dp-progress-height: 6px;
-  --dp-topic-min-height: 64px;
-  --dp-radius-pill: 999px;
-  --dp-choice-min-height: 140px;
-  --dp-content-max-width: 680px;
-  --dp-page-gutter: 16px;
-  --dp-page-gutter-regular: 20px;
-  --dp-page-gutter-wide: 24px;
-  --dp-status-min-height: 1.5rem;
-
-  /* Motion */
-  --dp-duration-press: 100ms;
-  --dp-duration-enter: 160ms;
-  --dp-duration-answer: 150ms;
-  --dp-duration-success: 250ms;
-  --dp-duration-fast: 120ms;
-  --dp-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --dp-enter-distance: 4px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --dp-duration-press: 0ms;
-    --dp-duration-enter: 0ms;
-    --dp-duration-answer: 0ms;
-    --dp-duration-success: 0ms;
-    --dp-duration-fast: 0ms;
-    --dp-enter-distance: 0px;
-  }
+  --motion-fast: 160ms;
+  --motion-enter: 240ms;
+  --motion-activity: 1800ms;
+  --motion-confirm: 380ms;
+  --motion-ready: 1800ms;
 }

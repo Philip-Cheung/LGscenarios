@@ -4,19 +4,19 @@ import type { SessionErrorCode } from './types'
 export function messageForError(code: SessionErrorCode): string {
   switch (code) {
     case 'invalid_code':
-      return 'That code is not valid or is no longer available. Check it with your partner.'
+      return 'That code doesn’t match an open practice. Check your partner’s screen and try again.'
     case 'scenario_mismatch':
       return 'That code is for a different scenario. Make sure you both opened the same link.'
     case 'self_join':
-      return 'You created this pair. Your partner needs to enter the code on their phone.'
+      return 'You created this practice. Your partner needs to enter the code on their phone.'
     case 'rate_limited':
       return 'Too many attempts. Please wait a few minutes and try again.'
     case 'session_expired':
-      return 'This session has ended. Start a new pair.'
+      return 'This practice has ended. Start a new one when you’re ready.'
     case 'not_found':
-      return 'This pair is no longer available on this device. Start a new pair.'
+      return 'This practice is no longer available on this device. Start a new one.'
     case 'scenario_unavailable':
-      return 'This scenario is not open for new pairs right now.'
+      return 'This scenario is not open for new practices right now.'
     case 'partner_stale':
       return 'Waiting for your partner to reconnect.'
     case 'conflict':

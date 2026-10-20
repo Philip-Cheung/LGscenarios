@@ -12,10 +12,9 @@ import { expect } from 'vitest'
 import { assertDisposableTarget } from './target'
 
 export const SCENARIO_ID = 'sample-doorstep'
-export const SCENARIO_VERSION = 3
-/** Ids from content/scenarios/sample-doorstep.v3.json. */
+export const SCENARIO_VERSION = 4
+/** Ids from content/scenarios/sample-doorstep.v4.json. */
 export const QUESTION_ID = 'hope'
-export const FOLLOWUP_ID = 'add-more'
 export const OTHER_QUESTION_ID = 'faith'
 
 export interface TestUser {
@@ -30,15 +29,14 @@ export interface SessionState {
   revision: number
   round: number
   my_role: 'missionary' | 'christian'
+  is_creator: boolean
   partner_joined: boolean
   swap_pending: boolean
   restart_pending?: boolean
+  restart_by_me?: boolean
   my_ready: boolean
   partner_ready: boolean
-  trigger_initiated: boolean
   active_question_id: string | null
-  active_followup_id: string | null
-  question_asked: boolean
   partner_fresh: boolean | null
   pair_code: string | null
   code_expires_at: string | null
@@ -98,11 +96,16 @@ export class Harness {
     await this.sql('delete from app_private.rate_events where user_id = any($1::uuid[])', [users.map((u) => u.id)])
   }
 
-  async createPair(missionary: TestUser, requestId: string = randomUUID()): Promise<RpcResult> {
-    return rpc(missionary, 'create_pair', {
+  async createPair(
+    creator: TestUser,
+    requestId: string = randomUUID(),
+    role: 'missionary' | 'christian' = 'missionary',
+  ): Promise<RpcResult> {
+    return rpc(creator, 'create_pair', {
       p_scenario_id: SCENARIO_ID,
       p_version: SCENARIO_VERSION,
       p_request_id: requestId,
+      p_role: role,
     })
   }
 
@@ -115,40 +118,46 @@ export class Harness {
     })
   }
 
-  /** Creates and joins a pair; returns the ready session from the missionary's view. */
+  /** Creates and joins a pair; returns the missionary's view of the paired summary. */
   async readyPair(missionary: TestUser, christian: TestUser): Promise<SessionState> {
     const created = expectOk(await this.createPair(missionary))
     const joined = expectOk(await this.joinPair(christian, created.pair_code ?? ''))
-    expect(joined.status).toBe('ready')
+    expect(joined).toMatchObject({ status: 'ready', stage: 'paired' })
     return expectOk(await rpc(missionary, 'get_session', { p_session_id: created.id }))
   }
 
-  /** Both players tap Ready on the scene; returns the missionary's view at the interaction trigger. */
+  /** Creates and joins a pair, then the missionary taps Start practice; leaves it at the scene. */
+  async scenePair(missionary: TestUser, christian: TestUser): Promise<SessionState> {
+    const paired = await this.readyPair(missionary, christian)
+    return expectOk(await guided(missionary, paired, 'start_practice'))
+  }
+
+  /** Both players tap Ready on the scene; returns the missionary's view at Ready together. */
   async bothReady(missionary: TestUser, christian: TestUser, state: SessionState): Promise<SessionState> {
     const first = expectOk(await guided(missionary, state, 'ready'))
     expectOk(await guided(christian, first, 'ready'))
     return expectOk(await rpc(missionary, 'get_session', { p_session_id: state.id }))
   }
 
-  /** Creates, joins, and readies a pair, leaving it at the interaction trigger. */
+  /** Creates, joins, starts, and readies a pair, leaving it at Ready together. */
   async activePair(missionary: TestUser, christian: TestUser): Promise<SessionState> {
-    const ready = await this.readyPair(missionary, christian)
-    return this.bothReady(missionary, christian, ready)
+    const scene = await this.scenePair(missionary, christian)
+    return this.bothReady(missionary, christian, scene)
   }
 
-  /** From the interaction trigger, knocks, opens, and finishes the opening line. */
-  async walkToQuestions(missionary: TestUser, christian: TestUser, state: SessionState): Promise<SessionState> {
-    const knocked = expectOk(await guided(missionary, state, 'trigger_initiate'))
-    const opened = expectOk(await guided(christian, knocked, 'trigger_acknowledge'))
-    return expectOk(await guided(missionary, opened, 'opening_complete'))
+  /** From Ready together, begins and finishes the opening line. */
+  async walkToQuestions(missionary: TestUser, _christian: TestUser, state: SessionState): Promise<SessionState> {
+    const opening = expectOk(await guided(missionary, state, 'begin'))
+    return expectOk(await guided(missionary, opening, 'opening_complete'))
   }
 
-  /** Walks a pair at the interaction trigger to the conclusion. */
+  /** Walks a pair at Ready together through one question to the conclusion. */
   async finishRound(missionary: TestUser, christian: TestUser, state: SessionState): Promise<SessionState> {
     const choosing = await this.walkToQuestions(missionary, christian, state)
-    const discussing = expectOk(await guided(missionary, choosing, 'select_question', QUESTION_ID))
-    const asked = expectOk(await guided(missionary, discussing, 'question_asked'))
-    return expectOk(await guided(missionary, asked, 'finish_discussion'))
+    const asked = expectOk(await guided(missionary, choosing, 'ask_question', QUESTION_ID))
+    const shared = expectOk(await guided(christian, asked, 'share_complete'))
+    const closing = expectOk(await guided(missionary, shared, 'move_to_closing'))
+    return expectOk(await guided(missionary, closing, 'finish'))
   }
 
   async cleanup() {

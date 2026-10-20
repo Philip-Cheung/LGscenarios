@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ScenarioContent } from '../lib/content'
 import type { SessionApi } from '../sessions/api'
 import { clearPointer } from '../sessions/pointer'
@@ -8,7 +8,6 @@ import { useSessionSync } from '../sessions/useSessionSync'
 import { EndedCard } from './EndedCard'
 import { MessageCard } from './MessageCard'
 import { SessionView } from './SessionView'
-import styles from './screens.module.css'
 
 interface SessionScreenProps {
   client: SupabaseClient
@@ -20,7 +19,8 @@ interface SessionScreenProps {
   /** Supabase URL that serves setting images from Storage. */
   imageBaseUrl: string
   onStartOver(): void
-  onEnded(byPartner: boolean): void
+  /** `duringPairing` is true when the creator closed the code before anyone joined. */
+  onEnded(byPartner: boolean, duringPairing: boolean): void
 }
 
 export function SessionScreen({
@@ -42,12 +42,17 @@ export function SessionScreen({
     initial,
   })
 
+  const lastLiveStatus = useRef(initial.status)
+  useEffect(() => {
+    if (snapshot.status !== 'ended') lastLiveStatus.current = snapshot.status
+  }, [snapshot.status])
+
   useEffect(() => {
     if (ended) clearPointer(slug)
   }, [ended, slug])
 
   useEffect(() => {
-    if (ended === 'ended' || snapshot.status === 'ended') onEnded(endedByPartner)
+    if (ended === 'ended' || snapshot.status === 'ended') onEnded(endedByPartner, lastLiveStatus.current === 'waiting')
   }, [ended, endedByPartner, onEnded, snapshot.status])
 
   if (ended === 'ended' || snapshot.status === 'ended') return null
@@ -55,7 +60,7 @@ export function SessionScreen({
   if (snapshot.scenarioId !== scenario.id || snapshot.scenarioVersion !== scenario.version) {
     return (
       <MessageCard heading="Please refresh this page" actionLabel="Refresh" onAction={() => window.location.reload()}>
-        <p className={styles.muted}>This pair uses a different version of the scenario.</p>
+        <p>This practice uses a different version of the scenario.</p>
       </MessageCard>
     )
   }

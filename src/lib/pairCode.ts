@@ -1,26 +1,25 @@
-/** Must match the alphabet in app_private.generate_pair_code(). */
-export const PAIR_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+/** Must match app_private.generate_pair_code(): six digits. */
 export const PAIR_CODE_LENGTH = 6
-/** Generous enough for "abc - def" style input; the server also caps length. */
+/** Generous enough for "482 716" or "482-716" style input; the server also caps length. */
 export const PAIR_CODE_INPUT_MAX_LENGTH = 12
 
-const VALID_CODE = new RegExp(`^[${PAIR_CODE_ALPHABET}]{${PAIR_CODE_LENGTH}}$`)
+const VALID_CODE = new RegExp(`^[0-9]{${PAIR_CODE_LENGTH}}$`)
 
-/** Uppercases and removes spaces and hyphens. */
+/** Removes spaces and hyphens. */
 export function normalizePairCode(input: string): string {
-  return input.replace(/[\s-]/g, '').toUpperCase()
+  return input.replace(/[\s-]/g, '')
 }
 
 export function isWellFormedPairCode(normalized: string): boolean {
   return VALID_CODE.test(normalized)
 }
 
-/** "ABCDEF" -> "ABC-DEF" for display. */
+/** "482716" -> "482 716" for display. */
 export function formatPairCode(code: string): string {
-  return code.length === PAIR_CODE_LENGTH ? `${code.slice(0, 3)}-${code.slice(3)}` : code
+  return code.length === PAIR_CODE_LENGTH ? `${code.slice(0, 3)} ${code.slice(3)}` : code
 }
 
-/** "ABCDEF" -> "A B C D E F" so screen readers spell it out. */
+/** "482716" -> "4 8 2 7 1 6" so screen readers read each digit. */
 export function spellPairCode(code: string): string {
   return code.split('').join(' ')
 }

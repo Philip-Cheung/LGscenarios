@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { parseRpcResult } from './schema'
-import type { GuidedEvent, RpcResult } from './types'
+import type { GuidedEvent, Role, RpcResult } from './types'
 
 /**
  * Thin adapter over the session RPCs. Identity always comes from the caller's
@@ -26,8 +26,14 @@ export class SessionApi {
     }
   }
 
-  createPair(scenarioId: string, version: number, requestId: string) {
-    return this.call('create_pair', { p_scenario_id: scenarioId, p_version: version, p_request_id: requestId })
+  /** The creator chooses their role; the partner who joins takes the other one. */
+  createPair(scenarioId: string, version: number, requestId: string, role: Role) {
+    return this.call('create_pair', {
+      p_scenario_id: scenarioId,
+      p_version: version,
+      p_request_id: requestId,
+      p_role: role,
+    })
   }
 
   joinPair(code: string, scenarioId: string, version: number, requestId: string) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useParams } from 'react-router'
-import { MessageCard } from '../components/MessageCard'
+import { LoadingCard, MessageCard } from '../components/MessageCard'
 import { PageShell } from '../components/PageShell'
 import { ScenarioFlow } from '../components/ScenarioFlow'
 import styles from '../components/screens.module.css'
@@ -50,14 +50,11 @@ function FeaturedRedirect({ config }: { config: AppConfig }) {
             setAttempt((n) => n + 1)
           }}
           focusOnMount
-          level="h1"
         >
-          <p className={styles.muted}>Check your connection and try again.</p>
+          <p>Check your connection and try again.</p>
         </MessageCard>
       ) : (
-        <p className={styles.muted} role="status">
-          Loading…
-        </p>
+        <LoadingCard />
       )}
     </PageShell>
   )
@@ -68,7 +65,7 @@ export function NotFoundPage() {
     <PageShell>
       <title>Scenario not found · Doorstep practice</title>
       <MessageCard heading="We could not find that scenario">
-        <p className={styles.muted}>Check that you opened the full link your group leader shared.</p>
+        <p>Check that you opened the full link your group leader shared.</p>
       </MessageCard>
     </PageShell>
   )
@@ -79,7 +76,7 @@ function ConfigErrorPage({ problems }: { problems: string[] }) {
     <PageShell>
       <title>Not configured · Doorstep practice</title>
       <MessageCard heading="Practice is not set up yet">
-        <p className={styles.muted}>This site is missing its connection settings. Please let your group leader know.</p>
+        <p>This site is missing its connection settings. Please let your group leader know.</p>
         <ul className={styles.list}>
           {problems.map((problem) => (
             <li key={problem}>{problem}</li>

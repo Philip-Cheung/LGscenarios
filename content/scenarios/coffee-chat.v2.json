@@ -1,0 +1,58 @@
+{
+  "$schema": "../scenario.schema.json",
+  "schemaVersion": "2.0",
+  "id": "coffee-chat",
+  "version": 2,
+  "status": "published",
+  "title": "Coffee with a friend",
+  "subtitle": "Practise a relaxed conversation about faith at a café.",
+  "estimatedMinutes": 8,
+  "difficulty": "beginner",
+  "roles": {
+    "missionary": {
+      "label": "Missionary",
+      "sceneTitle": "A café downtown",
+      "sceneText": "You are meeting a friend you know from a community event. They are already at a table.",
+      "goal": "Have a friendly conversation and ask what they believe."
+    },
+    "christian": {
+      "label": "Christian",
+      "sceneTitle": "A café downtown",
+      "sceneText": "You are having coffee and waiting for a friend you know from a community event.",
+      "goal": "Share what you believe in your own words."
+    }
+  },
+  "openingDialogue": {
+    "script": "Thanks for meeting me! I’ve been looking forward to catching up.",
+    "listenerPrompt": "Your friend has just sat down. Greet them and chat for a moment."
+  },
+  "questions": [
+    {
+      "id": "church",
+      "topic": "Church",
+      "icon": "chat",
+      "prompt": "I didn’t know you went to church. What’s your church like?",
+      "exampleAnswer": "Share one or two things you appreciate, such as the teaching, the people, or how it helps you follow Jesus."
+    },
+    {
+      "id": "why-go",
+      "topic": "Church",
+      "icon": "chat",
+      "prompt": "Why is going to church important to you?",
+      "exampleAnswer": "Church is where I worship God with other believers, learn from the Bible, and serve others."
+    },
+    {
+      "id": "bible",
+      "topic": "Scripture",
+      "icon": "book",
+      "prompt": "Do you read the Bible much? How do you know how to understand it?",
+      "exampleAnswer": "I read it regularly and try to understand each passage in its context. I trust it as God’s word.",
+      "scriptures": ["2 Timothy 3:16-17"]
+    }
+  ],
+  "conclusion": {
+    "closingPrompt": "Thanks for the coffee. Let’s do this again soon.",
+    "reflectionPrompt": "Which question was hardest to answer, and why?"
+  },
+  "sourceNotes": "Sample scenario for a non-doorstep setting with no built-in illustration."
+}

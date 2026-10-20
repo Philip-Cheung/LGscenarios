@@ -1,6 +1,6 @@
 {
   "$schema": "../scenario.schema.json",
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "id": "who-is-god",
   "version": 1,
   "status": "draft",
@@ -8,6 +8,7 @@
   "subtitle": "A conversation about the nature of God",
   "estimatedMinutes": 12,
   "difficulty": "beginner",
+  "illustration": "doorway",
   "roles": {
     "missionary": {
       "label": "Missionary",
@@ -18,96 +19,67 @@
     "christian": {
       "label": "Christian",
       "sceneTitle": "Sunday afternoon at home",
-      "sceneText": "You have returned from church and lunch with friends.",
+      "sceneText": "You have returned from church and lunch with friends. Someone knocks at the door.",
       "goal": "Respond thoughtfully to an unexpected visitor."
     }
   },
-  "interactionTrigger": {
-    "initiatingRole": "missionary",
-    "initiatorPrompt": "You've arrived at the home.",
-    "initiatorActionLabel": "Knock on the door",
-    "receiverPrompt": "Someone is knocking at your door.",
-    "receiverActionLabel": "Open the door"
-  },
   "openingDialogue": {
-    "speakerRole": "missionary",
-    "script": "Hi! We're missionaries from The Church of Jesus Christ of Latter-day Saints. Do you have a few minutes to talk?",
+    "script": "Hi! We’re missionaries from The Church of Jesus Christ of Latter-day Saints. Do you have a few minutes to talk?",
     "listenerPrompt": "Listen and respond naturally, as you would at your own door."
   },
   "questions": [
     {
       "id": "nature-of-god",
-      "title": "Who is God?",
-      "topicTag": "Nature of God",
-      "missionaryScript": "We believe Heavenly Father, Jesus Christ, and the Holy Ghost are three separate beings. What do you believe about who God is?",
-      "christian": {
-        "hint": "Think about one God and three distinct persons.",
-        "scriptures": ["Deuteronomy 6:4", "Matthew 28:19", "John 1:1-3"],
-        "hiddenAnswer": "Historic Trinitarian Christianity teaches one God eternally existing as Father, Son, and Holy Spirit, three distinct persons."
-      },
-      "followUps": [
-        {
-          "id": "jesus-prays",
-          "label": "Why does Jesus pray to the Father?",
-          "missionaryScript": "If God is one, why does Jesus pray to the Father?",
-          "christian": {
-            "hint": "Consider the distinction between persons.",
-            "scriptures": ["John 17:1-5"],
-            "hiddenAnswer": "The Son addresses the Father as a distinct person; Trinitarian belief does not say they are the same person."
-          }
-        }
-      ]
+      "topic": "Nature of God",
+      "icon": "chat",
+      "prompt": "We believe Heavenly Father, Jesus Christ, and the Holy Ghost are three separate beings. What do you believe about who God is?",
+      "exampleAnswer": "Historic Trinitarian Christianity teaches one God eternally existing as Father, Son, and Holy Spirit, three distinct persons.",
+      "scriptures": ["Deuteronomy 6:4", "Matthew 28:19", "John 1:1-3"]
+    },
+    {
+      "id": "jesus-prays",
+      "topic": "Nature of God",
+      "icon": "chat",
+      "prompt": "If God is one, why does Jesus pray to the Father?",
+      "exampleAnswer": "The Son addresses the Father as a distinct person; Trinitarian belief does not say they are the same person.",
+      "scriptures": ["John 17:1-5"]
     },
     {
       "id": "always-god",
-      "title": "Has God always been God?",
-      "topicTag": "God is eternal",
-      "missionaryScript": "We believe Heavenly Father has a glorified body of flesh and bones. Do you believe God has always been God?",
-      "christian": {
-        "hint": "Think about God being eternal and unchanging.",
-        "scriptures": ["Psalm 90:2", "Malachi 3:6", "Numbers 23:19"],
-        "hiddenAnswer": "The Bible teaches that God is eternal and does not change. He has always been God, and He is not a man."
-      },
-      "followUps": [
-        {
-          "id": "image-of-god",
-          "label": "Aren't we made in God's image?",
-          "missionaryScript": "Doesn't Genesis say we are made in God's image? Doesn't that mean God has a body like ours?",
-          "christian": {
-            "hint": "Being made in God's image is not about a physical body.",
-            "scriptures": ["Genesis 1:27", "John 4:24"],
-            "hiddenAnswer": "Being made in God's image points to qualities like reason, relationship, and moral responsibility. Jesus taught that God is spirit."
-          }
-        }
-      ]
+      "topic": "God is eternal",
+      "icon": "leaf",
+      "prompt": "We believe Heavenly Father has a glorified body of flesh and bones. Do you believe God has always been God?",
+      "exampleAnswer": "The Bible teaches that God is eternal and does not change. He has always been God, and He is not a man.",
+      "scriptures": ["Psalm 90:2", "Malachi 3:6", "Numbers 23:19"]
+    },
+    {
+      "id": "image-of-god",
+      "topic": "God is eternal",
+      "icon": "leaf",
+      "prompt": "Doesn’t Genesis say we are made in God’s image? Doesn’t that mean God has a body like ours?",
+      "exampleAnswer": "Being made in God’s image points to qualities like reason, relationship, and moral responsibility. Jesus taught that God is spirit.",
+      "scriptures": ["Genesis 1:27", "John 4:24"]
     },
     {
       "id": "is-jesus-god",
-      "title": "Is Jesus God?",
-      "topicTag": "Jesus",
-      "missionaryScript": "We believe Jesus Christ is the Son of God and a separate being from the Father. How do you understand who Jesus is?",
-      "christian": {
-        "hint": "Think about Jesus as fully God and fully man.",
-        "scriptures": ["John 1:1", "John 1:14", "Colossians 2:9"],
-        "hiddenAnswer": "Christians believe Jesus is the eternal Son, fully God and fully man. The Word was God from the beginning and became flesh."
-      },
-      "followUps": [
-        {
-          "id": "father-greater",
-          "label": "Didn't Jesus say the Father is greater?",
-          "missionaryScript": "Didn't Jesus say the Father is greater than He is?",
-          "christian": {
-            "hint": "Think about the role Jesus took on as a man.",
-            "scriptures": ["John 14:28", "Philippians 2:5-8"],
-            "hiddenAnswer": "Jesus was speaking from the humble role He took on as a man. Philippians 2 says He shared God's nature but took the form of a servant."
-          }
-        }
-      ]
+      "topic": "Jesus",
+      "icon": "book",
+      "prompt": "We believe Jesus Christ is the Son of God and a separate being from the Father. How do you understand who Jesus is?",
+      "exampleAnswer": "Christians believe Jesus is the eternal Son, fully God and fully man. The Word was God from the beginning and became flesh.",
+      "scriptures": ["John 1:1", "John 1:14", "Colossians 2:9"]
+    },
+    {
+      "id": "father-greater",
+      "topic": "Jesus",
+      "icon": "book",
+      "prompt": "Didn’t Jesus say the Father is greater than He is?",
+      "exampleAnswer": "Jesus was speaking from the humble role He took on as a man. Philippians 2 says He shared God’s nature but took the form of a servant.",
+      "scriptures": ["John 14:28", "Philippians 2:5-8"]
     }
   ],
   "conclusion": {
-    "closingPrompt": "Thank your neighbour for the conversation.",
+    "closingPrompt": "Thank you for talking with us. It was good to hear what you believe.",
     "reflectionPrompt": "How would you explain the difference between the LDS Godhead and the Trinity?"
   },
-  "sourceNotes": "Opening, roles, and the nature-of-god question come from the webapp pivot brief. The always-god and is-jesus-god questions and the image-of-god and father-greater follow-ups are placeholders added for review; confirm or replace them before changing status to published."
+  "sourceNotes": "Opening, roles, and the nature-of-god and jesus-prays questions come from the webapp pivot brief. The always-god, image-of-god, is-jesus-god, and father-greater questions are placeholders added for review; confirm or replace them before changing status to published. The closing line is new in the six-step format and also needs review."
 }
