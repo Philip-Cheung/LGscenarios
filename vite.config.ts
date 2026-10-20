@@ -13,17 +13,20 @@ const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com'
  */
 export function buildContentSecurityPolicy(env: Record<string, string>): string {
   const connect = ["'self'"]
+  const images = ["'self'", 'data:']
   const supabaseUrl = env.VITE_SUPABASE_URL
   if (supabaseUrl) {
     const origin = new URL(supabaseUrl).origin
     connect.push(origin, origin.replace(/^http/, 'ws'))
+    // Scenario setting images are served from Supabase Storage.
+    images.push(origin)
   }
   const turnstile = Boolean(env.VITE_TURNSTILE_SITE_KEY)
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
     'script-src': ["'self'", ...(turnstile ? [TURNSTILE_ORIGIN] : [])],
     'style-src': ["'self'"],
-    'img-src': ["'self'", 'data:'],
+    'img-src': images,
     'font-src': ["'self'", 'data:'],
     'connect-src': connect,
     'frame-src': turnstile ? [TURNSTILE_ORIGIN] : ["'none'"],

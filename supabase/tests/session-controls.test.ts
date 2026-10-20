@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { expectError, expectOk, Harness, rpc, SAMPLE_BRANCH_ID, type TestUser } from './harness'
+import { expectError, expectOk, FOLLOWUP_ID, guided, Harness, QUESTION_ID, rpc, type TestUser } from './harness'
 
 let h: Harness
 let missionary: TestUser
@@ -26,14 +26,7 @@ describe('ending a session', () => {
     expect(endedWaiting.status).toBe('ended')
     expect(endedWaiting.pair_code).toBeNull()
     expectError(await h.joinPair(christian, waiting.pair_code ?? ''), 'invalid_code')
-    expectError(
-      await rpc(missionary, 'navigate', {
-        p_session_id: waiting.id,
-        p_direction: 'next',
-        p_expected_revision: endedWaiting.revision,
-      }),
-      'invalid_state',
-    )
+    expectError(await guided(missionary, endedWaiting, 'ready'), 'invalid_state')
 
     const active = await h.activePair(missionary, christian)
     expectError(await end(outsider, active.id, active.revision), 'not_found')
@@ -58,14 +51,7 @@ describe('ending a session', () => {
     )
     const seen = expectOk(await rpc(missionary, 'get_session', { p_session_id: state.id }))
     expect(seen.partner_fresh).toBe(false)
-    expectError(
-      await rpc(missionary, 'navigate', {
-        p_session_id: state.id,
-        p_direction: 'next',
-        p_expected_revision: seen.revision,
-      }),
-      'partner_stale',
-    )
+    expectError(await guided(missionary, seen, 'trigger_initiate'), 'partner_stale')
     const ended = expectOk(await end(missionary, state.id, seen.revision))
     expect(ended.status).toBe('ended')
     const partner = expectOk(await rpc(christian, 'get_session', { p_session_id: state.id }))
@@ -77,13 +63,7 @@ describe('restart', () => {
   it('requires the missionary, and accept resets both phones once without changing roles', async () => {
     await h.resetRateLimits(missionary, christian)
     const state = await h.activePair(missionary, christian)
-    const moved = expectOk(
-      await rpc(missionary, 'navigate', {
-        p_session_id: state.id,
-        p_direction: 'next',
-        p_expected_revision: state.revision,
-      }),
-    )
+    const moved = expectOk(await guided(missionary, state, 'trigger_initiate'))
     expectError(
       await rpc(christian, 'request_restart', { p_session_id: state.id, p_expected_revision: moved.revision }),
       'forbidden',
@@ -92,14 +72,7 @@ describe('restart', () => {
       await rpc(missionary, 'request_restart', { p_session_id: state.id, p_expected_revision: moved.revision }),
     )
     expect(requested.restart_pending).toBe(true)
-    expectError(
-      await rpc(missionary, 'navigate', {
-        p_session_id: state.id,
-        p_direction: 'next',
-        p_expected_revision: requested.revision,
-      }),
-      'invalid_state',
-    )
+    expectError(await guided(christian, requested, 'trigger_acknowledge'), 'invalid_state')
     expectError(
       await rpc(missionary, 'respond_restart', {
         p_session_id: state.id,
@@ -119,13 +92,15 @@ describe('restart', () => {
     expect(accepted).toMatchObject({
       my_role: 'christian',
       status: 'active',
-      prompt_index: 0,
+      stage: 'scene_setup',
+      my_ready: false,
+      partner_ready: false,
+      trigger_initiated: false,
       round: state.round + 1,
       restart_pending: false,
-      selected_branch_id: null,
     })
     const missionaryView = expectOk(await rpc(missionary, 'get_session', { p_session_id: state.id }))
-    expect(missionaryView).toMatchObject({ my_role: 'missionary', prompt_index: 0, round: accepted.round })
+    expect(missionaryView).toMatchObject({ my_role: 'missionary', stage: 'scene_setup', round: accepted.round })
     expectError(
       await rpc(christian, 'respond_restart', {
         p_session_id: state.id,
@@ -136,6 +111,10 @@ describe('restart', () => {
     )
     const after = expectOk(await rpc(missionary, 'get_session', { p_session_id: state.id }))
     expect(after.round).toBe(accepted.round)
+
+    // Both players confirm the scene again before the new round starts.
+    const again = await h.bothReady(missionary, christian, after)
+    expect(again).toMatchObject({ status: 'active', stage: 'interaction_trigger', round: accepted.round })
   })
 
   it('keeps the prompt when the partner declines or the requester cancels', async () => {
@@ -152,7 +131,7 @@ describe('restart', () => {
       }),
     )
     expect(declined).toMatchObject({
-      prompt_index: 0,
+      stage: 'interaction_trigger',
       round: state.round,
       status: 'active',
       restart_pending: false,
@@ -169,7 +148,7 @@ describe('restart', () => {
     const cancelled = expectOk(
       await rpc(missionary, 'cancel_restart', { p_session_id: state.id, p_expected_revision: again.revision }),
     )
-    expect(cancelled).toMatchObject({ prompt_index: 0, round: state.round, restart_pending: false })
+    expect(cancelled).toMatchObject({ stage: 'interaction_trigger', round: state.round, restart_pending: false })
   })
 
   it('clears an expired restart without resetting the prompt', async () => {
@@ -183,7 +162,7 @@ describe('restart', () => {
     ])
     const beat = expectOk(await rpc(christian, 'heartbeat', { p_session_id: state.id }))
     expect(beat.restart_pending).toBe(false)
-    expect(beat.prompt_index).toBe(0)
+    expect(beat.stage).toBe('interaction_trigger')
     expect(beat.round).toBe(state.round)
     expect(beat.revision).toBeGreaterThan(requested.revision)
   })
@@ -207,7 +186,7 @@ describe('restart', () => {
     expect(lost?.status).toBe('ended')
     expect(lost?.round).toBe(state.round)
 
-    const completed = await h.finishRound(missionary, await h.activePair(missionary, christian))
+    const completed = await h.finishRound(missionary, christian, await h.activePair(missionary, christian))
     const swap = expectOk(
       await rpc(missionary, 'request_swap', { p_session_id: completed.id, p_expected_revision: completed.revision }),
     )
@@ -218,92 +197,41 @@ describe('restart', () => {
   })
 })
 
-describe('conditional branches', () => {
-  it('shares one validated choice and rejects the other role, stale revisions, and unknown ids', async () => {
+describe('restart during discussion', () => {
+  it('clears the question, follow-up, and asked state on both phones and refuses the old round', async () => {
     await h.resetRateLimits(missionary, christian)
-    let state = await h.activePair(missionary, christian)
-    for (let i = 1; i < 3; i += 1) {
-      state = expectOk(
-        await rpc(missionary, 'navigate', {
-          p_session_id: state.id,
-          p_direction: 'next',
-          p_expected_revision: state.revision,
-        }),
-      )
-    }
-    expect(state.prompt_index).toBe(2)
-    expectError(
-      await rpc(missionary, 'finish_pair', { p_session_id: state.id, p_expected_revision: state.revision }),
-      'invalid_state',
-    )
-    expectError(
-      await rpc(christian, 'select_branch', {
-        p_session_id: state.id,
-        p_branch_id: SAMPLE_BRANCH_ID,
-        p_expected_revision: state.revision,
-        p_expected_round: state.round,
-      }),
-      'forbidden',
-    )
-    expectError(
-      await rpc(missionary, 'select_branch', {
-        p_session_id: state.id,
-        p_branch_id: 'not-a-choice',
-        p_expected_revision: state.revision,
-        p_expected_round: state.round,
-      }),
-      'invalid_input',
-    )
-    expectError(
-      await rpc(outsider, 'select_branch', {
-        p_session_id: state.id,
-        p_branch_id: SAMPLE_BRANCH_ID,
-        p_expected_revision: state.revision,
-        p_expected_round: state.round,
-      }),
-      'not_found',
-    )
+    const choosing = await h.walkToQuestions(missionary, christian, await h.activePair(missionary, christian))
+    const discussing = expectOk(await guided(missionary, choosing, 'select_question', QUESTION_ID))
+    const asked = expectOk(await guided(missionary, discussing, 'question_asked'))
+    const followUp = expectOk(await guided(missionary, asked, 'select_followup', FOLLOWUP_ID))
+    const followUpAsked = expectOk(await guided(missionary, followUp, 'question_asked'))
+    expect(followUpAsked).toMatchObject({ active_question_id: QUESTION_ID, active_followup_id: FOLLOWUP_ID, question_asked: true })
 
-    const selected = expectOk(
-      await rpc(missionary, 'select_branch', {
-        p_session_id: state.id,
-        p_branch_id: SAMPLE_BRANCH_ID,
-        p_expected_revision: state.revision,
-        p_expected_round: state.round,
-      }),
+    const requested = expectOk(
+      await rpc(missionary, 'request_restart', { p_session_id: choosing.id, p_expected_revision: followUpAsked.revision }),
     )
-    expect(selected).toMatchObject({ prompt_index: 2, round: state.round, selected_branch_id: SAMPLE_BRANCH_ID })
-    const seen = expectOk(await rpc(christian, 'get_session', { p_session_id: state.id }))
-    expect(seen.selected_branch_id).toBe(SAMPLE_BRANCH_ID)
-    expectError(
-      await rpc(missionary, 'select_branch', {
-        p_session_id: state.id,
-        p_branch_id: 'something-else',
-        p_expected_revision: state.revision,
-        p_expected_round: state.round,
-      }),
-      'conflict',
-    )
-
-    const restarted = expectOk(
-      await rpc(missionary, 'request_restart', { p_session_id: state.id, p_expected_revision: selected.revision }),
-    )
+    expectError(await guided(missionary, requested, 'return_to_questions'), 'invalid_state')
     const accepted = expectOk(
       await rpc(christian, 'respond_restart', {
-        p_session_id: state.id,
+        p_session_id: choosing.id,
         p_accept: true,
-        p_expected_revision: restarted.revision,
+        p_expected_revision: requested.revision,
       }),
     )
-    expect(accepted).toMatchObject({ prompt_index: 0, selected_branch_id: null, round: state.round + 1 })
-    expectError(
-      await rpc(missionary, 'select_branch', {
-        p_session_id: state.id,
-        p_branch_id: SAMPLE_BRANCH_ID,
-        p_expected_revision: accepted.revision,
-        p_expected_round: state.round,
-      }),
-      'conflict',
-    )
+    expect(accepted).toMatchObject({
+      status: 'active',
+      stage: 'scene_setup',
+      active_question_id: null,
+      active_followup_id: null,
+      question_asked: false,
+      trigger_initiated: false,
+      round: choosing.round + 1,
+    })
+    const missionaryView = expectOk(await rpc(missionary, 'get_session', { p_session_id: choosing.id }))
+    expect(missionaryView).toMatchObject({ stage: 'scene_setup', active_question_id: null, question_asked: false })
+
+    // A command from the previous round is refused instead of resurrecting the old question.
+    expectError(await guided(missionary, followUpAsked, 'select_question', QUESTION_ID), 'conflict')
+    expectError(await guided(missionary, missionaryView, 'select_question', QUESTION_ID), 'invalid_state')
   })
 })

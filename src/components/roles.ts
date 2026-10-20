@@ -6,6 +6,6 @@ export const ROLE_LABELS: Record<Role, string> = {
 }
 
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  missionary: 'Read the prompts and guide the conversation.',
-  christian: 'Practise your response. Reveal an answer if needed.',
+  missionary: 'Lead the conversation and choose the questions.',
+  christian: 'Answer in your own words. Reveal a suggested answer if needed.',
 }

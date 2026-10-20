@@ -9,8 +9,8 @@ describe('RoleSelect', () => {
     expect(screen.getByRole('heading', { name: 'Choose your role' })).toBeInTheDocument()
     const missionary = screen.getByRole('button', { name: /Mormon missionary/ })
     const christian = screen.getByRole('button', { name: /Christian/ })
-    expect(missionary).toHaveTextContent('Read the prompts and guide the conversation.')
-    expect(christian).toHaveTextContent('Practise your response. Reveal an answer if needed.')
+    expect(missionary).toHaveTextContent('Lead the conversation and choose the questions.')
+    expect(christian).toHaveTextContent('Answer in your own words. Reveal a suggested answer if needed.')
 
     await userEvent.click(missionary)
     expect(onChoose).toHaveBeenCalledWith('missionary')

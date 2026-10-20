@@ -24,8 +24,8 @@ describe('ScenarioPage', () => {
     expect(screen.queryByRole('button', { name: 'Mormon missionary' })).toBeNull()
   })
 
-  it('shows a friendly not-found view for unknown scenarios', () => {
-    renderAt('/s/not-a-scenario')
+  it('shows a friendly not-found view for links that cannot be a scenario id', () => {
+    renderAt('/s/Not_A_Scenario!')
     expect(screen.getByRole('heading', { name: 'We could not find that scenario' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
   })

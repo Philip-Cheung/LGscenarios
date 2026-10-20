@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ScenarioContent } from '../lib/content'
 import type { AppConfig } from '../lib/env'
 import { getSupabase } from '../lib/supabase'
-import { findLatestBundledBySlug, findScenarioVersion } from '../scenarios'
+import { fetchActiveScenario, fetchScenarioVersion } from '../scenarios/catalog'
 import { SessionApi } from '../sessions/api'
 import { ensureIdentity, getExistingUserId } from '../sessions/identity'
 import { messageForError } from '../sessions/messages'
 import { clearPointer, readPointer, writePointer } from '../sessions/pointer'
-import { resolvePublishedVersion } from '../sessions/scenarioVersion'
 import type { Role, SessionSnapshot } from '../sessions/types'
 import { EndedCard } from './EndedCard'
 import { HumanCheck } from './HumanCheck'
@@ -28,18 +27,19 @@ type Phase =
   | { kind: 'session'; userId: string; snapshot: SessionSnapshot; scenario: ScenarioContent }
   | { kind: 'ended'; reason: 'expired' | 'gone' }
   | { kind: 'outdated' }
+  | { kind: 'missing' }
   | { kind: 'resumeError' }
 
 interface ScenarioFlowProps {
   slug: string
-  bundledTitle: string
   config: AppConfig
 }
 
-export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) {
+export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
   const client = useMemo(() => getSupabase(config), [config])
   const api = useMemo(() => new SessionApi(client), [client])
   const [phase, setPhase] = useState<Phase>({ kind: 'boot' })
+  const [landing, setLanding] = useState<ScenarioContent | null>(null)
   const [busyRole, setBusyRole] = useState<Role | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -47,43 +47,74 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
   const [bootAttempt, setBootAttempt] = useState(0)
   const requestRef = useRef<{ key: string; id: string } | null>(null)
 
-  // Resume only after the server confirms this identity is still seated.
+  // Load the scenario open at this link and, in parallel, resume a pair only
+  // after the server confirms this identity is still seated.
   useEffect(() => {
     let cancelled = false
-    void (async () => {
+
+    const resume = async (): Promise<Phase | null> => {
       const pointer = readPointer(slug)
-      if (!pointer) {
-        if (!cancelled) setPhase({ kind: 'choose' })
-        return
-      }
+      if (!pointer) return null
       const userId = await getExistingUserId(client)
-      if (cancelled) return
       if (!userId) {
         clearPointer(slug)
-        setPhase({ kind: 'choose' })
-        return
+        return null
       }
       const result = await api.getSession(pointer.sessionId)
-      if (cancelled) return
-      if (result.ok) {
-        if (result.session.status === 'ended') {
+      if (!result.ok) {
+        if (result.error === 'session_expired') {
           clearPointer(slug)
-          setNotice('Your partner ended the session.')
-          setPhase({ kind: 'choose' })
-          return
+          return { kind: 'ended', reason: 'expired' }
         }
-        const scenario = findScenarioVersion(result.session.scenarioId, result.session.scenarioVersion)
-        setPhase(scenario ? { kind: 'session', userId, snapshot: result.session, scenario } : { kind: 'outdated' })
+        if (result.error === 'not_found' || result.error === 'not_authenticated') {
+          clearPointer(slug)
+          return null
+        }
+        return { kind: 'resumeError' }
+      }
+      if (result.session.status === 'ended') {
+        clearPointer(slug)
+        if (!cancelled) setNotice('Your partner ended the session.')
+        return null
+      }
+      const lookup = await fetchScenarioVersion(client, result.session.scenarioId, result.session.scenarioVersion)
+      switch (lookup.status) {
+        case 'ok':
+          return { kind: 'session', userId, snapshot: result.session, scenario: lookup.scenario }
+        case 'outdated':
+          return { kind: 'outdated' }
+        case 'error':
+          return { kind: 'resumeError' }
+        case 'retired':
+        case 'unavailable':
+          clearPointer(slug)
+          if (!cancelled) setNotice('This practice was updated. Start a new pair.')
+          return null
+      }
+    }
+
+    void (async () => {
+      const [lookup, resumed] = await Promise.all([fetchActiveScenario(client, slug), resume()])
+      if (cancelled) return
+      if (lookup.status === 'ok') setLanding(lookup.scenario)
+      if (resumed) {
+        setPhase(resumed)
         return
       }
-      if (result.error === 'session_expired') {
-        clearPointer(slug)
-        setPhase({ kind: 'ended', reason: 'expired' })
-      } else if (result.error === 'not_found' || result.error === 'not_authenticated') {
-        clearPointer(slug)
-        setPhase({ kind: 'choose' })
-      } else {
-        setPhase({ kind: 'resumeError' })
+      switch (lookup.status) {
+        case 'ok':
+          setPhase({ kind: 'choose' })
+          break
+        case 'outdated':
+          setPhase({ kind: 'outdated' })
+          break
+        case 'error':
+          setPhase({ kind: 'resumeError' })
+          break
+        case 'retired':
+        case 'unavailable':
+          setPhase({ kind: 'missing' })
+          break
       }
     })()
     return () => {
@@ -112,15 +143,17 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
           return
         }
 
-        const resolved = await resolvePublishedVersion(client, slug)
+        // New pairs always use the newest published version for this link.
+        const resolved = await fetchActiveScenario(client, slug)
         if (resolved.status === 'outdated') {
           setPhase({ kind: 'outdated' })
           return
         }
         if (resolved.status !== 'ok') {
-          fail(messageForError(resolved.status === 'unavailable' ? 'scenario_unavailable' : 'unavailable'))
+          fail(messageForError(resolved.status === 'error' ? 'unavailable' : 'scenario_unavailable'))
           return
         }
+        setLanding(resolved.scenario)
 
         // Reuse the request id when retrying after a lost response so the
         // server returns the pair it may already have created or joined.
@@ -128,7 +161,7 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
         const requestId = requestRef.current?.key === key ? requestRef.current.id : crypto.randomUUID()
         requestRef.current = { key, id: requestId }
 
-        const { scenarioId, version } = resolved.scenario
+        const { id: scenarioId, version } = resolved.scenario
         const result =
           intent.role === 'missionary'
             ? await api.createPair(scenarioId, version, requestId)
@@ -149,30 +182,37 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
     [api, client, config.turnstileSiteKey, slug],
   )
 
+  const restartBoot = useCallback(() => {
+    setPhase({ kind: 'boot' })
+    setBootAttempt((n) => n + 1)
+  }, [])
+
   const startOver = useCallback(() => {
     clearPointer(slug)
     setError(null)
     setNotice(null)
-    setPhase({ kind: 'choose' })
-  }, [slug])
+    if (landing) setPhase({ kind: 'choose' })
+    else restartBoot()
+  }, [landing, restartBoot, slug])
 
   const leaveEndedSession = useCallback(
     (byPartner: boolean) => {
       clearPointer(slug)
       setError(null)
       setNotice(byPartner ? 'Your partner ended the session.' : null)
-      setPhase({ kind: 'choose' })
+      if (landing) setPhase({ kind: 'choose' })
+      else restartBoot()
     },
-    [slug],
+    [landing, restartBoot, slug],
   )
 
-  const title = phase.kind === 'session' ? phase.scenario.title : bundledTitle
+  const title = phase.kind === 'session' ? phase.scenario.title : landing?.title
   const introduction = phase.kind === 'choose' || phase.kind === 'boot'
-  const description = introduction ? findLatestBundledBySlug(slug)?.description : undefined
+  const description = introduction ? landing?.subtitle : undefined
 
   return (
     <PageShell title={title} description={description} compactTitle={!introduction}>
-      <title>{`${title} · Doorstep practice`}</title>
+      <title>{title ? `${title} · Doorstep practice` : 'Doorstep practice'}</title>
       {renderPhase()}
     </PageShell>
   )
@@ -229,6 +269,8 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
             userId={phase.userId}
             initial={phase.snapshot}
             scenario={phase.scenario}
+            slug={slug}
+            imageBaseUrl={config.supabaseUrl}
             onStartOver={startOver}
             onEnded={leaveEndedSession}
           />
@@ -247,15 +289,18 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
             <p className={styles.muted}>A newer version of this scenario is available.</p>
           </MessageCard>
         )
+      case 'missing':
+        return (
+          <MessageCard heading="This scenario is not available" focusOnMount level="h1">
+            <p className={styles.muted}>Check that you opened the full link your group leader shared.</p>
+          </MessageCard>
+        )
       case 'resumeError':
         return (
           <MessageCard
             heading="Cannot reach the practice service"
             actionLabel="Try again"
-            onAction={() => {
-              setPhase({ kind: 'boot' })
-              setBootAttempt((n) => n + 1)
-            }}
+            onAction={restartBoot}
             focusOnMount
             level="h1"
           >

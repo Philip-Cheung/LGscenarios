@@ -12,9 +12,11 @@ import { expect } from 'vitest'
 import { assertDisposableTarget } from './target'
 
 export const SCENARIO_ID = 'sample-doorstep'
-export const SCENARIO_VERSION = 2
-export const PROMPT_COUNT = 3
-export const SAMPLE_BRANCH_ID = 'they-agree'
+export const SCENARIO_VERSION = 3
+/** Ids from content/scenarios/sample-doorstep.v3.json. */
+export const QUESTION_ID = 'hope'
+export const FOLLOWUP_ID = 'add-more'
+export const OTHER_QUESTION_ID = 'faith'
 
 export interface TestUser {
   client: SupabaseClient
@@ -24,14 +26,19 @@ export interface TestUser {
 export interface SessionState {
   id: string
   status: string
-  prompt_index: number
+  stage: string
   revision: number
   round: number
   my_role: 'missionary' | 'christian'
   partner_joined: boolean
   swap_pending: boolean
   restart_pending?: boolean
-  selected_branch_id?: string | null
+  my_ready: boolean
+  partner_ready: boolean
+  trigger_initiated: boolean
+  active_question_id: string | null
+  active_followup_id: string | null
+  question_asked: boolean
   partner_fresh: boolean | null
   pair_code: string | null
   code_expires_at: string | null
@@ -116,37 +123,32 @@ export class Harness {
     return expectOk(await rpc(missionary, 'get_session', { p_session_id: created.id }))
   }
 
-  /** Walks to the last prompt, chooses the filler branch, and finishes. */
-  async finishRound(missionary: TestUser, state: SessionState): Promise<SessionState> {
-    let current = state
-    for (let i = 1; i < PROMPT_COUNT; i += 1) {
-      current = expectOk(
-        await rpc(missionary, 'navigate', {
-          p_session_id: current.id,
-          p_direction: 'next',
-          p_expected_revision: current.revision,
-        }),
-      )
-    }
-    current = expectOk(
-      await rpc(missionary, 'select_branch', {
-        p_session_id: current.id,
-        p_branch_id: SAMPLE_BRANCH_ID,
-        p_expected_revision: current.revision,
-        p_expected_round: current.round,
-      }),
-    )
-    return expectOk(
-      await rpc(missionary, 'finish_pair', { p_session_id: current.id, p_expected_revision: current.revision }),
-    )
+  /** Both players tap Ready on the scene; returns the missionary's view at the interaction trigger. */
+  async bothReady(missionary: TestUser, christian: TestUser, state: SessionState): Promise<SessionState> {
+    const first = expectOk(await guided(missionary, state, 'ready'))
+    expectOk(await guided(christian, first, 'ready'))
+    return expectOk(await rpc(missionary, 'get_session', { p_session_id: state.id }))
   }
 
-  /** Creates, joins, and starts a pair. */
+  /** Creates, joins, and readies a pair, leaving it at the interaction trigger. */
   async activePair(missionary: TestUser, christian: TestUser): Promise<SessionState> {
     const ready = await this.readyPair(missionary, christian)
-    return expectOk(
-      await rpc(missionary, 'start_pair', { p_session_id: ready.id, p_expected_revision: ready.revision }),
-    )
+    return this.bothReady(missionary, christian, ready)
+  }
+
+  /** From the interaction trigger, knocks, opens, and finishes the opening line. */
+  async walkToQuestions(missionary: TestUser, christian: TestUser, state: SessionState): Promise<SessionState> {
+    const knocked = expectOk(await guided(missionary, state, 'trigger_initiate'))
+    const opened = expectOk(await guided(christian, knocked, 'trigger_acknowledge'))
+    return expectOk(await guided(missionary, opened, 'opening_complete'))
+  }
+
+  /** Walks a pair at the interaction trigger to the conclusion. */
+  async finishRound(missionary: TestUser, christian: TestUser, state: SessionState): Promise<SessionState> {
+    const choosing = await this.walkToQuestions(missionary, christian, state)
+    const discussing = expectOk(await guided(missionary, choosing, 'select_question', QUESTION_ID))
+    const asked = expectOk(await guided(missionary, discussing, 'question_asked'))
+    return expectOk(await guided(missionary, asked, 'finish_discussion'))
   }
 
   async cleanup() {
@@ -166,6 +168,21 @@ export async function rpc(user: TestUser | SupabaseClient, fn: string, args: Rec
   const { data, error } = await client.rpc(fn, args)
   if (error) throw new TransportError(fn, error.code, error.message)
   return data as RpcResult
+}
+
+/** Sends one guided-flow event at the state's revision. */
+export function guided(
+  user: TestUser,
+  state: Pick<SessionState, 'id' | 'revision'>,
+  event: string,
+  targetId: string | null = null,
+): Promise<RpcResult> {
+  return rpc(user, 'guided_event', {
+    p_session_id: state.id,
+    p_event: event,
+    p_target_id: targetId,
+    p_expected_revision: state.revision,
+  })
 }
 
 export class TransportError extends Error {

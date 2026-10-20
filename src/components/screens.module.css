@@ -432,6 +432,277 @@
   background: var(--dp-color-surface-raised);
 }
 
+/* Role accents. Primary actions, focus, and selection follow the player's role. */
+.session {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-4);
+}
+
+.roleMissionary {
+  --dp-role-accent: var(--dp-color-role-missionary);
+  --dp-role-tint: var(--dp-color-role-missionary-tint);
+  --dp-color-action-primary-bg: var(--dp-color-role-missionary);
+  --dp-color-action-primary-bg-hover: var(--dp-color-role-missionary-hover);
+  --dp-color-action-text: var(--dp-color-role-missionary);
+  --dp-color-focus-ring: var(--dp-color-role-missionary);
+  --dp-color-selected: var(--dp-color-role-missionary-tint);
+}
+
+.roleChristian {
+  --dp-role-accent: var(--dp-color-role-christian);
+  --dp-role-tint: var(--dp-color-role-christian-tint);
+  --dp-color-action-primary-bg: var(--dp-color-role-christian);
+  --dp-color-action-primary-bg-hover: var(--dp-color-role-christian-hover);
+  --dp-color-action-text: var(--dp-color-role-christian);
+  --dp-color-focus-ring: var(--dp-color-role-christian);
+  --dp-color-selected: var(--dp-color-role-christian-tint);
+}
+
+.sessionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--dp-space-3);
+}
+
+.rolePill {
+  flex: none;
+  max-width: 40%;
+  padding: var(--dp-space-1) var(--dp-space-3);
+  border-radius: var(--dp-radius-pill);
+  background: var(--dp-role-tint);
+  color: var(--dp-role-accent);
+  font-size: var(--dp-font-size-meta);
+  font-weight: var(--dp-font-weight-semibold);
+  line-height: var(--dp-line-height-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--dp-space-1);
+  min-width: 0;
+}
+
+.progressLabel {
+  overflow: hidden;
+  color: var(--dp-color-text-muted);
+  font-size: var(--dp-font-size-meta);
+  line-height: var(--dp-line-height-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressTrack {
+  display: block;
+  height: var(--dp-progress-height);
+  overflow: hidden;
+  border-radius: var(--dp-radius-pill);
+  background: var(--dp-color-progress-track);
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dp-role-accent);
+}
+
+.leaveButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--dp-icon-button-size);
+  height: var(--dp-icon-button-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--dp-radius-pill);
+  background: var(--dp-color-destructive-tint);
+  color: var(--dp-color-action-destructive-bg);
+  cursor: pointer;
+}
+
+.leaveButton:hover {
+  background: var(--dp-color-destructive-tint-hover);
+}
+
+.leaveButton:focus-visible {
+  outline: var(--dp-focus-ring-width) solid var(--dp-color-action-destructive-bg);
+  outline-offset: var(--dp-focus-ring-offset);
+}
+
+.leaveIcon {
+  width: var(--dp-icon-size);
+  height: var(--dp-icon-size);
+}
+
+.turn {
+  margin: 0;
+  color: var(--dp-role-accent, var(--dp-color-text-muted));
+  font-size: var(--dp-font-size-meta);
+  font-weight: var(--dp-font-weight-semibold);
+  line-height: var(--dp-line-height-body);
+}
+
+.subheading {
+  margin: 0;
+  color: var(--dp-color-text);
+  font-size: var(--dp-font-size-body);
+  font-weight: var(--dp-font-weight-semibold);
+  line-height: var(--dp-line-height-tight);
+}
+
+.sceneImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--dp-radius-panel);
+  background: var(--dp-color-surface-raised);
+}
+
+.goal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-1);
+  padding: var(--dp-space-3) var(--dp-space-4);
+  border-radius: var(--dp-radius-panel);
+  background: var(--dp-role-tint, var(--dp-color-surface-raised));
+}
+
+.goalLabel {
+  margin: 0;
+  color: var(--dp-role-accent, var(--dp-color-text-muted));
+  font-size: var(--dp-font-size-meta);
+  font-weight: var(--dp-font-weight-semibold);
+  line-height: var(--dp-line-height-body);
+}
+
+.topicList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topic {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--dp-space-1);
+  width: 100%;
+  min-height: var(--dp-topic-min-height);
+  padding: var(--dp-space-3) var(--dp-space-4);
+  border: var(--dp-border-width) solid var(--dp-color-border-strong);
+  border-radius: var(--dp-radius-control);
+  background: var(--dp-color-surface);
+  color: var(--dp-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.topic:hover {
+  background: var(--dp-color-surface-hover);
+}
+
+.topic:focus-visible {
+  outline: var(--dp-focus-ring-width) solid var(--dp-color-focus-ring);
+  outline-offset: var(--dp-focus-ring-offset);
+}
+
+.topic:disabled {
+  cursor: default;
+  background: var(--dp-color-action-disabled-bg);
+  color: var(--dp-color-action-disabled-text);
+}
+
+.topicTag {
+  color: var(--dp-role-accent, var(--dp-color-text-muted));
+  font-size: var(--dp-font-size-meta);
+  font-weight: var(--dp-font-weight-semibold);
+  line-height: var(--dp-line-height-body);
+}
+
+.topic:disabled .topicTag {
+  color: inherit;
+}
+
+.topicTitle {
+  font-size: var(--dp-font-size-body);
+  font-weight: var(--dp-font-weight-semibold);
+  line-height: var(--dp-line-height-tight);
+  overflow-wrap: anywhere;
+}
+
+.asked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-1);
+  padding-left: var(--dp-space-3);
+  border-left: 3px solid var(--dp-role-accent, var(--dp-color-border));
+}
+
+.help {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-3);
+}
+
+.helpRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dp-space-2);
+}
+
+.scriptureList {
+  margin: 0;
+  padding-left: var(--dp-space-5);
+  color: var(--dp-color-text);
+  font-size: var(--dp-font-size-body);
+  line-height: var(--dp-line-height-body);
+}
+
+/* Stands in for the hidden answer. Decorative only; no answer text exists in the page. */
+.concealed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-3);
+  padding: var(--dp-space-4);
+  border: var(--dp-border-width) dashed var(--dp-color-border-strong);
+  border-radius: var(--dp-radius-panel);
+  background: var(--dp-color-surface-raised);
+}
+
+.concealedLines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dp-space-2);
+}
+
+.concealedLines > span {
+  display: block;
+  height: 0.75rem;
+  border-radius: var(--dp-radius-pill);
+  background: var(--dp-color-cue);
+}
+
+.concealedLines > span:nth-child(2) {
+  width: 85%;
+}
+
+.concealedLines > span:nth-child(3) {
+  width: 60%;
+}
+
 .check {
   display: inline-block;
   width: 1.25rem;
@@ -455,14 +726,22 @@
 
   .choice,
   .branch,
+  .topic,
+  .leaveButton,
   .textAction {
     transition: transform var(--dp-duration-press) var(--dp-easing-standard);
   }
 
   .choice:active:not(:disabled),
   .branch:active:not(:disabled),
+  .topic:active:not(:disabled),
+  .leaveButton:active,
   .textAction:active:not(:disabled) {
     transform: scale(0.98);
+  }
+
+  .progressFill {
+    transition: width var(--dp-duration-enter) var(--dp-easing-standard);
   }
 }
 

@@ -4,20 +4,20 @@ import { JoinForm } from '../components/JoinForm'
 import { PageShell } from '../components/PageShell'
 import { RoleSelect } from '../components/RoleSelect'
 import { SessionView } from '../components/SessionView'
-import { sampleDoorstepV2 } from '../scenarios/sample-doorstep.v2'
+import type { ScenarioContent } from '../lib/content'
+import { coffeeChat, whoIsGod } from '../scenarios/fixtures'
 import type { SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, SessionActions } from '../sessions/useSessionSync'
 
 /**
- * Development-only gallery of every screen state, rendered from fixtures with
- * no backend. Used for visual and accessibility review. Never shipped.
+ * Development-only gallery of every screen state, rendered from local scenario
+ * files with no backend. Used for visual and accessibility review. Never shipped.
  */
 const base: SessionSnapshot = {
   id: '00000000-0000-4000-8000-000000000000',
-  scenarioId: sampleDoorstepV2.scenarioId,
-  scenarioVersion: sampleDoorstepV2.version,
+  scenarioId: whoIsGod.id,
+  scenarioVersion: whoIsGod.version,
   status: 'active',
-  promptIndex: 0,
   revision: 1,
   round: 1,
   myRole: 'missionary',
@@ -25,7 +25,13 @@ const base: SessionSnapshot = {
   swapPending: false,
   restartPending: false,
   restartRequestedAt: null,
-  selectedBranchId: null,
+  stage: 'scene_setup',
+  meReady: false,
+  partnerReady: false,
+  triggerInitiated: false,
+  activeQuestionId: null,
+  activeFollowupId: null,
+  questionAsked: false,
   partnerFresh: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   pairCode: null,
@@ -34,10 +40,7 @@ const base: SessionSnapshot = {
 
 const noop = async () => true
 const actions: SessionActions = {
-  start: noop,
-  next: noop,
-  back: noop,
-  finish: noop,
+  send: noop,
   requestSwap: noop,
   acceptSwap: noop,
   declineSwap: noop,
@@ -47,10 +50,14 @@ const actions: SessionActions = {
   acceptRestart: noop,
   declineRestart: noop,
   cancelRestart: noop,
-  selectBranch: noop,
 }
 
-const STATES: Record<string, { snapshot?: Partial<SessionSnapshot>; connection?: ConnectionState; screen?: string }> = {
+const discussing = { stage: 'discussion' as const, activeQuestionId: 'nature-of-god' }
+
+const STATES: Record<
+  string,
+  { snapshot?: Partial<SessionSnapshot>; connection?: ConnectionState; screen?: string; scenario?: ScenarioContent }
+> = {
   'role-select': { screen: 'role-select' },
   'join': { screen: 'join' },
   'join-error': { screen: 'join-error' },
@@ -66,27 +73,42 @@ const STATES: Record<string, { snapshot?: Partial<SessionSnapshot>; connection?:
   'waiting-expired': {
     snapshot: { status: 'waiting', partnerJoined: false, partnerFresh: null, pairCode: null, codeExpiresAt: new Date(0).toISOString() },
   },
-  'ready-missionary': { snapshot: { status: 'ready' } },
-  'ready-christian': { snapshot: { status: 'ready', myRole: 'christian' } },
-  'missionary-first': { snapshot: {} },
-  'missionary-last': { snapshot: { promptIndex: 2 } },
-  'christian': { snapshot: { myRole: 'christian', promptIndex: 1 } },
-  'partner-away': { snapshot: { promptIndex: 1, partnerFresh: false } },
-  'reconnecting': { snapshot: { promptIndex: 1 }, connection: 'reconnecting' },
-  'complete-missionary': { snapshot: { status: 'completed', promptIndex: 2 } },
-  'complete-christian-request': { snapshot: { status: 'completed', promptIndex: 2, myRole: 'christian', swapPending: true } },
-  'ended': { screen: 'ended' },
-  'branch-missionary': { snapshot: { promptIndex: 2 } },
-  'branch-christian': { snapshot: { promptIndex: 2, myRole: 'christian' } },
-  'restart-christian': {
-    snapshot: { myRole: 'christian', restartPending: true, restartRequestedAt: new Date().toISOString() },
+  'scene-missionary': { snapshot: { status: 'ready' } },
+  'scene-christian-partner-ready': { snapshot: { status: 'ready', myRole: 'christian', partnerReady: true } },
+  'scene-waiting': { snapshot: { status: 'ready', meReady: true } },
+  'trigger-missionary': { snapshot: { stage: 'interaction_trigger' } },
+  'trigger-christian-waiting': { snapshot: { stage: 'interaction_trigger', myRole: 'christian' } },
+  'trigger-christian-knock': { snapshot: { stage: 'interaction_trigger', myRole: 'christian', triggerInitiated: true } },
+  'trigger-cafe-christian': { scenario: coffeeChat, snapshot: { stage: 'interaction_trigger', myRole: 'christian' } },
+  'opening-missionary': { snapshot: { stage: 'opening_dialogue' } },
+  'opening-christian': { snapshot: { stage: 'opening_dialogue', myRole: 'christian' } },
+  'select-missionary': { snapshot: { stage: 'question_selection' } },
+  'select-christian': { snapshot: { stage: 'question_selection', myRole: 'christian' } },
+  'ask-missionary': { snapshot: discussing },
+  'ask-christian': { snapshot: { ...discussing, myRole: 'christian' } },
+  'discuss-missionary': { snapshot: { ...discussing, questionAsked: true } },
+  'discuss-christian': { snapshot: { ...discussing, questionAsked: true, myRole: 'christian' } },
+  'followup-missionary': { snapshot: { ...discussing, activeFollowupId: 'jesus-prays' } },
+  'followup-christian': {
+    snapshot: { ...discussing, activeFollowupId: 'jesus-prays', questionAsked: true, myRole: 'christian' },
   },
+  'partner-away': { snapshot: { ...discussing, partnerFresh: false } },
+  'reconnecting': { snapshot: discussing, connection: 'reconnecting' },
+  'complete-missionary': { snapshot: { status: 'completed', stage: 'conclusion' } },
+  'complete-christian-request': {
+    snapshot: { status: 'completed', stage: 'conclusion', myRole: 'christian', swapPending: true },
+  },
+  'restart-christian': {
+    snapshot: { ...discussing, myRole: 'christian', restartPending: true, restartRequestedAt: new Date().toISOString() },
+  },
+  'ended': { screen: 'ended' },
 }
 
 export default function DevPreview() {
-  const initial = new URLSearchParams(window.location.search).get('state') ?? 'missionary-first'
-  const [state, setState] = useState(initial in STATES ? initial : 'missionary-first')
+  const initial = new URLSearchParams(window.location.search).get('state') ?? 'scene-missionary'
+  const [state, setState] = useState(initial in STATES ? initial : 'scene-missionary')
   const entry = STATES[state]
+  const scenario = entry.scenario ?? whoIsGod
 
   let content
   if (entry.screen === 'role-select') content = <RoleSelect busyRole={null} error={null} onChoose={() => {}} />
@@ -105,8 +127,9 @@ export default function DevPreview() {
   else
     content = (
       <SessionView
-        scenario={sampleDoorstepV2}
-        snapshot={{ ...base, ...entry.snapshot }}
+        key={state}
+        scenario={scenario}
+        snapshot={{ ...base, scenarioId: scenario.id, scenarioVersion: scenario.version, ...entry.snapshot }}
         connection={entry.connection ?? 'live'}
         pending={null}
         notice={null}
@@ -116,9 +139,9 @@ export default function DevPreview() {
 
   return (
     <PageShell
-      title={sampleDoorstepV2.title}
-      description={entry.screen === 'role-select' ? sampleDoorstepV2.description : undefined}
-      compactTitle={entry.screen !== 'role-select' && state !== 'role-select'}
+      title={scenario.title}
+      description={entry.screen === 'role-select' ? scenario.subtitle : undefined}
+      compactTitle={entry.screen !== 'role-select'}
     >
       <label>
         <span style={{ marginRight: 8 }}>Preview state</span>

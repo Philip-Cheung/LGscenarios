@@ -5,17 +5,14 @@ import { getExistingUserId } from './identity'
 import { messageForError } from './messages'
 import { REALTIME_SESSION_COLUMNS, snapshotFromRealtimeRow } from './schema'
 import { mergeSnapshot } from './snapshot'
-import type { RpcResult, SessionErrorCode, SessionSnapshot } from './types'
+import type { GuidedEvent, RpcResult, SessionErrorCode, SessionSnapshot } from './types'
 
 export const HEARTBEAT_INTERVAL_MS = 15_000
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting'
 export type EndReason = 'expired' | 'gone' | 'ended'
 export type PendingAction =
-  | 'start'
-  | 'next'
-  | 'back'
-  | 'finish'
+  | GuidedEvent
   | 'requestSwap'
   | 'acceptSwap'
   | 'declineSwap'
@@ -25,13 +22,10 @@ export type PendingAction =
   | 'acceptRestart'
   | 'declineRestart'
   | 'cancelRestart'
-  | 'selectBranch'
 
 export interface SessionActions {
-  start(): Promise<boolean>
-  next(): Promise<boolean>
-  back(): Promise<boolean>
-  finish(): Promise<boolean>
+  /** Sends one conversation event; `targetId` names the question or follow-up when one is chosen. */
+  send(event: GuidedEvent, targetId?: string): Promise<boolean>
   requestSwap(): Promise<boolean>
   acceptSwap(): Promise<boolean>
   declineSwap(): Promise<boolean>
@@ -41,7 +35,6 @@ export interface SessionActions {
   acceptRestart(): Promise<boolean>
   declineRestart(): Promise<boolean>
   cancelRestart(): Promise<boolean>
-  selectBranch(branchId: string): Promise<boolean>
 }
 
 interface Options {
@@ -261,10 +254,8 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
 
   const actions = useMemo<SessionActions>(
     () => ({
-      start: () => run('start', (s) => api.startPair(s.id, s.revision)),
-      next: () => run('next', (s) => api.navigate(s.id, 'next', s.revision)),
-      back: () => run('back', (s) => api.navigate(s.id, 'back', s.revision)),
-      finish: () => run('finish', (s) => api.finishPair(s.id, s.revision)),
+      send: (event: GuidedEvent, targetId?: string) =>
+        run(event, (s) => api.guidedEvent(s.id, event, targetId ?? null, s.revision)),
       requestSwap: () => run('requestSwap', (s) => api.requestSwap(s.id, s.revision)),
       acceptSwap: () => run('acceptSwap', (s) => api.respondSwap(s.id, true, s.revision)),
       declineSwap: () => run('declineSwap', (s) => api.respondSwap(s.id, false, s.revision)),
@@ -285,8 +276,6 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
       acceptRestart: () => run('acceptRestart', (s) => api.respondRestart(s.id, true, s.revision)),
       declineRestart: () => run('declineRestart', (s) => api.respondRestart(s.id, false, s.revision)),
       cancelRestart: () => run('cancelRestart', (s) => api.cancelRestart(s.id, s.revision)),
-      selectBranch: (branchId: string) =>
-        run('selectBranch', (s) => api.selectBranch(s.id, branchId, s.revision, s.round)),
     }),
     [api, run],
   )

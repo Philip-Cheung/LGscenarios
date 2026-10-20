@@ -6,7 +6,6 @@ const base: SessionSnapshot = {
   scenarioId: 'sample-doorstep',
   scenarioVersion: 1,
   status: 'active',
-  promptIndex: 1,
   revision: 5,
   round: 1,
   myRole: 'missionary',
@@ -14,7 +13,13 @@ const base: SessionSnapshot = {
   swapPending: false,
   restartPending: false,
   restartRequestedAt: null,
-  selectedBranchId: null,
+  stage: 'question_selection',
+  meReady: true,
+  partnerReady: true,
+  triggerInitiated: true,
+  activeQuestionId: null,
+  activeFollowupId: null,
+  questionAsked: false,
   partnerFresh: true,
   expiresAt: '2026-10-20T12:00:00Z',
   pairCode: null,
@@ -23,19 +28,20 @@ const base: SessionSnapshot = {
 
 describe('mergeSnapshot', () => {
   it('ignores an older revision so a slow response cannot roll state back', () => {
-    const merged = mergeSnapshot(base, { ...base, revision: 4, promptIndex: 0 })
+    const merged = mergeSnapshot(base, { ...base, revision: 4, stage: 'opening_dialogue' })
     expect(merged).toBe(base)
   })
 
   it('applies a newer revision', () => {
-    const merged = mergeSnapshot(base, { ...base, revision: 6, promptIndex: 2 })
-    expect(merged.promptIndex).toBe(2)
+    const merged = mergeSnapshot(base, { ...base, revision: 6, stage: 'discussion', activeQuestionId: 'nature-of-god' })
+    expect(merged.stage).toBe('discussion')
+    expect(merged.activeQuestionId).toBe('nature-of-god')
     expect(merged.revision).toBe(6)
   })
 
   it('only refreshes volatile fields at the same revision', () => {
-    const merged = mergeSnapshot(base, { ...base, promptIndex: 0, partnerFresh: false })
-    expect(merged.promptIndex).toBe(1)
+    const merged = mergeSnapshot(base, { ...base, stage: 'opening_dialogue', partnerFresh: false })
+    expect(merged.stage).toBe('question_selection')
     expect(merged.partnerFresh).toBe(false)
   })
 
