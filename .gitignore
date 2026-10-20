@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-e2e
+dist-ssr
+*.local
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Test output and browser state (never commit auth state, tokens, or codes)
+playwright-report
+test-results
+blob-report
+playwright/.cache
+.playwright-cli
+.auth
+*.storage-state.json
+coverage
+
+# Supabase CLI local state
+supabase/.temp
+supabase/.branches
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
