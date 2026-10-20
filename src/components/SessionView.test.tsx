@@ -98,7 +98,7 @@ describe('SessionView while waiting for a partner', () => {
     expect(screen.queryByLabelText('Session controls')).not.toBeInTheDocument()
   })
 
-  it('explains a reopened code belongs to this browser’s practice', () => {
+  it('reminds a creator who reopens the code that the partner joins on their own phone', () => {
     render(
       <SessionView
         scenario={sampleDoorstep}
@@ -110,8 +110,8 @@ describe('SessionView while waiting for a partner', () => {
         resumed
       />,
     )
-    expect(screen.getByText(/You started this practice earlier in this browser/)).toHaveTextContent(
-      'on their own phone and enter this code.',
+    expect(screen.getByText(/on their own phone and enter this code\./)).toHaveTextContent(
+      'Ask your partner to choose Join your partner on their own phone and enter this code.',
     )
     expect(screen.getByTestId('pair-code')).toHaveTextContent('482 716')
     expect(screen.getByText('Your role').parentElement!).toHaveTextContent('Christian')
@@ -121,7 +121,7 @@ describe('SessionView while waiting for a partner', () => {
     renderView({ ...waiting, myRole: 'christian' })
     const summary = screen.getByText('Your role').parentElement!
     expect(summary).toHaveTextContent('Christian')
-    expect(screen.getByText('Your partner’s role').parentElement!).toHaveTextContent('Latter-day Saint missionary')
+    expect(screen.getByText('Your partner’s role').parentElement!).toHaveTextContent('Mormon missionary')
   })
 
   it('closes the code with Change roles, without a dialog', async () => {
@@ -403,7 +403,7 @@ describe('SessionView closing and completion', () => {
   it('asks the Christian to accept a switch', async () => {
     const acceptSwap = vi.fn(async () => true)
     renderView({ status: 'completed', stage: 'conclusion', myRole: 'christian', swapPending: true }, makeActions({ acceptSwap }))
-    expect(screen.getByText(/You’d practise as the Latter-day Saint missionary/)).toBeInTheDocument()
+    expect(screen.getByText(/You’d practise as the Mormon missionary/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Switch roles' }))
     expect(acceptSwap).toHaveBeenCalledOnce()
     expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument()

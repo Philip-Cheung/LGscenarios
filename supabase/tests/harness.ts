@@ -12,8 +12,8 @@ import { expect } from 'vitest'
 import { assertDisposableTarget } from './target'
 
 export const SCENARIO_ID = 'sample-doorstep'
-export const SCENARIO_VERSION = 5
-/** Ids from content/scenarios/sample-doorstep.v5.json. */
+export const SCENARIO_VERSION = 6
+/** Ids from content/scenarios/sample-doorstep.v6.json. */
 export const QUESTION_ID = 'hope'
 export const OTHER_QUESTION_ID = 'faith'
 

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { PAIR_CODE_INPUT_MAX_LENGTH, isWellFormedPairCode, normalizePairCode } from '../lib/pairCode'
-import { AppScreen, PairingMeta } from './AppScreen'
+import { AppScreen } from './AppScreen'
 import { Icon } from './art'
 import { Button, TextInput } from './ui'
 import styles from './screens.module.css'
@@ -42,7 +42,6 @@ export function JoinForm({ initialValue = '', busy, error, onJoin, onBack }: Joi
 
   return (
     <AppScreen
-      meta={<PairingMeta label="Before you begin" />}
       viewKey="join"
       note="Your partner can find their code on the invitation screen."
       actions={

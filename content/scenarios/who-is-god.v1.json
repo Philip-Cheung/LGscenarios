@@ -11,7 +11,7 @@
   "illustration": "doorway",
   "roles": {
     "missionary": {
-      "label": "Latter-day Saint missionary",
+      "label": "Mormon missionary",
       "sceneTitle": "Sunday afternoon in Burnaby",
       "sceneText": "You are visiting homes in a quiet neighbourhood.",
       "goal": "Start a friendly conversation about God."

@@ -1,7 +1,7 @@
 import { expect, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test'
 
 export const SCENARIO_PATH = '/s/sample-doorstep'
-/** Copy from content/scenarios/sample-doorstep.v5.json, the published scenario the tests pair on. */
+/** Copy from content/scenarios/sample-doorstep.v6.json, the published scenario the tests pair on. */
 export const DOORSTEP = {
   sceneTitle: 'A Mormon missionary at your door',
   opening: 'Hello. May I ask you one short question?',
@@ -24,7 +24,7 @@ export const DOORSTEP = {
 /** Headings shared by every scenario. */
 export const SCREENS = {
   welcome: 'Practice talking with Mormon missionaries.',
-  chooseRole: 'Which role will you practise?',
+  chooseRole: 'Select a role',
   invite: 'Good conversations start with two.',
   join: 'Find your practice partner.',
   paired: 'A little practice, together.',

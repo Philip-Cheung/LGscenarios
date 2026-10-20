@@ -25,7 +25,6 @@ export function EndedCard({ reason, onStartOver }: EndedCardProps) {
       actionLabel="Start a new practice"
       onAction={onStartOver}
       focusOnMount
-      metaLabel="Session ended"
       illustrated
     >
       <p>{body}</p>

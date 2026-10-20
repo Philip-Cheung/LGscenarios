@@ -5,7 +5,7 @@ import { messageForEndFailure } from '../sessions/messages'
 import { isPartnerAway, isRestartCurrent, RESTART_TIMEOUT_MS } from '../sessions/snapshot'
 import type { SessionErrorCode, SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, PendingAction, SessionActions } from '../sessions/useSessionSync'
-import { AppScreen, PairingMeta, ProgressMeta, SessionMenu, type ScreenFrame } from './AppScreen'
+import { AppScreen, ProgressMeta, SessionMenu, type ScreenFrame } from './AppScreen'
 import { ActivityDots, BubblesArt, Icon } from './art'
 import { GuidedStage, PairSummary } from './GuidedStage'
 import { otherRole, ROLE_SHORT_LABELS } from './roles'
@@ -93,10 +93,10 @@ export function SessionView({
   }
 
   const roleLabel = ROLE_SHORT_LABELS[snapshot.myRole]
-  let meta
-  if (snapshot.status === 'waiting') meta = <PairingMeta label="Before you begin" />
-  else if (snapshot.stage === 'paired') meta = <PairingMeta label="Ready to practise" />
-  else meta = <ProgressMeta roleLabel={roleLabel} stage={snapshot.stage} />
+  const meta =
+    snapshot.status === 'waiting' || snapshot.stage === 'paired' ? undefined : (
+      <ProgressMeta roleLabel={roleLabel} stage={snapshot.stage} />
+    )
 
   const frame: ScreenFrame = {
     menu:
@@ -367,8 +367,7 @@ function WaitingScreen({
         <>
           {resumed ? (
             <p>
-              You started this practice earlier in this browser. Ask your partner to choose{' '}
-              <strong>Join your partner</strong> on their own phone and enter this code.
+              Ask your partner to choose <strong>Join your partner</strong> on their own phone and enter this code.
             </p>
           ) : (
             <p>

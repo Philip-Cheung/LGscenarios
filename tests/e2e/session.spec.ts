@@ -235,7 +235,7 @@ test('a creator who changes roles before anyone joins stays the creator, and the
   await expect(joiner.page.getByRole('alert')).toContainText('doesn’t match')
   await joinPractice(joiner.page, code)
   for (const phone of [creator, joiner]) await expect(heading(phone.page, SCREENS.paired)).toBeVisible()
-  await expect(joiner.page.getByText('You’re practising').locator('..')).toContainText('Latter-day Saint missionary')
+  await expect(joiner.page.getByText('You’re practising').locator('..')).toContainText('Mormon missionary')
   await expect(joiner.page.getByRole('button', { name: 'Start practice' })).toHaveCount(0)
   await expect(creator.page.getByRole('button', { name: 'Start practice' })).toBeVisible()
   await Promise.all([creator, joiner].map((phone) => phone.context.close()))
@@ -250,7 +250,7 @@ test('reopening the link in the creator’s browser shows the same code with con
   const secondTab = await creator.context.newPage()
   await secondTab.goto(SCENARIO_PATH)
   await expect(heading(secondTab, SCREENS.invite)).toBeVisible()
-  await expect(secondTab.getByText(/You started this practice earlier in this browser/)).toBeVisible()
+  await expect(secondTab.getByText(/on their own phone and enter this code/)).toBeVisible()
   await expect(secondTab.getByTestId('pair-code')).toHaveText(code)
   await expect(secondTab.getByText('Your role').locator('..')).toContainText('Christian')
 
@@ -273,7 +273,7 @@ test('a creator who chooses the Christian starts the practice, and the joiner le
   const joiner = await openPhone(browser)
   const code = await createPractice(creator.page, 'Christian')
   await expect(creator.page.getByText('Your role').locator('..')).toContainText('Christian')
-  await expect(creator.page.getByText('Your partner’s role').locator('..')).toContainText('Latter-day Saint missionary')
+  await expect(creator.page.getByText('Your partner’s role').locator('..')).toContainText('Mormon missionary')
 
   // A fresh identity choosing Join your partner reaches code entry without creating a practice.
   await joiner.page.getByRole('button', { name: 'Join your partner' }).click()
@@ -286,7 +286,7 @@ test('a creator who chooses the Christian starts the practice, and the joiner le
   ).toEqual([])
   await joinPractice(joiner.page, code)
   for (const phone of [creator, joiner]) await expect(heading(phone.page, SCREENS.paired)).toBeVisible()
-  await expect(joiner.page.getByText('You’re practising').locator('..')).toContainText('Latter-day Saint missionary')
+  await expect(joiner.page.getByText('You’re practising').locator('..')).toContainText('Mormon missionary')
   await expect(creator.page.getByText('You’re practising').locator('..')).toContainText('Christian')
   await expect(joiner.page.getByRole('button', { name: 'Start practice' })).toHaveCount(0)
   await creator.page.getByRole('button', { name: 'Start practice' }).click()
@@ -300,9 +300,9 @@ test('a creator who chooses the Christian starts the practice, and the joiner le
 
 test('pairing leads to a summary only the creator can start', async ({ browser }) => {
   const pair = await pairPhones(browser)
-  await expect(pair.missionary.page.getByText('You’re practising').locator('..')).toContainText('Latter-day Saint missionary')
+  await expect(pair.missionary.page.getByText('You’re practising').locator('..')).toContainText('Mormon missionary')
   await expect(pair.christian.page.getByText('You’re practising').locator('..')).toContainText('Christian')
-  await expect(pair.missionary.page.getByText('Ready to practise')).toBeVisible()
+  await expect(pair.missionary.page.getByRole('button', { name: 'Start practice' })).toBeVisible()
   await expect(pair.christian.page.getByText('Your partner will start when you’re both ready.')).toBeVisible()
   await closePair(pair)
 })

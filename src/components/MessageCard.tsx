@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { AppScreen, PairingMeta } from './AppScreen'
+import { AppScreen } from './AppScreen'
 import { BubblesArt } from './art'
 import { Button } from './ui'
 
@@ -10,8 +10,6 @@ interface MessageCardProps {
   onAction?(): void
   /** Move focus to the heading when this screen replaces another one. */
   focusOnMount?: boolean
-  /** Label under the header, e.g. "Session ended". */
-  metaLabel?: string
   /** Centred layout with the speech-bubble illustration. */
   illustrated?: boolean
 }
@@ -23,7 +21,6 @@ export function MessageCard({
   actionLabel,
   onAction,
   focusOnMount = false,
-  metaLabel = 'Before you begin',
   illustrated = false,
 }: MessageCardProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -33,7 +30,6 @@ export function MessageCard({
 
   return (
     <AppScreen
-      meta={<PairingMeta label={metaLabel} />}
       viewKey={heading}
       waiting={illustrated}
       actions={
@@ -53,7 +49,7 @@ export function MessageCard({
 
 export function LoadingCard() {
   return (
-    <AppScreen meta={<PairingMeta label="Before you begin" />} viewKey="loading">
+    <AppScreen viewKey="loading">
       <p role="status">Loading…</p>
     </AppScreen>
   )
