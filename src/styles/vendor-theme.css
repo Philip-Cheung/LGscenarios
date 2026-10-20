@@ -22,6 +22,7 @@
  * tokens.css. Unlayered rules take precedence over the library's layered ones.
  */
 :root,
+[data-theme='light'],
 [data-theme='dark'] {
   --font-sans: var(--dp-font-family);
   --color-text: var(--dp-color-text);

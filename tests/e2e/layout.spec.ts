@@ -28,9 +28,9 @@ for (const viewport of VIEWPORTS) {
     }
 
     // The card keeps its shape when the answer is hidden again.
-    const before = await christian.page.getByText('Your partner controls next and back.').boundingBox()
+    const before = await christian.page.getByText('Your partner moves to the next prompt.').boundingBox()
     await christian.page.getByRole('button', { name: 'Hide answer' }).click()
-    const after = await christian.page.getByText('Your partner controls next and back.').boundingBox()
+    const after = await christian.page.getByText('Your partner moves to the next prompt.').boundingBox()
     expect(after?.y).toBeLessThanOrEqual(before?.y ?? 0)
 
     await closePair(pair)
@@ -63,7 +63,7 @@ test('the role screen is keyboard reachable with a visible focus indicator', asy
   await page.goto(SCENARIO_PATH)
   await page.keyboard.press('Tab')
   const focused = page.locator(':focus-visible')
-  await expect(focused).toHaveAccessibleName('Mormon missionary')
+  await expect(focused).toHaveAccessibleName(/Mormon missionary/)
   const outline = await focused.evaluate((el) => getComputedStyle(el).outlineStyle)
   const shadow = await focused.evaluate((el) => getComputedStyle(el).boxShadow)
   expect(outline !== 'none' || shadow !== 'none').toBe(true)
@@ -71,8 +71,10 @@ test('the role screen is keyboard reachable with a visible focus indicator', asy
 
 test('the production build keeps the vendor component layer above the CSS reset', async ({ page }) => {
   // Guards against chunking that loads library CSS before the cascade layer order is declared.
+  // Role cards are native buttons; the Join action is still the wrapped vendor button.
   await page.goto(SCENARIO_PATH)
-  const button = page.getByRole('button', { name: 'Mormon missionary' })
+  await page.getByRole('button', { name: /^Christian/ }).click()
+  const button = page.getByRole('button', { name: 'Join' })
   const styles = await button.evaluate((el) => ({
     radius: getComputedStyle(el, '::before').borderRadius,
     text: getComputedStyle(el).color,
@@ -84,7 +86,8 @@ test('the production build keeps the vendor component layer above the CSS reset'
 
 test('changing a design token updates the wrapped components', async ({ page }) => {
   await page.goto(SCENARIO_PATH)
-  const button = page.getByRole('button', { name: 'Mormon missionary' })
+  await page.getByRole('button', { name: /^Christian/ }).click()
+  const button = page.getByRole('button', { name: 'Join' })
   // The vendor button paints its fill on ::before.
   const fill = () => button.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)
   const before = await fill()

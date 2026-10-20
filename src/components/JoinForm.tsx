@@ -40,9 +40,9 @@ export function JoinForm({ initialValue = '', busy, error, onJoin, onBack }: Joi
           <span>Christian</span>
           <span>Pairing</span>
         </p>
-        <h2 id="join-heading" className={styles.heading}>
+        <h1 id="join-heading" className={styles.heading}>
           Enter your partner’s code
-        </h2>
+        </h1>
         <TextInput
           ref={inputRef}
           label="Pair code"
@@ -70,7 +70,7 @@ export function JoinForm({ initialValue = '', busy, error, onJoin, onBack }: Joi
             Join
           </Button>
           <Button variant="secondary" block disabled={busy} onClick={onBack}>
-            Choose a different role
+            Back to roles
           </Button>
         </div>
       </form>

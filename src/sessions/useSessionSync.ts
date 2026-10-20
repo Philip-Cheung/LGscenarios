@@ -10,7 +10,7 @@ import type { RpcResult, SessionErrorCode, SessionSnapshot } from './types'
 export const HEARTBEAT_INTERVAL_MS = 15_000
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting'
-export type EndReason = 'expired' | 'gone'
+export type EndReason = 'expired' | 'gone' | 'ended'
 export type PendingAction =
   | 'start'
   | 'next'
@@ -20,6 +20,12 @@ export type PendingAction =
   | 'acceptSwap'
   | 'declineSwap'
   | 'regenerate'
+  | 'end'
+  | 'requestRestart'
+  | 'acceptRestart'
+  | 'declineRestart'
+  | 'cancelRestart'
+  | 'selectBranch'
 
 export interface SessionActions {
   start(): Promise<boolean>
@@ -30,6 +36,12 @@ export interface SessionActions {
   acceptSwap(): Promise<boolean>
   declineSwap(): Promise<boolean>
   regenerateCode(): Promise<boolean>
+  end(): Promise<boolean>
+  requestRestart(): Promise<boolean>
+  acceptRestart(): Promise<boolean>
+  declineRestart(): Promise<boolean>
+  cancelRestart(): Promise<boolean>
+  selectBranch(branchId: string): Promise<boolean>
 }
 
 interface Options {
@@ -56,7 +68,12 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
   const [stateFresh, setStateFresh] = useState(true)
   const [everLive, setEverLive] = useState(false)
   const [ended, setEnded] = useState<EndReason | null>(null)
+  const [endedByMe, setEndedByMe] = useState(false)
+  const terminal: EndReason | null = snapshot.status === 'ended' ? 'ended' : ended
+  const endedByPartner = snapshot.status === 'ended' && !endedByMe
+  const mounted = useRef(true)
   const [pending, setPending] = useState<PendingAction | null>(null)
+  const [lastError, setLastError] = useState<SessionErrorCode | null>(null)
   const pendingRef = useRef(false)
   const [notice, setNotice] = useState<string | null>(null)
   const refreshingRef = useRef<Promise<void> | null>(null)
@@ -65,7 +82,15 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
     snapshotRef.current = snapshot
   }, [snapshot])
 
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+
   const apply = useCallback((incoming: SessionSnapshot) => {
+    if (!mounted.current) return
     setSnapshot((current) => mergeSnapshot(current, incoming))
   }, [])
 
@@ -111,7 +136,7 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
   // Realtime subscription for this session row only. Membership RLS on the
   // sessions table authorizes delivery; the filter is not a security control.
   useEffect(() => {
-    if (ended) return
+    if (terminal) return
     let disposed = false
     const topic = `session-${sessionId}-${crypto.randomUUID().slice(0, 8)}`
     const channel = client
@@ -143,11 +168,11 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
       disposed = true
       void client.removeChannel(channel)
     }
-  }, [apply, client, ended, refresh, sessionId, userId])
+  }, [apply, client, terminal, refresh, sessionId, userId])
 
   // Heartbeat while visible, and recovery after sleep, tab switches, or network loss.
   useEffect(() => {
-    if (ended) return
+    if (terminal) return
     const wake = async () => {
       if (document.visibilityState !== 'visible') return
       setStateFresh(false)
@@ -174,7 +199,7 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
       window.removeEventListener('online', onWake)
       window.removeEventListener('offline', onOffline)
     }
-  }, [client, ended, refresh])
+  }, [client, terminal, refresh])
 
   // Token refresh or identity change.
   useEffect(() => {
@@ -191,14 +216,14 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
 
   // Expiry is enforced by the server; this only updates an open screen promptly.
   useEffect(() => {
-    if (ended) return
+    if (terminal) return
     const remaining = Date.parse(snapshot.expiresAt) - Date.now()
     if (Number.isNaN(remaining)) return
     const timer = window.setTimeout(() => setEnded('expired'), Math.max(0, Math.min(remaining, 2 ** 31 - 1)))
     return () => window.clearTimeout(timer)
-  }, [ended, snapshot.expiresAt])
+  }, [terminal, snapshot.expiresAt])
 
-  const live = channelReady && stateFresh && !ended
+  const live = channelReady && stateFresh && !terminal
   if (live && !everLive) setEverLive(true)
 
   const run = useCallback(
@@ -207,13 +232,16 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
       pendingRef.current = true
       setPending(action)
       setNotice(null)
+      setLastError(null)
       try {
         const result = await op(snapshotRef.current)
+        if (!mounted.current) return false
         if (result.session) apply(result.session)
         if (result.ok) {
           setStateFresh(true)
           return true
         }
+        setLastError(result.error)
         if (endFor(result.error)) return false
         if (result.error === 'partner_stale') return false
         setNotice(messageForError(result.error))
@@ -241,11 +269,29 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
       acceptSwap: () => run('acceptSwap', (s) => api.respondSwap(s.id, true, s.revision)),
       declineSwap: () => run('declineSwap', (s) => api.respondSwap(s.id, false, s.revision)),
       regenerateCode: () => run('regenerate', (s) => api.regeneratePairCode(s.id)),
+      end: () =>
+        run('end', async (s) => {
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            return { ok: false, error: 'unavailable', session: s }
+          }
+          setEndedByMe(true)
+          const result = await api.endSession(s.id, s.revision)
+          if (!result.ok && result.session?.status !== 'ended' && result.error !== 'unavailable') {
+            setEndedByMe(false)
+          }
+          return result
+        }),
+      requestRestart: () => run('requestRestart', (s) => api.requestRestart(s.id, s.revision)),
+      acceptRestart: () => run('acceptRestart', (s) => api.respondRestart(s.id, true, s.revision)),
+      declineRestart: () => run('declineRestart', (s) => api.respondRestart(s.id, false, s.revision)),
+      cancelRestart: () => run('cancelRestart', (s) => api.cancelRestart(s.id, s.revision)),
+      selectBranch: (branchId: string) =>
+        run('selectBranch', (s) => api.selectBranch(s.id, branchId, s.revision, s.round)),
     }),
     [api, run],
   )
 
   const connection: ConnectionState = live ? 'live' : everLive ? 'reconnecting' : 'connecting'
 
-  return { snapshot, connection, ended, pending, notice, actions }
+  return { snapshot, connection, ended: terminal, endedByPartner, pending, notice, lastError, actions }
 }

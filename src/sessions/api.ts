@@ -75,6 +75,35 @@ export class SessionApi {
     return this.call('heartbeat', { p_session_id: sessionId })
   }
 
+  endSession(sessionId: string, expectedRevision: number) {
+    return this.call('end_session', { p_session_id: sessionId, p_expected_revision: expectedRevision })
+  }
+
+  requestRestart(sessionId: string, expectedRevision: number) {
+    return this.call('request_restart', { p_session_id: sessionId, p_expected_revision: expectedRevision })
+  }
+
+  respondRestart(sessionId: string, accept: boolean, expectedRevision: number) {
+    return this.call('respond_restart', {
+      p_session_id: sessionId,
+      p_accept: accept,
+      p_expected_revision: expectedRevision,
+    })
+  }
+
+  cancelRestart(sessionId: string, expectedRevision: number) {
+    return this.call('cancel_restart', { p_session_id: sessionId, p_expected_revision: expectedRevision })
+  }
+
+  selectBranch(sessionId: string, branchId: string, expectedRevision: number, expectedRound: number) {
+    return this.call('select_branch', {
+      p_session_id: sessionId,
+      p_branch_id: branchId,
+      p_expected_revision: expectedRevision,
+      p_expected_round: expectedRound,
+    })
+  }
+
   getSession(sessionId: string) {
     return this.call('get_session', { p_session_id: sessionId })
   }

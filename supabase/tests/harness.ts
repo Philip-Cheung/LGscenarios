@@ -12,8 +12,9 @@ import { expect } from 'vitest'
 import { assertDisposableTarget } from './target'
 
 export const SCENARIO_ID = 'sample-doorstep'
-export const SCENARIO_VERSION = 1
+export const SCENARIO_VERSION = 2
 export const PROMPT_COUNT = 3
+export const SAMPLE_BRANCH_ID = 'they-agree'
 
 export interface TestUser {
   client: SupabaseClient
@@ -29,6 +30,8 @@ export interface SessionState {
   my_role: 'missionary' | 'christian'
   partner_joined: boolean
   swap_pending: boolean
+  restart_pending?: boolean
+  selected_branch_id?: string | null
   partner_fresh: boolean | null
   pair_code: string | null
   code_expires_at: string | null
@@ -111,6 +114,31 @@ export class Harness {
     const joined = expectOk(await this.joinPair(christian, created.pair_code ?? ''))
     expect(joined.status).toBe('ready')
     return expectOk(await rpc(missionary, 'get_session', { p_session_id: created.id }))
+  }
+
+  /** Walks to the last prompt, chooses the filler branch, and finishes. */
+  async finishRound(missionary: TestUser, state: SessionState): Promise<SessionState> {
+    let current = state
+    for (let i = 1; i < PROMPT_COUNT; i += 1) {
+      current = expectOk(
+        await rpc(missionary, 'navigate', {
+          p_session_id: current.id,
+          p_direction: 'next',
+          p_expected_revision: current.revision,
+        }),
+      )
+    }
+    current = expectOk(
+      await rpc(missionary, 'select_branch', {
+        p_session_id: current.id,
+        p_branch_id: SAMPLE_BRANCH_ID,
+        p_expected_revision: current.revision,
+        p_expected_round: current.round,
+      }),
+    )
+    return expectOk(
+      await rpc(missionary, 'finish_pair', { p_session_id: current.id, p_expected_revision: current.revision }),
+    )
   }
 
   /** Creates, joins, and starts a pair. */

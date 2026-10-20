@@ -1,6 +1,8 @@
 # Design system
 
-Doorstep Practice has one neutral dark theme: a centred card, the system font, one prompt per screen, and large tap targets. Visual decisions live in tokens. Any external UI library sits behind a small layer the app owns, so the library can be swapped without touching screens, session logic, RPCs or routing.
+Doorstep Practice has one light theme, adapted from Apple's Human Interface Guidelines for the web: a grouped gray page, white cards, the system font, one prompt per screen, and large tap targets. Phase 2 replaced the original dark theme. There is no theme switch and no automatic dark variant. Visual decisions live in tokens. Any external UI library sits behind a small layer the app owns, so the library can be swapped without touching screens, session logic, RPCs or routing.
+
+The installed guidance is Wondel.ai's `ios-hig-design` skill (v1.5.1, source `wondelai/skills`, content hash `57f41a91308e10b3315ee2ddabea4e9254bf119dc0265d03b37c6afc88e1c009`), copied for Cursor at `~/.agents/skills/ios-hig-design`. It is a third-party reading of the HIG, not an Apple package. Native recommendations are translated to semantic HTML: system font stack instead of a San Francisco download, text labels instead of SF Symbols, buttons and dialogs instead of SwiftUI controls, and no haptics.
 
 ## Active library
 
@@ -49,17 +51,17 @@ All tokens are defined on `:root` in `tokens.css`. Screens and primitives use `v
 
 | Group | Tokens | Intended use |
 | --- | --- | --- |
-| Surfaces | `--dp-color-page`, `--dp-color-surface`, `--dp-color-surface-raised`, `--dp-color-surface-hover` | Page background, the card, the revealed answer panel, hover fills |
-| Text | `--dp-color-text`, `--dp-color-text-muted`, `--dp-color-text-placeholder` | Primary copy, secondary copy and meta, input placeholders |
-| Borders | `--dp-color-border`, `--dp-color-border-strong` | Decorative card and panel edges; control outlines (≥ 3:1 against page and surface) |
-| Actions | `--dp-color-action-primary-{bg,bg-hover,text}`, `--dp-color-action-secondary-{bg,bg-hover,border,text}`, `--dp-color-action-disabled-opacity` | Primary and secondary buttons |
-| Focus and status | `--dp-color-focus-ring`, `--dp-color-error`, `--dp-color-error-border`, `--dp-color-status` | Keyboard focus, error text, invalid field outline, neutral status text |
-| Typography | `--dp-font-family`, `--dp-font-family-mono`, `--dp-font-size-{meta,body,control,prompt,prompt-wide,title,code}`, `--dp-font-weight-{regular,medium,semibold}`, `--dp-line-height-{tight,body}`, `--dp-letter-spacing-code` | System font stack; prompt headings use `prompt`, or `prompt-wide` from 480px up |
-| Spacing | `--dp-space-{1,2,3,4,5,6,8,10}` | 4px-based spacing scale |
-| Shape and sizing | `--dp-radius-{card,control,panel}`, `--dp-border-width`, `--dp-focus-ring-{width,offset}`, `--dp-control-height`, `--dp-content-max-width`, `--dp-page-gutter`, `--dp-page-gutter-wide`, `--dp-card-min-height`, `--dp-status-min-height` | 48px controls, a 680px column, and a card min-height that keeps navigation at the bottom |
-| Motion | `--dp-duration-fast`, `--dp-easing-standard` | Short transitions; the duration is `0ms` under `prefers-reduced-motion` |
+| Surfaces | `--dp-color-page`, `--dp-color-surface`, `--dp-color-surface-raised`, `--dp-color-surface-hover`, `--dp-color-cue`, `--dp-color-scrim`, `--dp-color-selected` | Grouped page (`#F2F2F7`), white cards, answer panel, hover, cue chips, dialog scrim, selected branch |
+| Text | `--dp-color-text`, `--dp-color-text-muted`, `--dp-color-text-placeholder` | Primary `#1C1C1E`, secondary `#51515A`, placeholders |
+| Borders | `--dp-color-border`, `--dp-color-border-strong` | Decorative separators `#D8D8DF`; control outlines `#6E6E76` (≥ 3:1). A separator is never the only sign of a control |
+| Actions | `--dp-color-action-primary-*`, `--dp-color-action-secondary-*`, `--dp-color-action-destructive-*`, `--dp-color-action-text`, `--dp-color-action-disabled-*` | Accent `#005BC4` with white text, red destructive `#B42318` with white text, accent text actions, solid disabled colours |
+| Focus and status | `--dp-color-focus-ring`, `--dp-color-error`, `--dp-color-error-border`, `--dp-color-status` | Keyboard focus, error text (also described in words), neutral status text |
+| Typography | `--dp-font-family`, `--dp-font-size-{meta,guidance,body,control,answer,choice,section,prompt,prompt-wide,title,code}`, `--dp-font-weight-{regular,medium,semibold,bold}`, `--dp-line-height-{tight,prompt,body}` | `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Scenario title 32px/700. Spoken prompt 28px (30px from 480px), weight 600, line-height 1.4. Body 17px. No webfont download |
+| Spacing | `--dp-space-{1,2,3,4,5,6,8,10}` | 4/8/12/16/20/24/32/40px |
+| Shape and sizing | `--dp-radius-{card,control,panel,cue}`, `--dp-control-height`, `--dp-control-height-primary`, `--dp-choice-min-height`, `--dp-content-max-width`, `--dp-page-gutter`, `--dp-page-gutter-regular`, `--dp-page-gutter-wide` | Cards 20px, controls 14px. Targets at least 48px; primary actions 52px. Role cards at least 140px and allowed to grow. Column 680px. Page padding 16px under 360px, 20px from 360px, 24px from 480px |
+| Motion | `--dp-duration-{press,enter,answer,success,fast}`, `--dp-easing-standard`, `--dp-enter-distance` | Press 100ms scale 0.98, enter 160ms and 4px, answer 150ms, success mark 250ms. All durations and the travel distance are 0 under `prefers-reduced-motion` |
 
-Measured contrast for the pairs in use: body text on surface is 13.5:1, muted text on surface 7.8:1, placeholder on page 5.5:1, error text on surface 7.8:1, primary button text 16.7:1, focus ring on surface 7.6:1, and control outlines 3.5:1 or more.
+Measured contrast: primary text on white 17:1, secondary text on white 7.8:1 and on the page 7:1, white on accent 6.4:1, white on destructive 6.6:1, destructive text on white 6.6:1, placeholder on white 5.2:1, control outline on white 5:1 and on the page 4.5:1. Disabled controls use a solid gray fill and are not the only way to discover an action.
 
 To change the theme, edit `tokens.css`. Screens should not need to change. The E2E test "changing a design token updates the wrapped components" checks that a token change reaches the vendor-backed `Button`.
 
@@ -78,7 +80,7 @@ import { Button } from './ui'
 
 | Prop | Type | Notes |
 | --- | --- | --- |
-| `variant` | `'primary' \| 'secondary'` | Defaults to `primary` (filled). `secondary` is outlined. |
+| `variant` | `'primary' \| 'secondary' \| 'destructive'` | Defaults to `primary` (accent fill, white text). `secondary` is outlined. `destructive` is a red fill with white text. |
 | `loading` | `boolean` | Disables the button, shows the library's spinner and sets `aria-busy`. |
 | `block` | `boolean` | Full width. |
 | `ref` | `Ref<HTMLButtonElement>` | Forwarded to the native button. |
@@ -126,13 +128,14 @@ A persistent live region: `role="status"` for `neutral` and `role="alert"` for `
 
 ## Accessibility requirements
 
-- Semantic buttons and headings: one `h1` per page (the scenario title, or the app name on error pages) and an `h2` per card.
+- Semantic buttons and headings: one `h1` per page. On the starting screen that is the scenario title. During pairing and play it is the screen's main instruction or the spoken prompt, and the scenario title is a compact label. Error pages that have no scenario title use the app name.
 - A visible `:focus-visible` ring everywhere (`--dp-color-focus-ring`). Focus moves to the new prompt heading on deliberate navigation, but not on the first render or on heartbeats.
 - The pair code input is labelled, validated inline, and gets focus back after an error.
 - The answer reveal uses `aria-expanded` and `aria-controls`. The hidden answer is removed from the accessibility tree with `hidden`.
 - The pair code is shown visually as `ABC-DEF` and announced letter by letter through visually hidden text, and is marked `translate="no"`.
 - Status and error messages use live regions. Colour is never the only signal.
-- Honours `prefers-reduced-motion`, works at 320px wide and at 200% text size, respects safe-area insets, and has no fixed footer covering content.
+- Honours `prefers-reduced-motion` with instant state changes and no translation or scaling. Motion never delays focus or the committed session state, and it does not replay on heartbeats.
+- Works at 320px wide and at 200% text size, respects safe-area insets, and has no fixed footer covering content. Cards grow with their content.
 - Touch targets are at least 48px tall with gaps of 8px or more.
 
 ## Replacement procedure
@@ -144,4 +147,22 @@ A persistent live region: `role="status"` for `neutral` and `role="alert"` for `
 5. If the new library ships CSS, check the stylesheet-ordering constraint above and adjust `vite.config.ts` chunking if needed.
 6. Run `npm run validate`, `npm run test:e2e`, and a manual pass over role selection, pairing (waiting, joining, errors), both player views, the revealed answer, reconnecting, completion and the role swap at 320, 375 and 430px and on desktop. The dev-only gallery at `/dev/preview?state=<name>` (`npm run dev`) renders every state without a backend.
 
-Screens, session hooks, RPCs, scenario data and routing should not change. If they need to, the wrapper API is leaking and should be fixed instead.
+Screens, session hooks, RPCs, scenario data and routing should not change when only the visual library changes. If they need to, the wrapper API is leaking and should be fixed instead.
+
+## Phase 2 additions
+
+### `CueTag`
+
+A noninteractive stage direction (`SAY`, `WAIT`, `CHALLENGE`, `IF THEY SAY…`). The words carry the meaning. It is not a button, filter, or topic chip. Missionary prompts place a tag immediately before the line it describes. The Christian never sees tags, wait instructions, or unchosen branches.
+
+### `ConfirmDialog`
+
+An `alertdialog` portaled to `document.body`. Focus starts on **Keep playing**, Tab cycles inside the dialog, Escape and the backdrop cancel, and focus returns to the opener. The page root is `inert` while it is open. **End session** uses the destructive button. A failed or offline end stays in the dialog and does not pretend the partner was notified.
+
+### Role cards
+
+The starting screen is the scenario title (`h1`), one short description, then **Choose your role** and two native card buttons. Each card's name includes its subtitle. There is no extra Continue step.
+
+### Session actions
+
+**Exit** is in the session bar for both phones. **Restart** is a quieter text action for the current missionary during play and after completion. Restart needs the partner's confirmation and expires after 60 seconds on the server. Conditional prompts use real buttons, distinct from cue tags, and Next/Finish stay unavailable until one option is chosen.

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ScenarioContent } from '../lib/content'
 import type { AppConfig } from '../lib/env'
 import { getSupabase } from '../lib/supabase'
-import { findScenarioVersion } from '../scenarios'
+import { findLatestBundledBySlug, findScenarioVersion } from '../scenarios'
 import { SessionApi } from '../sessions/api'
 import { ensureIdentity, getExistingUserId } from '../sessions/identity'
 import { messageForError } from '../sessions/messages'
@@ -42,6 +42,7 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
   const [phase, setPhase] = useState<Phase>({ kind: 'boot' })
   const [busyRole, setBusyRole] = useState<Role | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [lastCode, setLastCode] = useState('')
   const [bootAttempt, setBootAttempt] = useState(0)
   const requestRef = useRef<{ key: string; id: string } | null>(null)
@@ -65,6 +66,12 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
       const result = await api.getSession(pointer.sessionId)
       if (cancelled) return
       if (result.ok) {
+        if (result.session.status === 'ended') {
+          clearPointer(slug)
+          setNotice('Your partner ended the session.')
+          setPhase({ kind: 'choose' })
+          return
+        }
         const scenario = findScenarioVersion(result.session.scenarioId, result.session.scenarioVersion)
         setPhase(scenario ? { kind: 'session', userId, snapshot: result.session, scenario } : { kind: 'outdated' })
         return
@@ -145,13 +152,26 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
   const startOver = useCallback(() => {
     clearPointer(slug)
     setError(null)
+    setNotice(null)
     setPhase({ kind: 'choose' })
   }, [slug])
 
+  const leaveEndedSession = useCallback(
+    (byPartner: boolean) => {
+      clearPointer(slug)
+      setError(null)
+      setNotice(byPartner ? 'Your partner ended the session.' : null)
+      setPhase({ kind: 'choose' })
+    },
+    [slug],
+  )
+
   const title = phase.kind === 'session' ? phase.scenario.title : bundledTitle
+  const introduction = phase.kind === 'choose' || phase.kind === 'boot'
+  const description = introduction ? findLatestBundledBySlug(slug)?.description : undefined
 
   return (
-    <PageShell title={title}>
+    <PageShell title={title} description={description} compactTitle={!introduction}>
       <title>{`${title} · Doorstep practice`}</title>
       {renderPhase()}
     </PageShell>
@@ -166,8 +186,10 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
           <RoleSelect
             busyRole={busyRole}
             error={error}
+            notice={notice}
             onChoose={(role) => {
               setError(null)
+              setNotice(null)
               if (role === 'missionary') void proceed({ role: 'missionary' })
               else setPhase({ kind: 'join' })
             }}
@@ -208,6 +230,7 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
             initial={phase.snapshot}
             scenario={phase.scenario}
             onStartOver={startOver}
+            onEnded={leaveEndedSession}
           />
         )
       case 'ended':
@@ -219,6 +242,7 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
             actionLabel="Refresh"
             onAction={() => window.location.reload()}
             focusOnMount
+            level="h1"
           >
             <p className={styles.muted}>A newer version of this scenario is available.</p>
           </MessageCard>
@@ -233,6 +257,7 @@ export function ScenarioFlow({ slug, bundledTitle, config }: ScenarioFlowProps) 
               setBootAttempt((n) => n + 1)
             }}
             focusOnMount
+            level="h1"
           >
             <p className={styles.muted}>Check your connection and try again.</p>
           </MessageCard>

@@ -9,20 +9,29 @@ interface MessageCardProps {
   onAction?(): void
   /** Move focus to the heading when this card replaces another screen. */
   focusOnMount?: boolean
+  level?: 'h1' | 'h2'
 }
 
-export function MessageCard({ heading, children, actionLabel, onAction, focusOnMount = false }: MessageCardProps) {
+export function MessageCard({
+  heading,
+  children,
+  actionLabel,
+  onAction,
+  focusOnMount = false,
+  level = 'h2',
+}: MessageCardProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     if (focusOnMount) headingRef.current?.focus()
   }, [focusOnMount])
+  const Heading = level
 
   return (
     <Card aria-labelledby="message-heading">
       <div className={styles.stack}>
-        <h2 id="message-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
+        <Heading id="message-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
           {heading}
-        </h2>
+        </Heading>
         {children}
         {actionLabel && onAction ? (
           <Button block onClick={onAction}>

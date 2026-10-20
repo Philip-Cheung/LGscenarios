@@ -1,3 +1,5 @@
+> Phase 2 supersedes this brief on appearance. The active theme is light, documented in `docs/design-system.md`. Do not restore the dark theme or add a theme switch. Session architecture below remains, with later additions for ending a pair, restart confirmation, and conditional script cues.
+
 # Doorstep Practice — Build Brief
 
 ## 1. Instructions to the implementing IDE agent

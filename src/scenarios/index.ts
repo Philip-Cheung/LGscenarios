@@ -1,11 +1,12 @@
 import type { ScenarioContent } from '../lib/content'
 import { sampleDoorstepV1 } from './sample-doorstep.v1'
+import { sampleDoorstepV2 } from './sample-doorstep.v2'
 
 /**
  * Every scenario version the frontend can render. Keep old versions here while
  * sessions or links may still depend on them; never edit a published version.
  */
-export const allScenarios: readonly ScenarioContent[] = [sampleDoorstepV1]
+export const allScenarios: readonly ScenarioContent[] = [sampleDoorstepV1, sampleDoorstepV2]
 
 /**
  * The scenario the site root (/) redirects to. Switch it to a new week's slug
