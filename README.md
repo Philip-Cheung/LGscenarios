@@ -61,6 +61,7 @@ Migrations live in `supabase/migrations/` and are applied in timestamp order:
 | --- | --- |
 | `…_core_schema.sql` | Scenario registry, sessions, private tables (`app_private`), explicit grants, row-level security |
 | `…_session_rpcs.sql` | `create_pair`, `join_pair`, `regenerate_pair_code`, `start_pair`, `navigate`, `finish_pair`, `request_swap`, `respond_swap`, `heartbeat`, `get_session`. All are `SECURITY DEFINER`, check the revision, and are executable by `authenticated` only. |
+| `…_phase2_exit_restart_branch.sql` | Adds `ended`, restart requests, and `select_branch`. `end_session`, `request_restart`, `respond_restart`, and `cancel_restart` follow the same revision and membership rules. |
 | `…_realtime_and_cleanup.sql` | Adds `public.sessions` (only) to the `supabase_realtime` publication; cleanup functions; `pg_cron` schedules |
 | `…_registry_sample_doorstep_v1_publish.sql` | Generated registry entry for the sample scenario, published |
 
@@ -99,7 +100,7 @@ Alternatively, use `npx supabase link --project-ref <ref>` followed by `npx supa
   select cron.schedule('doorstep-cleanup-anonymous-users', '41 3 * * *', 'select app_private.cleanup_anonymous_users()');
   ```
 
-- Table Editor → `scenario_registry` shows `sample-doorstep` v1 with `active_for_new_sessions = true`.
+- Table Editor → `scenario_registry` shows `sample-doorstep` v2 with `active_for_new_sessions = true`. v1 stays in the table for pairs already using it, with `active_for_new_sessions = false`.
 
 ### Data retention and maintenance
 
@@ -174,7 +175,7 @@ Manual check after each production deploy, using **two real phones**:
 
 Never edit a published scenario version. Each change is a new version.
 
-1. Add `src/scenarios/<slug>.v<N>.ts`, with `scenarioId`, `slug`, `version` and `title`, and `prompts` entries that each have an `id`, `label`, `text` and `suggestedAnswer`. Register it in `src/scenarios/index.ts`. Keep older versions in place.
+1. Add `src/scenarios/<slug>.v<N>.ts`, with `scenarioId`, `slug`, `version` and `title`, and `prompts` entries that each have an `id`, `label`, `text` and `suggestedAnswer`. A `description` and script cues (`say`, `wait`, `challenge`, or `ifTheySay`) are optional. Register it in `src/scenarios/index.ts`. Keep older versions in place.
 2. Run `npm run content:validate`.
 3. Generate an **inactive** registry entry with `npm run registry:generate -- <scenarioId> <N>`.
 4. Run `npm run validate` and `npm run test:e2e`.

@@ -1,60 +1,75 @@
 /*
  * Canonical semantic design tokens for Doorstep Practice.
- * Screens and UI primitives consume these variables; do not repeat raw design
- * values elsewhere. See docs/design-system.md.
+ * Phase 2 is a light, iOS-inspired theme. Screens and UI primitives consume
+ * these variables; do not repeat raw design values elsewhere.
+ * See docs/design-system.md.
  */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Surfaces */
-  --dp-color-page: #181818;
-  --dp-color-surface: #222222;
-  --dp-color-surface-raised: #2a2a2a;
-  --dp-color-surface-hover: #303030;
+  /* Surfaces. Grouped gray page, white cards, no decorative depth. */
+  --dp-color-page: #f2f2f7;
+  --dp-color-surface: #ffffff;
+  --dp-color-surface-raised: #f7f7fa;
+  --dp-color-surface-hover: #e8e8ed;
+  --dp-color-cue: #e5e5ea;
+  --dp-color-scrim: color-mix(in srgb, #1c1c1e 40%, transparent);
 
   /* Text */
-  --dp-color-text: #ececec;
-  --dp-color-text-muted: #b5b5b5;
-  --dp-color-text-placeholder: #8f8f8f;
+  --dp-color-text: #1c1c1e;
+  --dp-color-text-muted: #51515a;
+  --dp-color-text-placeholder: #6c6c76;
 
-  /* Borders */
-  --dp-color-border: #3e3e3e;
+  /* Borders. Separators are not the only sign that something is tappable. */
+  --dp-color-border: #d8d8df;
   /* Control outlines: at least 3:1 against page and surface (WCAG 1.4.11). */
-  --dp-color-border-strong: #767676;
+  --dp-color-border-strong: #6e6e76;
 
   /* Actions */
-  --dp-color-action-primary-bg: #f2f2f2;
-  --dp-color-action-primary-bg-hover: #d9d9d9;
-  --dp-color-action-primary-text: #121212;
+  --dp-color-action-primary-bg: #005bc4;
+  --dp-color-action-primary-bg-hover: #004a9f;
+  --dp-color-action-primary-text: #ffffff;
   --dp-color-action-secondary-bg: transparent;
-  --dp-color-action-secondary-bg-hover: #2f2f2f;
-  --dp-color-action-secondary-border: #767676;
-  --dp-color-action-secondary-text: #ececec;
-  --dp-color-action-disabled-opacity: 0.45;
+  --dp-color-action-secondary-bg-hover: #e8e8ed;
+  --dp-color-action-secondary-border: #6e6e76;
+  --dp-color-action-secondary-text: #1c1c1e;
+  --dp-color-action-destructive-bg: #b42318;
+  --dp-color-action-destructive-bg-hover: #8e1b13;
+  --dp-color-action-destructive-text: #ffffff;
+  --dp-color-action-text: #005bc4;
+  --dp-color-action-disabled-bg: #e5e5ea;
+  --dp-color-action-disabled-text: #6c6c76;
+  --dp-color-action-disabled-opacity: 1;
 
   /* Focus and status */
-  --dp-color-focus-ring: #8ab4ff;
-  --dp-color-error: #ff9b8f;
-  --dp-color-error-border: #d9665a;
-  --dp-color-status: #b5b5b5;
+  --dp-color-focus-ring: #005bc4;
+  --dp-color-error: #b42318;
+  --dp-color-error-border: #b42318;
+  --dp-color-status: #51515a;
+  --dp-color-selected: #e8f1fc;
 
-  /* Typography */
-  --dp-font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  /* Typography. System fonts only; San Francisco is not downloaded. */
+  --dp-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --dp-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
   --dp-font-size-meta: 0.875rem;
-  --dp-font-size-body: 1rem;
-  --dp-font-size-control: 1rem;
-  --dp-font-size-prompt: 1.375rem;
-  --dp-font-size-prompt-wide: 1.5rem;
-  --dp-font-size-title: 1.75rem;
-  --dp-font-size-code: 2rem;
+  --dp-font-size-guidance: 0.9375rem;
+  --dp-font-size-body: 1.0625rem;
+  --dp-font-size-control: 1.0625rem;
+  --dp-font-size-answer: 1.1875rem;
+  --dp-font-size-choice: 1.25rem;
+  --dp-font-size-section: 1.375rem;
+  --dp-font-size-prompt: 1.75rem;
+  --dp-font-size-prompt-wide: 1.875rem;
+  --dp-font-size-title: 2rem;
+  --dp-font-size-code: 2.5rem;
   --dp-font-weight-regular: 400;
   --dp-font-weight-medium: 500;
   --dp-font-weight-semibold: 600;
-  --dp-line-height-tight: 1.25;
+  --dp-font-weight-bold: 700;
+  --dp-line-height-tight: 1.2;
+  --dp-line-height-prompt: 1.4;
   --dp-line-height-body: 1.5;
-  --dp-letter-spacing-code: 0.12em;
+  --dp-letter-spacing-code: 0.08em;
 
   /* Spacing */
   --dp-space-1: 0.25rem;
@@ -67,26 +82,39 @@
   --dp-space-10: 2.5rem;
 
   /* Shape and sizing */
-  --dp-radius-card: 18px;
-  --dp-radius-control: 12px;
+  --dp-radius-card: 20px;
+  --dp-radius-control: 14px;
   --dp-radius-panel: 12px;
+  --dp-radius-cue: 8px;
   --dp-border-width: 1px;
   --dp-focus-ring-width: 2px;
   --dp-focus-ring-offset: 2px;
   --dp-control-height: 48px;
+  --dp-control-height-primary: 52px;
+  --dp-choice-min-height: 140px;
   --dp-content-max-width: 680px;
   --dp-page-gutter: 16px;
+  --dp-page-gutter-regular: 20px;
   --dp-page-gutter-wide: 24px;
-  --dp-card-min-height: 22rem;
   --dp-status-min-height: 1.5rem;
 
   /* Motion */
+  --dp-duration-press: 100ms;
+  --dp-duration-enter: 160ms;
+  --dp-duration-answer: 150ms;
+  --dp-duration-success: 250ms;
   --dp-duration-fast: 120ms;
   --dp-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --dp-enter-distance: 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
+    --dp-duration-press: 0ms;
+    --dp-duration-enter: 0ms;
+    --dp-duration-answer: 0ms;
+    --dp-duration-success: 0ms;
     --dp-duration-fast: 0ms;
+    --dp-enter-distance: 0px;
   }
 }

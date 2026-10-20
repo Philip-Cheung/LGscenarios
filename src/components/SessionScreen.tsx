@@ -17,10 +17,11 @@ interface SessionScreenProps {
   initial: SessionSnapshot
   scenario: ScenarioContent
   onStartOver(): void
+  onEnded(byPartner: boolean): void
 }
 
-export function SessionScreen({ client, api, userId, initial, scenario, onStartOver }: SessionScreenProps) {
-  const { snapshot, connection, ended, pending, notice, actions } = useSessionSync({
+export function SessionScreen({ client, api, userId, initial, scenario, onStartOver, onEnded }: SessionScreenProps) {
+  const { snapshot, connection, ended, endedByPartner, pending, notice, lastError, actions } = useSessionSync({
     client,
     api,
     sessionId: initial.id,
@@ -32,6 +33,11 @@ export function SessionScreen({ client, api, userId, initial, scenario, onStartO
     if (ended) clearPointer(scenario.slug)
   }, [ended, scenario.slug])
 
+  useEffect(() => {
+    if (ended === 'ended' || snapshot.status === 'ended') onEnded(endedByPartner)
+  }, [ended, endedByPartner, onEnded, snapshot.status])
+
+  if (ended === 'ended' || snapshot.status === 'ended') return null
   if (ended) return <EndedCard reason={ended} onStartOver={onStartOver} />
   if (snapshot.scenarioId !== scenario.scenarioId || snapshot.scenarioVersion !== scenario.version) {
     return (
@@ -47,8 +53,8 @@ export function SessionScreen({ client, api, userId, initial, scenario, onStartO
       connection={connection}
       pending={pending}
       notice={notice}
+      lastError={lastError}
       actions={actions}
-      onLeave={onStartOver}
     />
   )
 }

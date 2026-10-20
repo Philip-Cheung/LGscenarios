@@ -37,6 +37,30 @@ describe('validateScenarioSet', () => {
     expect(validateScenarioSet([valid, valid]).errors.join('\n')).toMatch(/Duplicate scenario version/)
   })
 
+  it('rejects a conditional beat mixed with another spoken cue', () => {
+    const report = validateScenarioSet([
+      {
+        ...valid,
+        prompts: [
+          {
+            ...valid.prompts[0],
+            cues: [
+              { type: 'say', text: valid.prompts[0].text },
+              {
+                type: 'ifTheySay',
+                options: [
+                  { id: 'one', label: 'One', response: 'First.' },
+                  { id: 'one', label: 'Again', response: 'Second.' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ])
+    expect(report.errors.join('\n')).toMatch(/IF THEY SAY/)
+  })
+
   it('warns, without failing, when text is long for a phone screen', () => {
     const report = validateScenarioSet([{ ...valid, prompts: [{ ...valid.prompts[0], text: 'a'.repeat(200) }] }])
     expect(report.errors).toEqual([])

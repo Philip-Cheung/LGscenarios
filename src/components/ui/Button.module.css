@@ -22,12 +22,25 @@
   white-space: normal;
 }
 
+.primary,
+.destructive {
+  min-height: var(--dp-control-height-primary);
+}
+
 .primary {
   --button-background-color: var(--dp-color-action-primary-bg);
   --button-background-color-hover: var(--dp-color-action-primary-bg-hover);
   --button-background-color-active: var(--dp-color-action-primary-bg-hover);
   --button-text-color: var(--dp-color-action-primary-text);
   --button-text-color-hover: var(--dp-color-action-primary-text);
+}
+
+.destructive {
+  --button-background-color: var(--dp-color-action-destructive-bg);
+  --button-background-color-hover: var(--dp-color-action-destructive-bg-hover);
+  --button-background-color-active: var(--dp-color-action-destructive-bg-hover);
+  --button-text-color: var(--dp-color-action-destructive-text);
+  --button-text-color-hover: var(--dp-color-action-destructive-text);
 }
 
 .secondary {
@@ -42,4 +55,20 @@
 
 .button:disabled {
   opacity: var(--dp-color-action-disabled-opacity);
+  --button-background-color: var(--dp-color-action-disabled-bg);
+  --button-background-color-hover: var(--dp-color-action-disabled-bg);
+  --button-background-color-active: var(--dp-color-action-disabled-bg);
+  --button-text-color: var(--dp-color-action-disabled-text);
+  --button-text-color-hover: var(--dp-color-action-disabled-text);
+  --button-border-color: var(--dp-color-action-disabled-bg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button {
+    transition: transform var(--dp-duration-press) var(--dp-easing-standard);
+  }
+
+  .button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
 }

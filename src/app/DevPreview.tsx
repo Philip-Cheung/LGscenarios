@@ -4,7 +4,7 @@ import { JoinForm } from '../components/JoinForm'
 import { PageShell } from '../components/PageShell'
 import { RoleSelect } from '../components/RoleSelect'
 import { SessionView } from '../components/SessionView'
-import { sampleDoorstepV1 } from '../scenarios/sample-doorstep.v1'
+import { sampleDoorstepV2 } from '../scenarios/sample-doorstep.v2'
 import type { SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, SessionActions } from '../sessions/useSessionSync'
 
@@ -14,8 +14,8 @@ import type { ConnectionState, SessionActions } from '../sessions/useSessionSync
  */
 const base: SessionSnapshot = {
   id: '00000000-0000-4000-8000-000000000000',
-  scenarioId: sampleDoorstepV1.scenarioId,
-  scenarioVersion: sampleDoorstepV1.version,
+  scenarioId: sampleDoorstepV2.scenarioId,
+  scenarioVersion: sampleDoorstepV2.version,
   status: 'active',
   promptIndex: 0,
   revision: 1,
@@ -23,6 +23,9 @@ const base: SessionSnapshot = {
   myRole: 'missionary',
   partnerJoined: true,
   swapPending: false,
+  restartPending: false,
+  restartRequestedAt: null,
+  selectedBranchId: null,
   partnerFresh: true,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   pairCode: null,
@@ -39,6 +42,12 @@ const actions: SessionActions = {
   acceptSwap: noop,
   declineSwap: noop,
   regenerateCode: noop,
+  end: noop,
+  requestRestart: noop,
+  acceptRestart: noop,
+  declineRestart: noop,
+  cancelRestart: noop,
+  selectBranch: noop,
 }
 
 const STATES: Record<string, { snapshot?: Partial<SessionSnapshot>; connection?: ConnectionState; screen?: string }> = {
@@ -67,6 +76,11 @@ const STATES: Record<string, { snapshot?: Partial<SessionSnapshot>; connection?:
   'complete-missionary': { snapshot: { status: 'completed', promptIndex: 2 } },
   'complete-christian-request': { snapshot: { status: 'completed', promptIndex: 2, myRole: 'christian', swapPending: true } },
   'ended': { screen: 'ended' },
+  'branch-missionary': { snapshot: { promptIndex: 2 } },
+  'branch-christian': { snapshot: { promptIndex: 2, myRole: 'christian' } },
+  'restart-christian': {
+    snapshot: { myRole: 'christian', restartPending: true, restartRequestedAt: new Date().toISOString() },
+  },
 }
 
 export default function DevPreview() {
@@ -91,18 +105,21 @@ export default function DevPreview() {
   else
     content = (
       <SessionView
-        scenario={sampleDoorstepV1}
+        scenario={sampleDoorstepV2}
         snapshot={{ ...base, ...entry.snapshot }}
         connection={entry.connection ?? 'live'}
         pending={null}
         notice={null}
         actions={actions}
-        onLeave={() => {}}
       />
     )
 
   return (
-    <PageShell title={sampleDoorstepV1.title}>
+    <PageShell
+      title={sampleDoorstepV2.title}
+      description={entry.screen === 'role-select' ? sampleDoorstepV2.description : undefined}
+      compactTitle={entry.screen !== 'role-select' && state !== 'role-select'}
+    >
       <label>
         <span style={{ marginRight: 8 }}>Preview state</span>
         <select

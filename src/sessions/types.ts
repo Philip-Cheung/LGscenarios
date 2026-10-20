@@ -1,6 +1,6 @@
 export type Role = 'missionary' | 'christian'
 
-export type SessionStatus = 'waiting' | 'ready' | 'active' | 'completed' | 'expired'
+export type SessionStatus = 'waiting' | 'ready' | 'active' | 'completed' | 'expired' | 'ended'
 
 /** Authoritative session state as seen by the current participant. */
 export interface SessionSnapshot {
@@ -14,6 +14,11 @@ export interface SessionSnapshot {
   myRole: Role
   partnerJoined: boolean
   swapPending: boolean
+  restartPending: boolean
+  /** ISO time the restart was requested, or null when none is pending. */
+  restartRequestedAt: string | null
+  /** Chosen conditional response for the current prompt, or null. */
+  selectedBranchId: string | null
   /** null when there is no partner yet; undefined when not yet known (Realtime rows). */
   partnerFresh: boolean | null | undefined
   expiresAt: string

@@ -14,6 +14,7 @@ export function EndedCard({ reason, onStartOver }: EndedCardProps) {
         actionLabel="Start a new pair"
         onAction={onStartOver}
         focusOnMount
+        level="h1"
       />
     )
   }
@@ -23,6 +24,7 @@ export function EndedCard({ reason, onStartOver }: EndedCardProps) {
       actionLabel="Start a new pair"
       onAction={onStartOver}
       focusOnMount
+      level="h1"
     >
       <p className={styles.muted}>If browser data was cleared or you switched browsers, start a new pair.</p>
     </MessageCard>

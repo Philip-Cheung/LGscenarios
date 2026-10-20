@@ -52,7 +52,8 @@ describe('signed-out callers', () => {
 
     const registry = await anon.from('scenario_registry').select('scenario_id, version, prompt_count')
     expect(registry.error).toBeNull()
-    expect(registry.data).toContainEqual({ scenario_id: 'sample-doorstep', version: 1, prompt_count: 3 })
+    expect(registry.data).toContainEqual({ scenario_id: 'sample-doorstep', version: 2, prompt_count: 3 })
+    expect(registry.data).not.toContainEqual({ scenario_id: 'sample-doorstep', version: 1, prompt_count: 3 })
   })
 })
 
@@ -155,13 +156,7 @@ describe('role permissions', () => {
 
   it('moves control to the other phone after a role swap', async () => {
     const [m, c] = await h.usersN(2)
-    let state = await h.activePair(m, c)
-    for (let i = 0; i < 2; i += 1) {
-      state = expectOk(
-        await rpc(m, 'navigate', { p_session_id: state.id, p_direction: 'next', p_expected_revision: state.revision }),
-      )
-    }
-    state = expectOk(await rpc(m, 'finish_pair', { p_session_id: state.id, p_expected_revision: state.revision }))
+    let state = await h.finishRound(m, await h.activePair(m, c))
     expect(state.status).toBe('completed')
 
     // Only the Christian can answer a swap request, and only the missionary can make one.
@@ -189,13 +184,7 @@ describe('role permissions', () => {
 
   it('keeps roles when a swap is declined', async () => {
     const [m, c] = await h.usersN(2)
-    let state = await h.activePair(m, c)
-    for (let i = 0; i < 2; i += 1) {
-      state = expectOk(
-        await rpc(m, 'navigate', { p_session_id: state.id, p_direction: 'next', p_expected_revision: state.revision }),
-      )
-    }
-    state = expectOk(await rpc(m, 'finish_pair', { p_session_id: state.id, p_expected_revision: state.revision }))
+    let state = await h.finishRound(m, await h.activePair(m, c))
     state = expectOk(await rpc(m, 'request_swap', { p_session_id: state.id, p_expected_revision: state.revision }))
     const declined = expectOk(
       await rpc(c, 'respond_swap', { p_session_id: state.id, p_accept: false, p_expected_revision: state.revision }),

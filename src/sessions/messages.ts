@@ -35,3 +35,13 @@ export function messageForError(code: SessionErrorCode): string {
       return 'Cannot reach the practice service. Check your connection and try again.'
   }
 }
+
+/** Shown inside the exit dialog. A lost connection must not look like success. */
+export function messageForEndFailure(offline: boolean, code: SessionErrorCode | null): string | null {
+  if (offline) return 'You are offline. The shared session cannot be ended until your connection returns.'
+  if (!code) return null
+  if (code === 'unavailable' || code === 'not_authenticated') {
+    return 'The shared session could not be ended. Check your connection and try again.'
+  }
+  return messageForError(code)
+}

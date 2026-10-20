@@ -1,4 +1,6 @@
 export { Button, type ButtonProps, type ButtonVariant } from './Button'
 export { Card, type CardProps } from './Card'
+export { ConfirmDialog, type ConfirmDialogProps } from './ConfirmDialog'
+export { CueTag, type CueTagKind } from './CueTag'
 export { StatusMessage, type StatusMessageProps } from './StatusMessage'
 export { TextInput, type TextInputProps } from './TextInput'

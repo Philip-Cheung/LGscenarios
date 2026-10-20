@@ -16,6 +16,9 @@ const state = {
   my_role: 'missionary',
   partner_joined: false,
   swap_pending: false,
+  restart_pending: false,
+  restart_requested_at: null,
+  selected_branch_id: null,
   partner_fresh: null,
   expires_at: '2026-10-20T12:00:00Z',
   pair_code: 'ABCDEF',
@@ -59,6 +62,9 @@ describe('snapshotFromRealtimeRow', () => {
     revision: '7',
     round: 1,
     swap_requested_by: null,
+    restart_requested_by: null,
+    restart_requested_at: null,
+    selected_branch_id: null,
     expires_at: '2026-10-20T12:00:00Z',
   }
 

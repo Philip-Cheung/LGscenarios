@@ -1,8 +1,10 @@
 import * as z from 'zod/mini'
+import { isRestartCurrent } from './snapshot'
 import type { RpcResult, SessionErrorCode, SessionSnapshot } from './types'
 
 const uuid = z.uuid()
-const status = z.enum(['waiting', 'ready', 'active', 'completed', 'expired'])
+const status = z.enum(['waiting', 'ready', 'active', 'completed', 'expired', 'ended'])
+const branchId = z.string().check(z.maxLength(40), z.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/))
 const scenarioId = z.string().check(z.maxLength(64))
 const positiveInt = z.int().check(z.positive())
 const nonnegativeInt = z.int().check(z.nonnegative())
@@ -18,6 +20,9 @@ const sessionStateSchema = z.object({
   my_role: z.enum(['missionary', 'christian']),
   partner_joined: z.boolean(),
   swap_pending: z.boolean(),
+  restart_pending: z.optional(z.boolean()),
+  restart_requested_at: z.optional(z.nullable(z.string())),
+  selected_branch_id: z.optional(z.nullable(branchId)),
   partner_fresh: z.nullable(z.boolean()),
   expires_at: z.string(),
   pair_code: z.nullable(z.string().check(z.regex(/^[A-Z0-9]{6}$/))),
@@ -62,6 +67,9 @@ function toSnapshot(state: z.infer<typeof sessionStateSchema>): SessionSnapshot 
     myRole: state.my_role,
     partnerJoined: state.partner_joined,
     swapPending: state.swap_pending,
+    restartPending: state.restart_pending ?? false,
+    restartRequestedAt: state.restart_requested_at ?? null,
+    selectedBranchId: state.selected_branch_id ?? null,
     partnerFresh: state.partner_fresh,
     expiresAt: state.expires_at,
     pairCode: state.pair_code,
@@ -92,6 +100,9 @@ const realtimeRowSchema = z.object({
   revision: z.pipe(z.coerce.number(), nonnegativeInt),
   round: positiveInt,
   swap_requested_by: z.nullable(uuid),
+  restart_requested_by: z.optional(z.nullable(uuid)),
+  restart_requested_at: z.optional(z.nullable(z.string())),
+  selected_branch_id: z.optional(z.nullable(branchId)),
   expires_at: z.string(),
 })
 
@@ -119,6 +130,9 @@ export function snapshotFromRealtimeRow(row: unknown, viewerId: string): Session
     myRole: isMissionary ? 'missionary' : 'christian',
     partnerJoined: value.christian_user_id !== null,
     swapPending: value.swap_requested_by !== null,
+    restartPending: value.restart_requested_by != null && isRestartCurrent(value.restart_requested_at ?? null),
+    restartRequestedAt: value.restart_requested_at ?? null,
+    selectedBranchId: value.selected_branch_id ?? null,
     partnerFresh: undefined,
     expiresAt: value.expires_at,
     pairCode: undefined,

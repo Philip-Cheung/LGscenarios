@@ -27,7 +27,7 @@ export function HumanCheck({ siteKey, onToken, onCancel }: HumanCheckProps) {
         if (cancelled || !containerRef.current) return
         widgetId = turnstile.render(containerRef.current, {
           sitekey: siteKey,
-          theme: 'dark',
+          theme: 'light',
           appearance: 'interaction-only',
           callback: (token) => onTokenRef.current(token),
           'error-callback': () => setError('The check could not be completed. Go back and choose your role again.'),
