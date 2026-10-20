@@ -15,6 +15,7 @@ import {
   PARTNER_CHOOSING,
   pairOnScene,
   pairPhones,
+  ROLE_NAMES,
   SCENARIO_PATH,
   SCREENS,
   shareComplete,
@@ -222,23 +223,34 @@ test('the creator can change roles before anyone joins', async ({ browser }) => 
   await missionary.context.close()
 })
 
-test('a creator who chooses the Christian starts the practice, and the joiner leads as the missionary', async ({
+test('choosing the Christian leads to entering the Mormon’s code, and the Mormon starts the practice', async ({
   browser,
 }) => {
-  const creator = await openPhone(browser)
-  const joiner = await openPhone(browser)
-  const code = await createPractice(creator.page, 'Christian')
-  await expect(creator.page.getByText('Your role').locator('..')).toContainText('Christian')
-  await joinPractice(joiner.page, code)
-  for (const phone of [creator, joiner]) await expect(heading(phone.page, SCREENS.paired)).toBeVisible()
-  await expect(joiner.page.getByRole('button', { name: 'Start practice' })).toHaveCount(0)
-  await creator.page.getByRole('button', { name: 'Start practice' }).click()
-  for (const phone of [creator, joiner]) await expect(heading(phone.page, DOORSTEP.sceneTitle)).toBeVisible()
+  const missionary = await openPhone(browser)
+  const christian = await openPhone(browser)
+  const code = await createPractice(missionary.page)
 
-  const pair = { missionary: joiner, christian: creator }
-  await bothReady(pair)
-  await walkToQuestions(pair)
-  await closePair(pair)
+  await christian.page.getByRole('button', { name: 'Start a practice' }).click()
+  await christian.page.getByRole('radio', { name: ROLE_NAMES.Christian }).check()
+  await christian.page.getByRole('button', { name: 'Enter a pairing code' }).click()
+  await expect(heading(christian.page, SCREENS.join)).toBeVisible()
+  await expect(christian.page.getByTestId('pair-code')).toHaveCount(0)
+
+  // Back returns to the role choice with the Christian still chosen.
+  await christian.page.getByRole('button', { name: 'Back' }).click()
+  await expect(heading(christian.page, SCREENS.chooseRole)).toBeVisible()
+  await expect(christian.page.getByRole('radio', { name: ROLE_NAMES.Christian })).toBeChecked()
+  await christian.page.getByRole('button', { name: 'Enter a pairing code' }).click()
+
+  await christian.page.getByLabel('Pairing code').fill(code)
+  await christian.page.getByRole('button', { name: 'Join practice' }).click()
+  for (const phone of [missionary, christian]) await expect(heading(phone.page, SCREENS.paired)).toBeVisible()
+  await expect(christian.page.getByText('You’re practising').locator('..')).toContainText('Christian')
+  await expect(christian.page.getByRole('button', { name: 'Start practice' })).toHaveCount(0)
+  await missionary.page.getByRole('button', { name: 'Start practice' }).click()
+  for (const phone of [missionary, christian]) await expect(heading(phone.page, DOORSTEP.sceneTitle)).toBeVisible()
+
+  await Promise.all([missionary, christian].map((phone) => phone.context.close()))
 })
 
 test('pairing leads to a summary only the creator can start', async ({ browser }) => {

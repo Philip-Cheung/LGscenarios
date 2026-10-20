@@ -82,7 +82,7 @@ test('the role screen is keyboard reachable with a visible focus indicator', asy
   expect(outline).not.toBe('none')
   await page.keyboard.press('ArrowDown')
   await expect(page.getByRole('radio', { name: /Christian$/ })).toBeChecked()
-  await expect(page.getByRole('button', { name: 'Get a pairing code' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Enter a pairing code' })).toBeVisible()
 })
 
 test('the production build styles the primary action from the design tokens', async ({ page }) => {
