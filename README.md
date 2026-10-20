@@ -13,10 +13,12 @@ A two-phone role-play app for practising doorstep conversations. One person play
 
 ```bash
 npm ci
-cp .env.example .env.local          # then fill in the VITE_* values (see section 4)
-npx playwright install chromium     # browser for the E2E suite
-npm run dev                         # http://localhost:5173/s/sample-doorstep
+cp .env.example .env.development.local   # then fill in the test project's VITE_* values (see section 4)
+npx playwright install chromium          # browser for the E2E suite
+npm run dev                              # http://localhost:5173/s/sample-doorstep
 ```
+
+Use `.env.development.local`, not `.env.local`: Vite loads `.env.local` for production builds too, and the test suites refuse to run when the test project looks like production.
 
 Without valid `VITE_*` values the app shows "Practice is not set up yet" instead of starting. During development, `http://localhost:5173/dev/preview` shows every screen state from sample data without a backend. This page is removed from production builds.
 
@@ -46,7 +48,7 @@ For each project:
 2. **Enable anonymous sign-ins**: Authentication → Sign In / Providers → *Allow anonymous sign-ins*.
 3. **Rate limits**: Authentication → Rate Limits → *Anonymous sign-ins*. The default is 30 per hour per IP address, and a group of 12 on one Wi-Fi network shares one IP.
    - **Production**: raise it enough for your group plus retries (for example 100 per hour), and rely on CAPTCHA for abuse protection.
-   - **Test project**: raise it well above that (for example 1,000 per hour), because a full run of the database and E2E suites creates about 50 anonymous users.
+   - **Test project**: raise it well above that (for example 1,000 per hour), because each `npm run test:db` creates 21 anonymous users and each `npm run test:e2e` creates 29, and reruns within the hour add up. When the limit is hit, sign-ins fail with HTTP 429 and the app shows "Too many attempts".
 4. **CAPTCHA (production)**: Authentication → Attack Protection → enable CAPTCHA with **Cloudflare Turnstile**. Paste the Turnstile **secret key** there only; it never goes in the frontend. Put the **site key** in `VITE_TURNSTILE_SITE_KEY`. The app shows the check only when a phone needs a new anonymous identity.
    - **Test project**: leave CAPTCHA off, or use Cloudflare's always-pass test keys: secret `1x0000000000000000000000000000000AA`, then set `TEST_TURNSTILE_SITE_KEY=1x00000000000000000000AA` and `TEST_CAPTCHA_TOKEN=XXXX.DUMMY.TOKEN.XXXX`.
 5. **Data API**: Settings → API → *Exposed schemas* must include `public` and must **not** include `app_private`. Every table and function grant is explicit in the migrations, so nothing depends on default exposure.
@@ -131,7 +133,7 @@ The build also writes a Content-Security-Policy `<meta>` tag allowing only the e
 
 ## 6. Routing and headers
 
-`vercel.json` rewrites every path except `/assets/*` and `/favicon.svg` to `index.html`, so direct loads and refreshes of `/s/sample-doorstep` work and asset requests still resolve. It also sends these headers:
+`vercel.json` rewrites every path except `/assets/*` and `/favicon.svg` to `index.html`, so direct loads and refreshes of `/s/sample-doorstep` work and asset requests still resolve. The bare address (`/`) redirects to `CURRENT_SCENARIO_SLUG` from `src/scenarios/index.ts`; other unknown paths show the not-found page. It also sends these headers:
 
 - `Content-Security-Policy` with `frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'`, which complements the build-time `<meta>` policy
 - `X-Content-Type-Options: nosniff`
@@ -177,7 +179,7 @@ Never edit a published scenario version. Each change is a new version.
 3. Generate an **inactive** registry entry with `npm run registry:generate -- <scenarioId> <N>`.
 4. Run `npm run validate` and `npm run test:e2e`.
 5. Commit, push, and let Vercel deploy the frontend that knows about the new version. Then apply the migration with `npm run db:push` (test) or the production command above.
-6. Publish it with `npm run registry:generate -- <scenarioId> <N> --publish`, then commit and push the migration. That migration is idempotent.
+6. Publish it with `npm run registry:generate -- <scenarioId> <N> --publish` and apply it with `db:push`. If this is a new week rather than a revision, set `CURRENT_SCENARIO_SLUG` in `src/scenarios/index.ts` to the new slug so the bare site address opens it. Commit and push both. The migration is idempotent.
 7. Open `https://<your-domain>/s/<slug>` on two phones, then share the link.
 
 ## 10. Rollback

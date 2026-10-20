@@ -74,13 +74,17 @@ test('a phone that reloads or loses its connection catches up', async ({ browser
   await christian.page.reload()
   await expect(christian.page.getByRole('heading', { level: 2, name: PROMPTS[0].text })).toBeVisible()
 
+  // A live update proves the reloaded phone is subscribed again, not just showing fetched state.
+  await missionary.page.getByRole('button', { name: 'Next', exact: true }).click()
+  await expect(christian.page.getByRole('heading', { level: 2, name: PROMPTS[1].text })).toBeVisible()
+
   await christian.context.setOffline(true)
   await missionary.page.getByRole('button', { name: 'Next', exact: true }).click()
-  await expect(missionary.page.getByText('2 of 3')).toBeVisible()
+  await expect(missionary.page.getByText('3 of 3')).toBeVisible()
   await expect(christian.page.getByText('Reconnecting…')).toBeVisible()
 
   await christian.context.setOffline(false)
-  await expect(christian.page.getByRole('heading', { level: 2, name: PROMPTS[1].text })).toBeVisible()
+  await expect(christian.page.getByRole('heading', { level: 2, name: PROMPTS[2].text })).toBeVisible()
   await expect(christian.page.getByText('Reconnecting…')).toBeHidden()
 
   await closePair(pair)

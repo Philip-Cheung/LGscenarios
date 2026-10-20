@@ -7,6 +7,13 @@ import { sampleDoorstepV1 } from './sample-doorstep.v1'
  */
 export const allScenarios: readonly ScenarioContent[] = [sampleDoorstepV1]
 
+/**
+ * The scenario the site root (/) redirects to. Switch it to a new week's slug
+ * only once that version is published in the registry; until then the
+ * database rejects new sessions for it.
+ */
+export const CURRENT_SCENARIO_SLUG = 'sample-doorstep'
+
 export function findScenarioVersion(scenarioId: string, version: number): ScenarioContent | undefined {
   return allScenarios.find((scenario) => scenario.scenarioId === scenarioId && scenario.version === version)
 }

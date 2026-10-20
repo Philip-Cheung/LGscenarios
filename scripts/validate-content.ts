@@ -1,8 +1,12 @@
 import { validateScenarioSet } from '../src/lib/content'
-import { allScenarios } from '../src/scenarios'
+import { allScenarios, CURRENT_SCENARIO_SLUG, findLatestBundledBySlug } from '../src/scenarios'
 import { hasRegistryMigration } from './registry'
 
 const report = validateScenarioSet(allScenarios)
+
+if (!findLatestBundledBySlug(CURRENT_SCENARIO_SLUG)) {
+  report.errors.push(`CURRENT_SCENARIO_SLUG "${CURRENT_SCENARIO_SLUG}" does not match any bundled scenario`)
+}
 
 for (const scenario of allScenarios) {
   if (!hasRegistryMigration(scenario)) {
