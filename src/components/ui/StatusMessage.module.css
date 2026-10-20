@@ -1,0 +1,15 @@
+.status {
+  margin: 0;
+  min-height: var(--dp-status-min-height);
+  color: var(--dp-color-status);
+  font-size: var(--dp-font-size-body);
+  line-height: var(--dp-line-height-body);
+}
+
+.status:empty {
+  min-height: 0;
+}
+
+.error {
+  color: var(--dp-color-error);
+}

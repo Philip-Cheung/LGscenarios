@@ -1,0 +1,13 @@
+.card {
+  background: var(--dp-color-surface);
+  border: var(--dp-border-width) solid var(--dp-color-border);
+  border-radius: var(--dp-radius-card);
+  color: var(--dp-color-text);
+  padding: var(--dp-space-5);
+}
+
+@media (min-width: 480px) {
+  .card {
+    padding: var(--dp-space-6);
+  }
+}
