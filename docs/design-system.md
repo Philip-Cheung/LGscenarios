@@ -165,4 +165,4 @@ The starting screen is the scenario title (`h1`), one short description, then **
 
 ### Session actions
 
-**Exit** is in the session bar for both phones. **Restart** is a quieter text action for the current missionary during play and after completion. Restart needs the partner's confirmation and expires after 60 seconds on the server. Conditional prompts use real buttons, distinct from cue tags, and Next/Finish stay unavailable until one option is chosen.
+Before a partner joins, both pairing screens end with a secondary **Back to roles** button inside the card. For the missionary it closes the pairing code on the server without a dialog, and stays put with an explanation when offline. Once paired, **Exit** is in the session bar for both phones. **Restart** is a quieter text action for the current missionary during play and after completion. Restart needs the partner's confirmation and expires after 60 seconds on the server. Conditional prompts use real buttons, distinct from cue tags, and Next/Finish stay unavailable until one option is chosen.
