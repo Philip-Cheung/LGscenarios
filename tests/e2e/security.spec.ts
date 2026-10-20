@@ -30,6 +30,12 @@ test('unknown scenario links show a friendly not-found page', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'We could not find that scenario' })).toBeVisible()
 })
 
+test('the site root opens the current scenario', async ({ page }) => {
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/s\/sample-doorstep$/)
+  await expect(page.getByRole('button', { name: 'Mormon missionary' })).toBeVisible()
+})
+
 test('the development preview gallery is not shipped', async ({ page }) => {
   await page.goto('/dev/preview')
   await expect(page.getByRole('heading', { name: 'We could not find that scenario' })).toBeVisible()
