@@ -18,6 +18,8 @@ interface SessionScreenProps {
   slug: string
   /** Supabase URL that serves setting images from Storage. */
   imageBaseUrl: string
+  /** True when this browser reopened a pair it was already seated in. */
+  resumed?: boolean
   onStartOver(): void
   /** `duringPairing` is true when the creator closed the code before anyone joined. */
   onEnded(byPartner: boolean, duringPairing: boolean): void
@@ -31,6 +33,7 @@ export function SessionScreen({
   scenario,
   slug,
   imageBaseUrl,
+  resumed = false,
   onStartOver,
   onEnded,
 }: SessionScreenProps) {
@@ -74,6 +77,7 @@ export function SessionScreen({
       lastError={lastError}
       actions={actions}
       imageBaseUrl={imageBaseUrl}
+      resumed={resumed}
     />
   )
 }

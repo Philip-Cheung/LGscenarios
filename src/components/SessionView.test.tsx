@@ -98,6 +98,25 @@ describe('SessionView while waiting for a partner', () => {
     expect(screen.queryByLabelText('Session controls')).not.toBeInTheDocument()
   })
 
+  it('explains a reopened code belongs to this browser’s practice', () => {
+    render(
+      <SessionView
+        scenario={sampleDoorstep}
+        snapshot={{ ...snapshot, ...waiting, myRole: 'christian' }}
+        connection="live"
+        pending={null}
+        notice={null}
+        actions={makeActions()}
+        resumed
+      />,
+    )
+    expect(screen.getByText(/You started this practice earlier in this browser/)).toHaveTextContent(
+      'on their own phone and enter this code.',
+    )
+    expect(screen.getByTestId('pair-code')).toHaveTextContent('482 716')
+    expect(screen.getByText('Your role').parentElement!).toHaveTextContent('Christian')
+  })
+
   it('shows the role the creator chose', () => {
     renderView({ ...waiting, myRole: 'christian' })
     const summary = screen.getByText('Your role').parentElement!

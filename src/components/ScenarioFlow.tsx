@@ -25,7 +25,7 @@ type Phase =
   | { kind: 'create' }
   | { kind: 'join' }
   | { kind: 'captcha'; intent: Intent }
-  | { kind: 'session'; userId: string; snapshot: SessionSnapshot; scenario: ScenarioContent }
+  | { kind: 'session'; userId: string; snapshot: SessionSnapshot; scenario: ScenarioContent; resumed?: boolean }
   | { kind: 'ended'; reason: EndedReason }
   | { kind: 'outdated' }
   | { kind: 'missing' }
@@ -43,7 +43,6 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
   const [landing, setLanding] = useState<ScenarioContent | null>(null)
   const [busy, setBusy] = useState<Intent['kind'] | null>(null)
   const [createRole, setCreateRole] = useState<Role>('missionary')
-  const [joinFrom, setJoinFrom] = useState<'welcome' | 'create'>('welcome')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [lastCode, setLastCode] = useState('')
@@ -83,7 +82,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
       const lookup = await fetchScenarioVersion(client, result.session.scenarioId, result.session.scenarioVersion)
       switch (lookup.status) {
         case 'ok':
-          return { kind: 'session', userId, snapshot: result.session, scenario: lookup.scenario }
+          return { kind: 'session', userId, snapshot: result.session, scenario: lookup.scenario, resumed: true }
         case 'outdated':
           return { kind: 'outdated' }
         case 'error':
@@ -239,7 +238,6 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             onJoin={() => {
               setError(null)
               setNotice(null)
-              setJoinFrom('welcome')
               setPhase({ kind: 'join' })
             }}
           />
@@ -252,14 +250,8 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             initialRole={createRole}
             busy={busy === 'create'}
             error={error}
-            onContinue={(role) => {
+            onCreate={(role) => {
               setCreateRole(role)
-              if (role === 'christian') {
-                setError(null)
-                setJoinFrom('create')
-                setPhase({ kind: 'join' })
-                return
-              }
               void proceed({ kind: 'create', role })
             }}
             onBack={() => {
@@ -281,7 +273,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             }}
             onBack={() => {
               setError(null)
-              setPhase({ kind: joinFrom })
+              setPhase({ kind: 'welcome' })
             }}
           />
         )
@@ -304,6 +296,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
             scenario={phase.scenario}
             slug={slug}
             imageBaseUrl={config.supabaseUrl}
+            resumed={phase.resumed}
             onStartOver={startOver}
             onEnded={leaveEndedSession}
           />

@@ -23,6 +23,8 @@ export interface SessionViewProps {
   actions: SessionActions
   /** Supabase URL that serves setting images from Storage. */
   imageBaseUrl?: string
+  /** True when this browser reopened a pair it was already seated in. */
+  resumed?: boolean
 }
 
 const CONNECTION_MESSAGE_DELAY_MS = 800
@@ -37,6 +39,7 @@ export function SessionView({
   lastError = null,
   actions,
   imageBaseUrl = '',
+  resumed = false,
 }: SessionViewProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const showConnection = useDelayedFlag(connection !== 'live', CONNECTION_MESSAGE_DELAY_MS)
@@ -160,6 +163,7 @@ export function SessionView({
           canAct={connection === 'live' && pending === null}
           pending={pending}
           headingRef={headingRef}
+          resumed={resumed}
           onRegenerate={actions.regenerateCode}
           onBack={actions.end}
         />
@@ -283,6 +287,7 @@ interface WaitingScreenProps {
   canAct: boolean
   pending: PendingAction | null
   headingRef: Ref<HTMLHeadingElement>
+  resumed: boolean
   onRegenerate(): void
   /** Closes the pairing code on the server; the screen leaves once it is ended. */
   onBack(): Promise<boolean>
@@ -296,6 +301,7 @@ function WaitingScreen({
   canAct,
   pending,
   headingRef,
+  resumed,
   onRegenerate,
   onBack,
 }: WaitingScreenProps) {
@@ -359,9 +365,16 @@ function WaitingScreen({
         <p>Get a new code, then share it with your partner.</p>
       ) : (
         <>
-          <p>
-            Ask your partner to choose <strong>Join your partner</strong> and enter this code.
-          </p>
+          {resumed ? (
+            <p>
+              You started this practice earlier in this browser. Ask your partner to choose{' '}
+              <strong>Join your partner</strong> on their own phone and enter this code.
+            </p>
+          ) : (
+            <p>
+              Ask your partner to choose <strong>Join your partner</strong> and enter this code.
+            </p>
+          )}
           {snapshot.pairCode ? (
             <div className={styles.pairCode} translate="no">
               <span>YOUR PAIRING CODE</span>

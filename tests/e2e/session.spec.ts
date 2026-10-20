@@ -15,7 +15,7 @@ import {
   PARTNER_CHOOSING,
   pairOnScene,
   pairPhones,
-  ROLE_NAMES,
+  readPairCode,
   SCENARIO_PATH,
   SCREENS,
   shareComplete,
@@ -214,47 +214,94 @@ test('a third phone cannot join a full pair, and wrong codes are explained', asy
   await Promise.all([missionary, christian, third].map((phone) => phone.context.close()))
 })
 
-test('the creator can change roles before anyone joins', async ({ browser }) => {
-  const missionary = await openPhone(browser)
-  await createPractice(missionary.page)
-  await missionary.page.getByRole('button', { name: 'Change roles' }).click()
-  await expect(heading(missionary.page, SCREENS.chooseRole)).toBeVisible()
-  await expect(missionary.page.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
-  await missionary.context.close()
-})
-
-test('choosing the Christian leads to entering the Mormon’s code, and the Mormon starts the practice', async ({
+test('a creator who changes roles before anyone joins stays the creator, and the partner takes the other role', async ({
   browser,
 }) => {
-  const missionary = await openPhone(browser)
-  const christian = await openPhone(browser)
-  const code = await createPractice(missionary.page)
+  const creator = await openPhone(browser)
+  const joiner = await openPhone(browser)
+  const firstCode = await createPractice(creator.page)
+  await creator.page.getByRole('button', { name: 'Change roles' }).click()
+  await expect(heading(creator.page, SCREENS.chooseRole)).toBeVisible()
+  await expect(creator.page.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
 
-  await christian.page.getByRole('button', { name: 'Start a practice' }).click()
-  await christian.page.getByRole('radio', { name: ROLE_NAMES.Christian }).check()
-  await christian.page.getByRole('button', { name: 'Enter a pairing code' }).click()
-  await expect(heading(christian.page, SCREENS.join)).toBeVisible()
-  await expect(christian.page.getByTestId('pair-code')).toHaveCount(0)
+  await creator.page.getByRole('radio', { name: /Christian$/ }).check()
+  await creator.page.getByRole('button', { name: 'Get a pairing code' }).click()
+  await expect(heading(creator.page, SCREENS.invite)).toBeVisible()
+  const code = await readPairCode(creator.page)
+  await expect(creator.page.getByText('Your role').locator('..')).toContainText('Christian')
 
-  // Back returns to the role choice with the Christian still chosen.
-  await christian.page.getByRole('button', { name: 'Back' }).click()
-  await expect(heading(christian.page, SCREENS.chooseRole)).toBeVisible()
-  await expect(christian.page.getByRole('radio', { name: ROLE_NAMES.Christian })).toBeChecked()
-  await christian.page.getByRole('button', { name: 'Enter a pairing code' }).click()
+  // The closed code no longer works.
+  await joinPractice(joiner.page, firstCode)
+  await expect(joiner.page.getByRole('alert')).toContainText('doesn’t match')
+  await joinPractice(joiner.page, code)
+  for (const phone of [creator, joiner]) await expect(heading(phone.page, SCREENS.paired)).toBeVisible()
+  await expect(joiner.page.getByText('You’re practising').locator('..')).toContainText('Latter-day Saint missionary')
+  await expect(joiner.page.getByRole('button', { name: 'Start practice' })).toHaveCount(0)
+  await expect(creator.page.getByRole('button', { name: 'Start practice' })).toBeVisible()
+  await Promise.all([creator, joiner].map((phone) => phone.context.close()))
+})
 
-  await christian.page.getByLabel('Pairing code').fill(code)
-  await christian.page.getByRole('button', { name: 'Join practice' }).click()
-  for (const phone of [missionary, christian]) await expect(heading(phone.page, SCREENS.paired)).toBeVisible()
-  await expect(christian.page.getByText('You’re practising').locator('..')).toContainText('Christian')
-  await expect(christian.page.getByRole('button', { name: 'Start practice' })).toHaveCount(0)
-  await missionary.page.getByRole('button', { name: 'Start practice' }).click()
-  for (const phone of [missionary, christian]) await expect(heading(phone.page, DOORSTEP.sceneTitle)).toBeVisible()
+test('reopening the link in the creator’s browser shows the same code with context, and self-join is explained', async ({
+  browser,
+}) => {
+  const creator = await openPhone(browser)
+  const code = await createPractice(creator.page, 'Christian')
 
-  await Promise.all([missionary, christian].map((phone) => phone.context.close()))
+  const secondTab = await creator.context.newPage()
+  await secondTab.goto(SCENARIO_PATH)
+  await expect(heading(secondTab, SCREENS.invite)).toBeVisible()
+  await expect(secondTab.getByText(/You started this practice earlier in this browser/)).toBeVisible()
+  await expect(secondTab.getByTestId('pair-code')).toHaveText(code)
+  await expect(secondTab.getByText('Your role').locator('..')).toContainText('Christian')
+
+  // Without the saved practice, the same identity reaches code entry and is told it made this code.
+  await secondTab.evaluate(() => {
+    for (const key of Object.keys(window.localStorage)) {
+      if (key.startsWith('doorstep-practice:pointer:')) window.localStorage.removeItem(key)
+    }
+  })
+  await secondTab.goto(SCENARIO_PATH)
+  await joinPractice(secondTab, code)
+  await expect(secondTab.getByRole('alert')).toContainText('You created this practice')
+  await creator.context.close()
+})
+
+test('a creator who chooses the Christian starts the practice, and the joiner leads as the missionary', async ({
+  browser,
+}) => {
+  const creator = await openPhone(browser)
+  const joiner = await openPhone(browser)
+  const code = await createPractice(creator.page, 'Christian')
+  await expect(creator.page.getByText('Your role').locator('..')).toContainText('Christian')
+  await expect(creator.page.getByText('Your partner’s role').locator('..')).toContainText('Latter-day Saint missionary')
+
+  // A fresh identity choosing Join your partner reaches code entry without creating a practice.
+  await joiner.page.getByRole('button', { name: 'Join your partner' }).click()
+  await expect(heading(joiner.page, SCREENS.join)).toBeVisible()
+  await expect(joiner.page.getByTestId('pair-code')).toHaveCount(0)
+  expect(
+    await joiner.page.evaluate(() =>
+      Object.keys(window.localStorage).filter((key) => key.startsWith('doorstep-practice:pointer:')),
+    ),
+  ).toEqual([])
+  await joinPractice(joiner.page, code)
+  for (const phone of [creator, joiner]) await expect(heading(phone.page, SCREENS.paired)).toBeVisible()
+  await expect(joiner.page.getByText('You’re practising').locator('..')).toContainText('Latter-day Saint missionary')
+  await expect(creator.page.getByText('You’re practising').locator('..')).toContainText('Christian')
+  await expect(joiner.page.getByRole('button', { name: 'Start practice' })).toHaveCount(0)
+  await creator.page.getByRole('button', { name: 'Start practice' }).click()
+  for (const phone of [creator, joiner]) await expect(heading(phone.page, DOORSTEP.sceneTitle)).toBeVisible()
+
+  const pair = { missionary: joiner, christian: creator }
+  await bothReady(pair)
+  await walkToQuestions(pair)
+  await closePair(pair)
 })
 
 test('pairing leads to a summary only the creator can start', async ({ browser }) => {
   const pair = await pairPhones(browser)
+  await expect(pair.missionary.page.getByText('You’re practising').locator('..')).toContainText('Latter-day Saint missionary')
+  await expect(pair.christian.page.getByText('You’re practising').locator('..')).toContainText('Christian')
   await expect(pair.missionary.page.getByText('Ready to practise')).toBeVisible()
   await expect(pair.christian.page.getByText('Your partner will start when you’re both ready.')).toBeVisible()
   await closePair(pair)
