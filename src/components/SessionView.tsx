@@ -42,11 +42,17 @@ export function SessionView({
   const canSelect = connection === 'live' && pending === null && !restartLive
   const [exitOpen, setExitOpen] = useState(false)
   const [exitOffline, setExitOffline] = useState(false)
+  const [exitFailed, setExitFailed] = useState(false)
   const [restartOpen, setRestartOpen] = useState(false)
 
   let statusText = notice ?? ''
-  if (partnerAway) statusText = 'Waiting for your partner to reconnect'
   if (showConnection) statusText = connection === 'reconnecting' ? 'Reconnecting…' : 'Connecting…'
+
+  const openExit = () => {
+    setExitOffline(false)
+    setExitFailed(false)
+    setExitOpen(true)
+  }
 
   // Move focus to the new heading when the shared step changes, not on heartbeats.
   const viewKey = `${snapshot.status}:${snapshot.round}:${snapshot.promptIndex}:${snapshot.myRole}:${snapshot.selectedBranchId ?? ''}`
@@ -64,18 +70,21 @@ export function SessionView({
     (snapshot.status === 'active' || snapshot.status === 'completed') &&
     !snapshot.swapPending
 
-  const exitDescription =
-    snapshot.status === 'waiting' || !snapshot.partnerJoined
+  const exitDescription = partnerAway
+    ? 'Your partner is disconnected. This closes the scenario for both of you. You can start a new pair afterward.'
+    : snapshot.status === 'waiting' || !snapshot.partnerJoined
       ? 'This closes your pairing code and returns you to role selection.'
       : 'This ends the scenario for both players. You can start a new pair afterward.'
 
   const confirmEnd = async () => {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       setExitOffline(true)
+      setExitFailed(true)
       return
     }
     setExitOffline(false)
-    await actions.end()
+    const ok = await actions.end()
+    if (!ok) setExitFailed(true)
   }
 
   return (
@@ -86,17 +95,21 @@ export function SessionView({
             Restart
           </button>
         ) : null}
-        <button
-          type="button"
-          className={styles.textAction}
-          onClick={() => {
-            setExitOffline(false)
-            setExitOpen(true)
-          }}
-        >
+        <button type="button" className={styles.textAction} onClick={openExit}>
           Exit
         </button>
       </div>
+      {partnerAway ? (
+        <div className={styles.notice} role="region" aria-labelledby="partner-away-heading">
+          <h2 id="partner-away-heading" className={styles.heading}>
+            Your partner is disconnected
+          </h2>
+          <p className={styles.muted}>You can end the session for both of you.</p>
+          <Button variant="destructive" block onClick={openExit}>
+            End session
+          </Button>
+        </div>
+      ) : null}
       {renderBody()}
       {exitOpen ? (
         <ConfirmDialog
@@ -105,12 +118,13 @@ export function SessionView({
           confirmLabel="End session"
           destructive
           pending={pending === 'end'}
-          error={messageForEndFailure(exitOffline, exitOffline ? null : lastError)}
+          error={exitFailed ? messageForEndFailure(exitOffline, exitOffline ? null : lastError) : null}
           onConfirm={() => void confirmEnd()}
           onCancel={() => {
             if (pending === 'end') return
             setExitOpen(false)
             setExitOffline(false)
+            setExitFailed(false)
           }}
         />
       ) : null}
@@ -198,6 +212,7 @@ export function SessionView({
               statusText={statusText}
               canAct={canAct}
               canSelect={canSelect}
+              partnerAway={partnerAway}
               pending={pending}
               headingRef={headingRef}
               onBack={actions.back}

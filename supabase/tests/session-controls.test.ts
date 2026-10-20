@@ -48,6 +48,29 @@ describe('ending a session', () => {
       'invalid_state',
     )
   })
+
+  it('lets the connected player end while the partner is disconnected', async () => {
+    await h.resetRateLimits(missionary, christian)
+    const state = await h.activePair(missionary, christian)
+    await h.sql(
+      "update app_private.heartbeats set last_seen_at = now() - interval '5 minutes' where session_id = $1 and user_id = $2",
+      [state.id, christian.id],
+    )
+    const seen = expectOk(await rpc(missionary, 'get_session', { p_session_id: state.id }))
+    expect(seen.partner_fresh).toBe(false)
+    expectError(
+      await rpc(missionary, 'navigate', {
+        p_session_id: state.id,
+        p_direction: 'next',
+        p_expected_revision: seen.revision,
+      }),
+      'partner_stale',
+    )
+    const ended = expectOk(await end(missionary, state.id, seen.revision))
+    expect(ended.status).toBe('ended')
+    const partner = expectOk(await rpc(christian, 'get_session', { p_session_id: state.id }))
+    expect(partner.status).toBe('ended')
+  })
 })
 
 describe('restart', () => {
