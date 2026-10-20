@@ -1,5 +1,5 @@
-import coffeeChatV3 from '../../content/scenarios/coffee-chat.v3.json'
-import sampleDoorstepV5 from '../../content/scenarios/sample-doorstep.v5.json'
+import coffeeChatV3 from '../../content/scenarios/coffee-chat.v4.json'
+import sampleDoorstepV5 from '../../content/scenarios/sample-doorstep.v6.json'
 import whoIsGodV1 from '../../content/scenarios/who-is-god.v1.json'
 import { scenarioFileSchema, toStoredContent, type ScenarioContent } from '../lib/content'
 

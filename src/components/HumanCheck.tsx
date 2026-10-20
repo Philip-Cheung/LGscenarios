@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadTurnstile } from '../lib/turnstile'
-import { AppScreen, PairingMeta } from './AppScreen'
+import { AppScreen } from './AppScreen'
 import { Button, StatusMessage } from './ui'
 import styles from './screens.module.css'
 
@@ -46,7 +46,6 @@ export function HumanCheck({ siteKey, onToken, onCancel }: HumanCheckProps) {
 
   return (
     <AppScreen
-      meta={<PairingMeta label="Before you begin" />}
       viewKey="check"
       status={
         <StatusMessage tone="error" className={styles.statusLine}>

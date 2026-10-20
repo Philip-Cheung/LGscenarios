@@ -125,15 +125,6 @@
   background: var(--color-teal);
 }
 
-.pairingMeta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 16px;
-  font-size: 0.75rem;
-  color: var(--color-muted);
-}
-
 /* Content */
 .content {
   flex: 1;

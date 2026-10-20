@@ -7,8 +7,8 @@ import styles from './screens.module.css'
 export interface ScreenFrame {
   /** Session controls in the header; omitted before pairing. */
   menu?: ReactNode
-  /** Pairing label or practice progress under the header. */
-  meta: ReactNode
+  /** Practice progress under the header; omitted before the practice starts. */
+  meta?: ReactNode
   /** Live status line (connection, errors) above the actions. */
   status?: ReactNode
 }
@@ -39,15 +39,6 @@ export function AppScreen({ menu, meta, status, viewKey, waiting = false, note, 
       {status}
       {actions ? <div className={styles.actions}>{actions}</div> : null}
     </article>
-  )
-}
-
-export function PairingMeta({ label }: { label: string }) {
-  return (
-    <div className={styles.pairingMeta}>
-      <span>{label}</span>
-      <span>Speak · Listen · Connect</span>
-    </div>
   )
 }
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ScenarioContent } from '../lib/content'
 import type { Role } from '../sessions/types'
-import { AppScreen, PairingMeta } from './AppScreen'
+import { AppScreen } from './AppScreen'
 import { Icon } from './art'
 import { ROLE_CAPTIONS, ROLE_SHORT_LABELS } from './roles'
 import { Button, StatusMessage } from './ui'
@@ -27,7 +27,6 @@ export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, 
 
   return (
     <AppScreen
-      meta={<PairingMeta label="Before you begin" />}
       viewKey="roles"
       status={
         <StatusMessage tone="error" className={styles.statusLine}>
@@ -49,7 +48,7 @@ export function RoleSelect({ scenario, initialRole = 'missionary', busy, error, 
         <Icon />
         Create a room
       </span>
-      <h1 tabIndex={-1}>Which role will you practise?</h1>
+      <h1 tabIndex={-1}>Select a role</h1>
       <p>One person practises as the Christian. The other plays the missionary to help their partner prepare.</p>
       <fieldset className={styles.choices} disabled={busy}>
         <legend className={styles.srOnly}>Your practice role</legend>

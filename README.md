@@ -1,6 +1,6 @@
 # LGscenarios: Doorstep Practice
 
-A two-phone role-play app for practising doorstep conversations. One person plays a **Latter-day Saint missionary** and one the **Christian**. Each pair opens the same weekly link (for example `/s/who-is-god`) and pairs with a short code. The practice has six steps: both players read their scene and tap Ready, settle in together, the missionary says the opening line, asks questions one at a time, and closes the conversation. The Christian sees each question only after it has been asked, and can reveal an example answer on their own phone only.
+A two-phone role-play app for practising doorstep conversations. One person plays a **Mormon missionary** and one the **Christian**. Each pair opens the same weekly link (for example `/s/who-is-god`) and pairs with a short code. The practice has six steps: both players read their scene and tap Ready, settle in together, the missionary says the opening line, asks questions one at a time, and closes the conversation. The Christian sees each question only after it has been asked, and can reveal an example answer on their own phone only.
 
 Scenarios are reviewed JSON files in `content/scenarios/`, stored in Supabase as versioned rows. Publishing a new scenario is a database migration; the frontend doesn't change and doesn't need redeploying.
 
@@ -110,7 +110,7 @@ Alternatively, use `npx supabase link --project-ref <ref>` followed by `npx supa
   select cron.schedule('doorstep-cleanup-anonymous-users', '41 3 * * *', 'select app_private.cleanup_anonymous_users()');
   ```
 
-- Table Editor → `scenario_registry` shows `sample-doorstep` v5 and `coffee-chat` v3 as `published` with `active_for_new_sessions = true`, and `who-is-god` v1 as `draft`. Older versions stay as inactive rows.
+- Table Editor → `scenario_registry` shows `sample-doorstep` v6 and `coffee-chat` v4 as `published` with `active_for_new_sessions = true`, and `who-is-god` v1 as `draft`. Older versions stay as inactive rows.
 - Storage shows a public `scenario-images` bucket (JPEG, PNG or WebP, up to 2 MB each).
 
 ### Data retention and maintenance
@@ -210,7 +210,7 @@ The current `who-is-god.v1.json` is a **draft**. Its roles, opening, and first t
 - To stop new pairs using a version, add a migration that sets `active_for_new_sessions = false` for that version (and `true` for the previous published one). Pairs with a link to a scenario that has no active version see "This scenario is not available".
 - To change which scenario the bare address opens, publish (or republish as a new version) the one you want; it follows the latest `published_at` among active rows.
 - Make schema changes additive; avoid destructive migrations. The frontend can be rolled back by promoting a previous Vercel deployment, but only to one that understands the six-step flow (this release or later).
-- **Deploying this release**: apply `…_warm_coach_flow.sql`, the scenario migrations, `…_reference_pairing.sql`, `…_restart_by_either.sql`, `…_answered_questions.sql` and the scenario migrations `…_scenario_coffee_chat_v3_publish.sql`, `…_scenario_sample_doorstep_v5_publish.sql` and `…_scenario_who_is_god_v1_draft.sql` (published in that order so the bare address opens `sample-doorstep`) at a quiet time, then deploy the frontend straight away. The database and frontend must change together: the previous frontend doesn't understand the new stages or calls `create_pair` without a role, and pairs that started on the previous flow can't continue and must start a new practice. Unused letter codes are deleted by the migration.
+- **Deploying this release**: apply `…_warm_coach_flow.sql`, the scenario migrations, `…_reference_pairing.sql`, `…_restart_by_either.sql`, `…_answered_questions.sql` and the scenario migrations `…_scenario_coffee_chat_v3_publish.sql`, `…_scenario_sample_doorstep_v5_publish.sql`, `…_scenario_who_is_god_v1_draft.sql`, `…_scenario_coffee_chat_v4_publish.sql`, `…_scenario_sample_doorstep_v6_publish.sql` and the second `…_scenario_who_is_god_v1_draft.sql` (published in timestamp order so the bare address opens `sample-doorstep`) at a quiet time, then deploy the frontend straight away. The database and frontend must change together: the previous frontend doesn't understand the new stages or calls `create_pair` without a role, and pairs that started on the previous flow can't continue and must start a new practice. Unused letter codes are deleted by the migration.
 
 ## Testing details
 
