@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import file from '../../../content/scenarios/week-one-christians-too.v1.json'
 import lessonFile from '../../../content/scenarios/lesson-one-first-vision.v1.json'
+import lessonV2File from '../../../content/scenarios/lesson-one-first-vision.v2.json'
 import preparedFile from '../../../content/scenarios/week-one-christians-too.v3.json'
 import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { parseScenarioFile, toStoredContent } from '../../lib/content'
@@ -208,5 +209,24 @@ describe('conversation model, Lesson 1 (Introduction & First Vision)', () => {
   it('lets a caption open the passage it names, on both phones', () => {
     const thread = threadMessages(lesson, [m(OPENING_ID), c(answerId(0)), m('church-name')])
     expect(thread.at(-1)).toMatchObject({ speaker: 'missionary', caption: '3 Nephi 27:7–8 · Book of Mormon', passage: '3-nephi-27-7-8' })
+  })
+})
+
+const parsedLessonV2 = parseScenarioFile(lessonV2File)
+if (!parsedLessonV2.success) throw new Error('lesson-one-first-vision.v2.json does not parse')
+const lessonV2 = toStoredContent(parsedLessonV2.data) as ConversationContent
+
+describe('conversation model, Lesson 1 version 2 (worksheet questions)', () => {
+  it('prepares the five questions in worksheet order after the introduction, then the wrap-up', () => {
+    const history: HistoryEntry[] = [m(OPENING_ID), c(answerId(0))]
+    const suggested: string[] = []
+    for (let next = suggestNext(lessonV2, conversationProgress(lessonV2, history)); next !== CLOSING_ID; ) {
+      suggested.push(next)
+      expect(responseOptions(lessonV2, findBeat(lessonV2, next)!)).toHaveLength(1)
+      history.push(m(next), c(answerId(0)))
+      next = suggestNext(lessonV2, conversationProgress(lessonV2, history))
+    }
+    expect(suggested).toEqual(['word-mormon', 'first-vision-accounts', 'expected-response', 'best-rejoinder', 'unaware-friend'])
+    expect(topicsExhausted(lessonV2, conversationProgress(lessonV2, history))).toBe(true)
   })
 })
