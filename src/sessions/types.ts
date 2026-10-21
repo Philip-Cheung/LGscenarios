@@ -75,6 +75,8 @@ export interface SessionSnapshot {
   restartByMe: boolean
   /** ISO time the restart was requested, or null when none is pending. */
   restartRequestedAt: string | null
+  /** True when the pending restart moves the pair into the scenario's Hard mode. */
+  restartHardMode: boolean
   stage: GuidedStage
   /** Ready taps during scene setup. */
   meReady: boolean

@@ -44,6 +44,7 @@ function withDefaults(snapshot: SessionSnapshot): SessionSnapshot {
     swapRequestedAt: snapshot.swapRequestedAt ?? null,
     restartPending: snapshot.restartPending ?? false,
     restartRequestedAt: snapshot.restartRequestedAt ?? null,
+    restartHardMode: snapshot.restartHardMode ?? false,
     turn: snapshot.turn ?? 'missionary',
     history: snapshot.history ?? [],
     encounterPhase: snapshot.encounterPhase ?? null,

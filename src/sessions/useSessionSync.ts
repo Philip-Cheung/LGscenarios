@@ -23,6 +23,7 @@ export type PendingAction =
   | 'regenerate'
   | 'end'
   | 'requestRestart'
+  | 'requestHardMode'
   | 'acceptRestart'
   | 'declineRestart'
   | 'cancelRestart'
@@ -43,6 +44,8 @@ export interface SessionActions {
   regenerateCode(): Promise<boolean>
   end(): Promise<boolean>
   requestRestart(): Promise<boolean>
+  /** From reflection: a restart that moves the pair into the scenario's Hard mode. */
+  requestHardMode(): Promise<boolean>
   acceptRestart(): Promise<boolean>
   declineRestart(): Promise<boolean>
   cancelRestart(): Promise<boolean>
@@ -305,6 +308,7 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
           return result
         }),
       requestRestart: () => run('requestRestart', (s) => api.requestRestart(s.id, s.revision)),
+      requestHardMode: () => run('requestHardMode', (s) => api.requestHardMode(s.id, s.revision)),
       acceptRestart: () => run('acceptRestart', (s) => api.respondRestart(s.id, true, s.revision)),
       declineRestart: () => run('declineRestart', (s) => api.respondRestart(s.id, false, s.revision)),
       cancelRestart: () => run('cancelRestart', (s) => api.cancelRestart(s.id, s.revision)),

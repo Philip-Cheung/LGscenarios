@@ -38,6 +38,7 @@ export interface SessionState {
   swap_requested_at: string | null
   restart_pending?: boolean
   restart_by_me?: boolean
+  restart_hard_mode?: boolean
   my_ready: boolean
   partner_ready: boolean
   active_question_id: string | null

@@ -4,6 +4,8 @@ import v2 from '../../content/scenarios/week-one-christians-too.v2.json'
 import v3 from '../../content/scenarios/week-one-christians-too.v3.json'
 import lesson from '../../content/scenarios/lesson-one-first-vision.v1.json'
 import lessonV2 from '../../content/scenarios/lesson-one-first-vision.v2.json'
+import lessonV3 from '../../content/scenarios/lesson-one-first-vision.v3.json'
+import hardMode from '../../content/scenarios/week-one-hard-mode.v1.json'
 import { conversationFileSchema } from './conversation'
 
 function errors(file: unknown): string[] {
@@ -167,5 +169,56 @@ describe('Lesson 1, version 2: the worksheet questions and answers', () => {
     expect(all).not.toMatch(/every time the term Mormon/)
     expect(questions[0].help.answers[0]).toContain('to remove the Lord’s name from the Lord’s Church is “a major victory for Satan.”')
     expect(questions[3].help.answers[0]).toContain('“Is it possible there were multiple first visions?”')
+  })
+})
+
+describe('Hard mode: week one with missionary replies (schema 3.1)', () => {
+  const hardBeats = hardMode.topics.flatMap((topic) => [topic.question, ...topic.followUps])
+
+  it('parses, and asks week one v3’s lines word for word, including the three-kingdoms afterlife question', () => {
+    expect(errors(hardMode)).toEqual([])
+    expect(hardMode).toMatchObject({ id: 'week-one-hard-mode', version: 1, schemaVersion: '3.1', title: 'Hard mode' })
+    const asked = (file: typeof v3 | typeof hardMode) =>
+      file.topics.flatMap((topic) => [topic.question, ...topic.followUps]).map(({ id, text, caption }) => ({ id, text, caption }))
+    expect(asked(hardMode)).toEqual(asked(v3))
+    expect(hardMode.opening.text).toBe(v3.opening.text)
+    expect(hardMode.closing).toEqual(v3.closing)
+    expect(hardMode).not.toHaveProperty('hardMode')
+  })
+
+  it('gives every question and follow-up replies, and matches every Christian answer to one of them', () => {
+    for (const beat of hardBeats) {
+      const replyIds = beat.respond.replies.map((reply) => reply.id)
+      for (const answer of beat.help.answers) expect(replyIds).toContain(answer.reply)
+      expect(replyIds).toContain(beat.respond.clarifyReply)
+      expect(replyIds).toContain(beat.respond.notSureReply)
+      for (const heard of beat.respond.heard) expect(replyIds).toContain(heard.reply)
+      for (const reply of beat.respond.replies) expect(reply.next).toBe('continue')
+    }
+  })
+
+  it('rejects replies in a 3.0 file, and a 3.1 answer without a reply', () => {
+    const asOld = structuredClone(hardMode) as Record<string, unknown>
+    asOld.schemaVersion = '3.0'
+    expect(errors(asOld)).not.toEqual([])
+    const unmatched = structuredClone(hardMode)
+    delete (unmatched.topics[0].question.help.answers[0] as { reply?: string }).reply
+    expect(errors(unmatched)).not.toEqual([])
+  })
+})
+
+describe('Lesson 1, version 3: links to Hard mode', () => {
+  it('is version 2 plus the Hard mode link, nothing else', () => {
+    expect(errors(lessonV3)).toEqual([])
+    const { version: _v3, status: _s3, hardMode: link, ...rest } = lessonV3
+    const { version: _v2, status: _s2, ...previous } = lessonV2
+    expect(rest).toEqual(previous)
+    expect(link).toEqual({ scenarioId: 'week-one-hard-mode' })
+  })
+
+  it('refuses an invalid Hard mode id', () => {
+    const file = structuredClone(lessonV3)
+    file.hardMode.scenarioId = 'Not An Id'
+    expect(errors(file)).not.toEqual([])
   })
 })
