@@ -914,6 +914,133 @@
   margin-top: 10px;
 }
 
+/* The missionary's choice card: the composer while choosing what to ask next. */
+
+/* The card may take more room than the composer, and scrolls inside itself before the frame does. */
+.conversation.conversationChoosing {
+  min-height: min(24dvh, 10rem);
+}
+
+.tools.toolsChoosing {
+  flex: 0 1 auto;
+  min-height: min(15rem, 62dvh);
+  max-height: 62dvh;
+}
+
+.choiceCard {
+  padding-top: 12px;
+}
+
+.choiceHeading {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-ink);
+}
+
+.choiceList {
+  display: grid;
+  gap: 6px;
+}
+
+.choiceItem {
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+
+.choiceItem.choiceSelected {
+  border-color: var(--color-selected-line);
+  background: var(--color-selected);
+}
+
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+}
+
+.choiceItem:not(.choiceSelected) .choiceRow:hover:not(:disabled) {
+  background: var(--color-surface-quiet);
+}
+
+.choiceRow .choiceNumber {
+  margin-top: 0;
+}
+
+.choiceSelected .choiceNumber {
+  background: var(--color-teal);
+  color: var(--color-surface);
+}
+
+.choiceRowTitle {
+  flex: 1 1 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.choiceBadge {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-chip);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--color-chip-ink);
+}
+
+.choiceLine {
+  padding: 0 12px 10px 48px;
+}
+
+.choiceLine .composerText {
+  max-height: min(15dvh, 116px);
+  color: var(--color-ink);
+}
+
+.choiceBar {
+  position: sticky;
+  bottom: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-line);
+  background: var(--color-surface-quiet);
+}
+
+.moreDirections {
+  justify-self: start;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-chip-ink);
+  text-align: left;
+}
+
+.moreDirections:hover:not(:disabled) {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 360px) {
+  .choiceLine {
+    padding-left: 12px;
+  }
+}
+
 .composeMore {
   display: grid;
   place-items: center;
