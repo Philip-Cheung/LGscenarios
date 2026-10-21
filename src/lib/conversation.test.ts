@@ -3,6 +3,7 @@ import v1 from '../../content/scenarios/week-one-christians-too.v1.json'
 import v2 from '../../content/scenarios/week-one-christians-too.v2.json'
 import v3 from '../../content/scenarios/week-one-christians-too.v3.json'
 import lesson from '../../content/scenarios/lesson-one-first-vision.v1.json'
+import lessonV2 from '../../content/scenarios/lesson-one-first-vision.v2.json'
 import { conversationFileSchema } from './conversation'
 
 function errors(file: unknown): string[] {
@@ -125,5 +126,46 @@ describe('Lesson 1: Introduction & First Vision', () => {
     const file = structuredClone(lesson)
     file.topics[0].question.passage = 'missing-passage'
     expect(errors(file)).toEqual(['topics.0.question.passage Unknown passage "missing-passage"'])
+  })
+})
+
+describe('Lesson 1, version 2: the worksheet questions and answers', () => {
+  const questions = lessonV2.topics.map((topic) => topic.question)
+  const { sourceNotes: _notes, ...shown } = lessonV2
+  const all = JSON.stringify(shown)
+
+  it('keeps the introduction and goodbye around the five worksheet questions, in order, with no follow-ups', () => {
+    expect(errors(lessonV2)).toEqual([])
+    expect(lessonV2).toMatchObject({ id: 'lesson-one-first-vision', version: 2, title: 'Introduction & First Vision', speakAloud: true })
+    expect(lessonV2.opening).toEqual(lesson.opening)
+    expect(lessonV2.closing).toEqual({ ...lesson.closing, caption: 'Wrap up conversation' })
+    expect(questions.map((question) => question.caption)).toEqual([1, 2, 3, 4, 5].map((n) => `Lesson 1 · Question ${n}`))
+    expect(questions[0].text).toBe('Why is the use or non-use of the word Mormon a good thing to bring up with your Mormon friend?')
+    expect(questions[4].text).toBe(
+      'How would you respond if your Mormon friend or neighbor was unaware that there were multiple first vision accounts?',
+    )
+    for (const topic of lessonV2.topics) expect(topic.followUps).toEqual([])
+  })
+
+  it('offers only the lesson answer as help: one answer, no notes, evidence, passages or reading links', () => {
+    for (const question of questions) {
+      expect(question.help.answers).toHaveLength(1)
+      expect(Object.keys(question.help).sort()).toEqual(['answers', 'hint'])
+      expect(question).not.toHaveProperty('passage')
+      expect(question.text).not.toContain('(ref:')
+    }
+  })
+
+  it('fixes the worksheet typos', () => {
+    expect(all).not.toMatch(/you're your|you’re your|document first|\bfirs\b|do the LDS church/)
+    expect(questions[3].help.answers[0]).toContain('there was really only one first vision')
+    expect(questions[1].help.answers[0]).toContain('nine different documented first vision accounts')
+  })
+
+  it('applies the accuracy rules: no unverified campaign claims, and President Nelson quoted exactly', () => {
+    expect(all).not.toMatch(/6\.1|million|same year/)
+    expect(all).not.toMatch(/every time the term Mormon/)
+    expect(questions[0].help.answers[0]).toContain('to remove the Lord’s name from the Lord’s Church is “a major victory for Satan.”')
+    expect(questions[3].help.answers[0]).toContain('“Is it possible there were multiple first visions?”')
   })
 })

@@ -5,13 +5,15 @@ import pg from 'pg'
 import { closePair, heading, openPhone, readPairCode, type Pair } from './helpers'
 
 /**
- * Lesson 1 (Introduction & First Vision) on two phones, against a temporary
- * copy of content/scenarios/lesson-one-first-vision.v1.json. The copy is
- * registered under its own id with an old publication date, so it is never the
- * featured scenario, and it is deleted afterwards.
+ * Lesson 1 (Introduction & First Vision) on two phones, against temporary
+ * copies of content/scenarios/lesson-one-first-vision.v1.json and .v2.json.
+ * The copies are registered under their own ids with an old publication date,
+ * so they are never the featured scenario, and they are deleted afterwards.
  */
 const SCENARIO = `test-lesson-${randomUUID().slice(0, 8)}`
 const PATH = `/s/${SCENARIO}`
+const SCENARIO_V2 = `test-lesson-v2-${randomUUID().slice(0, 8)}`
+const PATH_V2 = `/s/${SCENARIO_V2}`
 const COPY = {
   opening: 'Hi! We’re missionaries from The Church of Jesus Christ of Latter-day Saints. Do you have a few minutes to talk about our beliefs?',
   welcome: 'Sure, I have a few minutes. I’m a Christian myself.',
@@ -44,24 +46,30 @@ const db = () => new pg.Client({ connectionString: process.env.TEST_DATABASE_URL
 test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async () => {
-  const file = JSON.parse(readFileSync('content/scenarios/lesson-one-first-vision.v1.json', 'utf8'))
-  const { $schema: _schema, status: _status, ...content } = file
   const client = db()
   await client.connect()
-  await client.query(
-    `insert into public.scenario_registry
-       (scenario_id, version, slug, prompt_count, status, content, active_for_new_sessions, published_at)
-     values ($1, 1, $1, 5, 'published', $2, true, '2000-01-01')`,
-    [SCENARIO, { ...content, id: SCENARIO, version: 1 }],
-  )
+  for (const [id, path] of [
+    [SCENARIO, 'content/scenarios/lesson-one-first-vision.v1.json'],
+    [SCENARIO_V2, 'content/scenarios/lesson-one-first-vision.v2.json'],
+  ]) {
+    const { $schema: _schema, status: _status, ...content } = JSON.parse(readFileSync(path, 'utf8'))
+    await client.query(
+      `insert into public.scenario_registry
+         (scenario_id, version, slug, prompt_count, status, content, active_for_new_sessions, published_at)
+       values ($1, 1, $1, 5, 'published', $2, true, '2000-01-01')`,
+      [id, { ...content, id, version: 1 }],
+    )
+  }
   await client.end()
 })
 
 test.afterAll(async () => {
   const client = db()
   await client.connect()
-  await client.query('delete from public.sessions where scenario_id = $1', [SCENARIO])
-  await client.query('delete from public.scenario_registry where scenario_id = $1', [SCENARIO])
+  for (const id of [SCENARIO, SCENARIO_V2]) {
+    await client.query('delete from public.sessions where scenario_id = $1', [id])
+    await client.query('delete from public.scenario_registry where scenario_id = $1', [id])
+  }
   await client.end()
 })
 
@@ -73,9 +81,9 @@ async function shot(page: Page, name: string) {
 const speakButton = (page: Page, name: string) => page.getByRole('button', { name, exact: true })
 
 /** Pairs two phones, readies both with relaxed timing, and opens the door. */
-async function toConversation(browser: Browser, width: number, height: number): Promise<Pair> {
-  const missionary = await openPhone(browser, width, height, PATH)
-  const christian = await openPhone(browser, width, height, PATH)
+async function toConversation(browser: Browser, width: number, height: number, path = PATH): Promise<Pair> {
+  const missionary = await openPhone(browser, width, height, path)
+  const christian = await openPhone(browser, width, height, path)
   await missionary.page.getByRole('button', { name: /^Mormon missionary/ }).click()
   const code = await readPairCode(missionary.page)
   await christian.page.getByRole('button', { name: /^Christian/ }).click()
@@ -267,5 +275,55 @@ test('Lesson 1: the instructions fit a 320px screen without sideways scrolling',
     const overflow = await phone.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   }
+  await closePair(pair)
+})
+
+test('Lesson 1 v2: the five worksheet questions follow the introduction, the long fourth answer reads on a 320px phone, and the goodbye completes', async ({
+  browser,
+}) => {
+  test.setTimeout(180_000)
+  const QUESTIONS = [
+    'Why is the use or non-use of the word Mormon a good thing to bring up with your Mormon friend?',
+    'How many different first vision accounts does the LDS church recognize and how do they defend the differing accounts?',
+    'Suppose you were to share with your Mormon friend that there were multiple first vision accounts.',
+    'Given the “typical” response to multiple versions, what would be the best rejoinder?',
+    'How would you respond if your Mormon friend or neighbor was unaware that there were multiple first vision accounts?',
+  ]
+  const pair = await toConversation(browser, 320, 640, PATH_V2)
+  const { missionary, christian } = pair
+  const help = christian.page.getByRole('dialog', { name: 'Help with your reply' })
+
+  await speak(pair, 'Send introduction', COPY.opening)
+  await christian.page.getByRole('button', { name: 'Need help?' }).click()
+  await help.getByRole('button', { name: COPY.welcome }).click()
+  await speakButton(christian.page, 'Send response').click()
+
+  for (const [i, question] of QUESTIONS.entries()) {
+    await speak(pair, 'Send question', question)
+    await expect(missionary.page.locator('main').getByText(`Lesson 1 · Question ${i + 1}`)).toBeVisible()
+    if (i === 3) {
+      // The lesson answer stays hidden until asked for, and the whole of it can be read without sideways scrolling.
+      await christian.page.getByRole('button', { name: 'Need help?' }).click()
+      await expect(help).not.toContainText('Use a question to help move your point.')
+      await help.getByRole('button', { name: 'Hint' }).click()
+      await expect(help).toContainText('Tap Suggested responses to see the lesson answer.')
+      await help.getByRole('button', { name: 'Suggested responses' }).click()
+      const answer = help.locator('button[class*="responseChoice"]')
+      await expect(answer).toHaveCount(1)
+      await expect(answer).toContainText('Use a question to help move your point.')
+      await expect(answer).toContainText('guide them into discovering the problem for themselves.')
+      await answer.scrollIntoViewIfNeeded()
+      await expect(answer).toBeInViewport({ ratio: 0.99 })
+      const overflow = await christian.page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+      expect(overflow).toBeLessThanOrEqual(0)
+      await shot(christian.page, '320-02-v2-answer-four')
+      await help.getByRole('button', { name: 'Close help' }).click()
+    }
+    await answerWithHelp(pair)
+  }
+
+  await expect(missionary.page.locator('section').getByText(COPY.closing)).toBeVisible()
+  await speakButton(missionary.page, 'Send closing').click()
+  for (const phone of [missionary, christian]) await expect(heading(phone.page, 'Until next time')).toBeVisible()
   await closePair(pair)
 })
