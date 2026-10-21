@@ -115,6 +115,14 @@ async function wrapUp(pair: Pair, closing: string) {
   }
 }
 
+test('Hard mode: its own address starts nothing; new practices begin at Lesson 1', async ({ browser }) => {
+  const phone = await openPhone(browser, 375, 740, `/s/${HARD}`)
+  await expect(phone.page).toHaveURL(new RegExp(`/s/${LESSON}$`))
+  await expect(phone.page).toHaveTitle('Introduction & First Vision · Doorstep practice')
+  await expect(phone.page.getByRole('button', { name: /^Mormon missionary/ })).toBeVisible()
+  await phone.context.close()
+})
+
 test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sided scenario with the same roles', async ({ browser }) => {
   test.setTimeout(180_000)
   const missionary = await openPhone(browser, 375, 740, `/s/${LESSON}`)
@@ -203,5 +211,21 @@ test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sid
     await expect(button(phone.page, 'Play again')).toBeVisible()
   }
   await shot(christian.page, '375-05-hard-mode-reflection')
+
+  // Ending the session sends both players back to Lesson 1's role choice.
+  await missionary.page.getByRole('button', { name: 'Leave', exact: true }).click()
+  await missionary.page.getByRole('dialog', { name: 'End this session?' }).getByRole('button', { name: 'End session' }).click()
+  for (const [phone, notice] of [
+    [missionary, 'Session ended for both players.'],
+    [christian, 'Your partner ended the session.'],
+  ] as const) {
+    await expect(phone.page).toHaveURL(new RegExp(`/s/${LESSON}$`))
+    await expect(phone.page).toHaveTitle('Introduction & First Vision · Doorstep practice')
+    await expect(phone.page.getByText(notice)).toBeVisible()
+    await expect(phone.page.getByRole('button', { name: /^Mormon missionary/ })).toBeVisible()
+  }
+  await missionary.page.reload()
+  await expect(missionary.page.getByRole('button', { name: /^Mormon missionary/ })).toBeVisible()
+  await expect(missionary.page.getByText('Session ended for both players.')).toHaveCount(0)
   await closePair(pair)
 })

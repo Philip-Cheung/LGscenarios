@@ -76,6 +76,28 @@ export async function fetchScenarioVersion(
   }
 }
 
+/**
+ * The slug of the scenario whose Hard mode is `slug`, or null when `slug` can
+ * be started on its own. A Hard mode is only reached from that scenario's
+ * reflection, so new practices start there instead. Fails open on errors.
+ */
+export async function fetchHardModeParent(client: SupabaseClient, slug: string): Promise<string | null> {
+  try {
+    const { data, error } = await client
+      .from('scenario_registry')
+      .select('slug')
+      .eq('active_for_new_sessions', true)
+      .eq('content->hardMode->>scenarioId', slug)
+      .order('published_at', { ascending: false })
+      .limit(1)
+    if (error) return null
+    const parent = (data?.[0] as { slug?: unknown } | undefined)?.slug
+    return typeof parent === 'string' && parent !== slug ? parent : null
+  } catch {
+    return null
+  }
+}
+
 export type FeaturedLookup = { status: 'ok'; slug: string } | { status: 'none' } | { status: 'error' }
 
 /** The slug the site root opens: the most recently published scenario. */

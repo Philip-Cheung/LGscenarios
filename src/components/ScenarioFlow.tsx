@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Navigate, useLocation, useNavigate } from 'react-router'
 import { isConversation, type AnyScenarioContent } from '../lib/content'
 import type { ConversationContent } from '../lib/conversation'
 import type { AppConfig } from '../lib/env'
 import { getSupabase } from '../lib/supabase'
-import { fetchActiveScenario, fetchScenarioVersion } from '../scenarios/catalog'
+import { fetchActiveScenario, fetchHardModeParent, fetchScenarioVersion } from '../scenarios/catalog'
 import { SessionApi } from '../sessions/api'
 import { ensureIdentity, getExistingUserId } from '../sessions/identity'
 import { messageForError } from '../sessions/messages'
@@ -47,9 +48,19 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
   const [busy, setBusy] = useState<Intent['kind'] | null>(null)
   const [createRole, setCreateRole] = useState<Role>('missionary')
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  // A notice carried over from a Hard mode page, such as "Session ended for both players."
+  const location = useLocation()
+  const navigate = useNavigate()
+  const carried = (location.state as { notice?: unknown } | null)?.notice
+  const [notice, setNotice] = useState<string | null>(typeof carried === 'string' ? carried : null)
+  useEffect(() => {
+    // Shown once: a reload of this page should not repeat it.
+    if (carried !== undefined) void navigate(location.pathname, { replace: true, state: null })
+  }, [carried, location.pathname, navigate])
   const [lastCode, setLastCode] = useState('')
   const [bootAttempt, setBootAttempt] = useState(0)
+  /** Set for a Hard mode: new practices start at the scenario it belongs to. */
+  const [startsAt, setStartsAt] = useState<string | null>(null)
   const requestRef = useRef<{ key: string; id: string } | null>(null)
 
   // Load the scenario open at this link and, in parallel, resume a pair only
@@ -99,8 +110,13 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
     }
 
     void (async () => {
-      const [lookup, resumed] = await Promise.all([fetchActiveScenario(client, slug), resume()])
+      const [lookup, resumed, parent] = await Promise.all([
+        fetchActiveScenario(client, slug),
+        resume(),
+        fetchHardModeParent(client, slug),
+      ])
       if (cancelled) return
+      setStartsAt(parent)
       if (lookup.status === 'ok') setLanding(lookup.scenario)
       if (resumed) {
         setPhase(resumed)
@@ -221,6 +237,10 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
     },
     [landing, restartBoot, slug],
   )
+
+  if (startsAt && ['welcome', 'create', 'join', 'captcha'].includes(phase.kind)) {
+    return <Navigate to={`/s/${startsAt}`} replace state={notice ? { notice } : null} />
+  }
 
   const current = phase.kind === 'session' ? phase.scenario : landing
   const title = current?.title
