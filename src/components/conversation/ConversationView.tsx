@@ -16,8 +16,7 @@ import {
   suggestNext,
   threadMessages,
   type Beat,
-  type ConversationProgress,
-  type Responding,
+  type DirectionChoice,
   type ThreadMessage,
 } from './model'
 import { OpenPassageContext } from './passageContext'
@@ -69,8 +68,6 @@ export function ConversationView({
   const messages = useMemo(() => threadMessages(content, history), [content, history])
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [draft, setDraft] = useState<Draft>({ forLength: -1, id: null })
-  /** The history length at which the missionary said "They said something else". */
-  const [heardFor, setHeardFor] = useState(-1)
   const restoreFocus = useRef(true)
   const sendRef = useRef<HTMLButtonElement>(null)
   const scrollRef = useRef<HTMLElement>(null)
@@ -89,9 +86,6 @@ export function ConversationView({
     return id && canSpeak(content, progress, id) ? id : null
   })()
   const missionaryDraft = missionaryDraftId ? findBeat(content, missionaryDraftId) : null
-  const responding = role === 'missionary' && !awaitingAnswer ? progress.responding : null
-  // Without a matched reply, or once they say the Christian said something else, ask what they heard.
-  const askWhatHeard = !!responding && (responding.matchedId === null || heardFor === history.length)
   const christianText =
     role === 'christian' && awaitingAnswer && chosenId ? responseText(content, progress.lastBeat, chosenId) : null
 
@@ -138,23 +132,9 @@ export function ConversationView({
   }
 
   const latest = messages.at(-1)
-  const allTopicsUsed = progress.started && !progress.responding && suggestNext(content, progress) === null
-  // On the missionary's turn the composer becomes a choice card: a reply to
-  // the Christian's answer, or what to ask next until only the closing remains.
-  const card: Card | null = responding
-    ? replyCard(content, progress, responding, askWhatHeard, missionaryDraftId, {
-        somethingElse: () => {
-          setHeardFor(history.length)
-          setDraft({ forLength: history.length, id: null })
-        },
-        useSuggested: () => {
-          setHeardFor(-1)
-          setDraft({ forLength: history.length, id: responding.matchedId })
-        },
-      })
-    : role === 'missionary' && !awaitingAnswer && progress.started && !allTopicsUsed
-      ? directionCard(content, progress, missionaryDraftId, () => openSheet('questions'))
-      : null
+  const allTopicsUsed = progress.started && suggestNext(content, progress) === null
+  // On the missionary's turn the composer becomes a choice card, until only the closing remains.
+  const card = role === 'missionary' && !awaitingAnswer && progress.started && !allTopicsUsed ? cardChoices(content, progress, missionaryDraftId) : null
 
   let caption: string
   let note: string
@@ -171,31 +151,13 @@ export function ConversationView({
       sendLabel = 'Waiting for Christian response'
       sendText = 'Ask question'
     } else {
-      const ownWords = missionaryDraftId === FREE_RESPONSE_ID
-      hasDraft = !!missionaryDraft || ownWords
+      hasDraft = !!missionaryDraft
       caption = hasDraft ? 'Your next line' : 'Conversation'
-      note = ownWords ? 'Reply aloud, then tap Reply' : hasDraft ? 'Read aloud after posting' : 'Speak together aloud'
+      note = hasDraft ? 'Read aloud after posting' : 'Speak together aloud'
       text = missionaryDraft?.text ?? 'Choose what to say…'
-      sendText =
-        missionaryDraftId === CLOSING_ID
-          ? 'Say goodbye'
-          : ownWords || missionaryDraft?.next || (responding && !hasDraft)
-            ? 'Reply'
-            : progress.started
-              ? 'Ask question'
-              : 'Introduce'
+      sendText = missionaryDraftId === CLOSING_ID ? 'Say goodbye' : progress.started ? 'Ask question' : 'Introduce'
       sendLabel =
-        missionaryDraftId === CLOSING_ID
-          ? 'Send closing'
-          : ownWords
-            ? 'Confirm you replied aloud'
-            : missionaryDraft?.next
-              ? 'Send reply'
-              : responding && !hasDraft
-                ? 'Choose how to reply'
-                : progress.started
-                  ? 'Send question'
-                  : 'Send introduction'
+        missionaryDraftId === CLOSING_ID ? 'Send closing' : progress.started ? 'Send question' : 'Send introduction'
       canSend = hasDraft
     }
   } else if (awaitingAnswer) {
@@ -210,13 +172,7 @@ export function ConversationView({
     caption = 'Conversation'
     note = 'Speak together aloud'
     sendText = 'Answer question'
-    text = !progress.started
-      ? 'Your visitor will introduce themselves first…'
-      : progress.responding
-        ? 'Your partner is responding to you…'
-        : progress.afterReply
-          ? 'Your partner is choosing how to continue…'
-          : 'Your partner is choosing what to ask next…'
+    text = progress.started ? 'Your partner is choosing what to ask next…' : 'Your visitor will introduce themselves first…'
     sendLabel = 'Waiting for your partner'
   }
 
@@ -274,12 +230,15 @@ export function ConversationView({
         ) : null}
         <div className={card ? `${styles.composeBox} ${styles.choiceCard}` : hasDraft ? `${styles.composeBox} ${styles.hasDraft}` : styles.composeBox}>
           {card ? (
-            <ChoiceCard
-              card={card}
+            <NextChoices
+              choices={card.rows}
+              recommendedId={card.recommendedId}
               selectedId={missionaryDraftId}
               line={missionaryDraft?.text ?? null}
+              more={card.more}
               disabled={!canAct}
               onChoose={choose}
+              onMore={() => openSheet('questions')}
             />
           ) : (
             <>
@@ -391,190 +350,111 @@ export function Message({
   )
 }
 
-/** One numbered row in the missionary's choice card. */
-interface CardRow {
-  id: string
-  title: string
-  /** Read by screen readers with the title. */
-  summary: string
-  badge?: 'Recommended' | 'Suggested'
-  /** Shown under the row when it is chosen and has no line to read aloud. */
-  note?: string
+interface CardChoices {
+  rows: DirectionChoice[]
+  recommendedId: string | null
+  /** Directions not shown in the card. */
+  more: number
 }
-
-interface Card {
-  heading: string
-  rows: CardRow[]
-  /** A link under the rows: more directions, or switching how to reply. */
-  footer: { label: string; dialog: boolean; onClick(): void } | null
-}
-
-const ASK_TO_EXPLAIN = 'Ask them to explain'
-const WRAP_UP = 'Wrap up conversation'
 
 /**
- * A line chosen outside the card (the full list, or "Ask them to explain" /
- * "Wrap up" from the options menu) takes the first row, so the selection is
- * always visible.
+ * The card's rows: the suggested line first, then the next directions. A line
+ * chosen elsewhere (the full list, or "Ask them to explain" / "Wrap up" from
+ * the options menu) takes the first row so the selection is always visible.
  */
-function withSelection(content: ConversationContent, rows: CardRow[], candidates: CardRow[], selectedId: string | null, size: number): CardRow[] {
-  if (!selectedId || rows.some((row) => row.id === selectedId)) return rows
-  const chosen =
-    candidates.find((row) => row.id === selectedId) ??
-    (selectedId === CLARIFICATION_ID
-      ? { id: selectedId, title: ASK_TO_EXPLAIN, summary: richTextOneLine(content.clarification.text) }
-      : selectedId === CLOSING_ID
-        ? { id: selectedId, title: WRAP_UP, summary: 'End the conversation kindly.' }
-        : null)
-  return chosen ? [chosen, ...rows.slice(0, size - 1)] : rows
-}
-
-/** "What would you like to ask next?": the suggested line first, then the next directions. */
-function directionCard(content: ConversationContent, progress: ConversationProgress, selectedId: string | null, onMore: () => void): Card {
+function cardChoices(content: ConversationContent, progress: ReturnType<typeof conversationProgress>, selectedId: string | null): CardChoices {
   const { continueTopic, otherDirections } = directionChoices(content, progress)
-  const all: CardRow[] = [...continueTopic, ...otherDirections].map((choice, index) => ({
-    id: choice.beatId,
-    title: choice.title,
-    summary: choice.summary,
-    badge: index === 0 ? 'Recommended' : undefined,
-  }))
-  const rows = withSelection(content, all.slice(0, CARD_CHOICES), all, selectedId, CARD_CHOICES)
-  const more = all.filter((choice) => !rows.some((row) => row.id === choice.id)).length
+  const all = [...continueTopic, ...otherDirections]
+  let rows = all.slice(0, CARD_CHOICES)
+  if (selectedId && !rows.some((row) => row.beatId === selectedId)) {
+    const chosen =
+      all.find((row) => row.beatId === selectedId) ??
+      (selectedId === CLARIFICATION_ID && content.clarification
+        ? { beatId: selectedId, title: 'Ask them to explain', summary: richTextOneLine(content.clarification.text) }
+        : selectedId === CLOSING_ID
+          ? { beatId: selectedId, title: 'Wrap up conversation', summary: 'End the conversation kindly.' }
+          : null)
+    if (chosen) rows = [chosen, ...rows.slice(0, CARD_CHOICES - 1)]
+  }
   return {
-    heading: 'What would you like to ask next?',
     rows,
-    footer: more > 0 ? { label: `More directions (${more})`, dialog: true, onClick: onMore } : null,
-  }
-}
-
-/**
- * The missionary's reply to the Christian's answer: the reply matched to the
- * answer they confirmed, or "What did your partner say?" after a free answer
- * or when the missionary heard something else. Their own words are always an
- * option, and the clarification is offered unless they just asked it.
- */
-function replyCard(
-  content: ConversationContent,
-  progress: ConversationProgress,
-  responding: Responding,
-  askWhatHeard: boolean,
-  selectedId: string | null,
-  actions: { somethingElse(): void; useSuggested(): void },
-): Card {
-  const { respond } = responding.parent
-  const replyRow = (id: string, title: string, badge?: CardRow['badge']): CardRow | null => {
-    const reply = respond.replies.find((item) => item.id === id)
-    return reply ? { id, title, summary: richTextOneLine(reply.text), badge } : null
-  }
-  const ownWords: CardRow = {
-    id: FREE_RESPONSE_ID,
-    title: 'I responded in my own words',
-    summary: 'Reply aloud, then confirm.',
-    note: 'Reply aloud in your own words, then tap Reply.',
-  }
-  const candidates = respond.replies.flatMap((reply) => replyRow(reply.id, reply.label) ?? [])
-
-  if (!askWhatHeard && responding.matchedId) {
-    const matched = replyRow(responding.matchedId, respond.replies.find((reply) => reply.id === responding.matchedId)?.label ?? '', 'Suggested')
-    const rows = [...(matched ? [matched] : []), ownWords]
-    return {
-      heading: 'Respond to your partner',
-      rows: withSelection(content, rows, candidates, selectedId, rows.length + 1),
-      footer: { label: 'They said something else', dialog: false, onClick: actions.somethingElse },
-    }
-  }
-
-  const rows = [
-    ...respond.heard.flatMap((heard) => replyRow(heard.reply, heard.label) ?? []),
-    ...(canSpeak(content, progress, CLARIFICATION_ID)
-      ? [{ id: CLARIFICATION_ID, title: 'Something else / help me clarify', summary: richTextOneLine(content.clarification.text) }]
-      : []),
-    ownWords,
-  ]
-  return {
-    heading: 'What did your partner say?',
-    rows: withSelection(content, rows, candidates, selectedId, rows.length + 1),
-    footer: responding.matchedId ? { label: 'Use the suggested reply', dialog: false, onClick: actions.useSuggested } : null,
+    recommendedId: all[0]?.beatId ?? null,
+    more: all.filter((choice) => !rows.some((row) => row.beatId === choice.beatId)).length,
   }
 }
 
 /** The missionary's choice card: a question, a few numbered rows, and the selected line to read aloud. */
-function ChoiceCard({
-  card,
+function NextChoices({
+  choices,
+  recommendedId,
   selectedId,
   line,
+  more,
   disabled,
   onChoose,
+  onMore,
 }: {
-  card: Card
+  choices: DirectionChoice[]
+  recommendedId: string | null
   selectedId: string | null
   line: string | null
+  /** Directions not shown; they open in the full list. */
+  more: number
   disabled: boolean
   onChoose(id: string): void
+  onMore(): void
 }) {
   const headingId = useId()
-  const groupRef = useRef<HTMLDivElement>(null)
-  const { rows, footer } = card
   // Number keys pick a row, but only while focus is inside the card.
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (disabled || event.altKey || event.ctrlKey || event.metaKey) return
-    const row = rows[Number(event.key) - 1]
-    if (!/^[1-9]$/.test(event.key) || !row) return
+    const choice = choices[Number(event.key) - 1]
+    if (!/^[1-9]$/.test(event.key) || !choice) return
     event.preventDefault()
-    onChoose(row.id)
+    onChoose(choice.beatId)
   }
   return (
     <>
       <h2 id={headingId} className={styles.choiceHeading}>
-        {card.heading}
+        What would you like to ask next?
       </h2>
-      <div ref={groupRef} role="group" aria-labelledby={headingId} className={styles.choiceList} onKeyDown={onKeyDown}>
-        {rows.map((row, index) => {
-          const selected = row.id === selectedId
-          const shown = selected ? (line ?? row.note ?? null) : null
+      <div role="group" aria-labelledby={headingId} className={styles.choiceList} onKeyDown={onKeyDown}>
+        {choices.map((choice, index) => {
+          const selected = choice.beatId === selectedId
+          const recommended = choice.beatId === recommendedId
           return (
-            <div key={row.id} className={selected ? `${styles.choiceItem} ${styles.choiceSelected}` : styles.choiceItem}>
+            <div key={choice.beatId} className={selected ? `${styles.choiceItem} ${styles.choiceSelected}` : styles.choiceItem}>
               <button
                 type="button"
                 className={styles.choiceRow}
                 aria-pressed={selected}
-                aria-label={`${index + 1}. ${row.title}${row.badge ? ` (${row.badge})` : ''}. ${row.summary}`}
+                aria-label={`${index + 1}. ${choice.title}${recommended ? ' (Recommended)' : ''}. ${choice.summary}`}
                 disabled={disabled}
-                onClick={() => onChoose(row.id)}
+                onClick={() => onChoose(choice.beatId)}
               >
                 <span className={styles.choiceNumber} aria-hidden="true">
                   {index + 1}
                 </span>
-                <span className={styles.choiceRowTitle}>{row.title}</span>
-                {row.badge ? (
+                <span className={styles.choiceRowTitle}>{choice.title}</span>
+                {recommended ? (
                   <span className={styles.choiceBadge} aria-hidden="true">
-                    {row.badge}
+                    Recommended
                   </span>
                 ) : null}
               </button>
-              {shown ? (
+              {selected && line ? (
                 <div className={styles.choiceLine}>
-                  <div className={line ? styles.composerText : `${styles.composerText} ${styles.placeholder}`}>
-                    <ConversationText text={shown} />
+                  <div className={styles.composerText}>
+                    <ConversationText text={line} />
                   </div>
                 </div>
               ) : null}
             </div>
           )
         })}
-        {footer ? (
-          <button
-            type="button"
-            className={styles.moreDirections}
-            aria-haspopup={footer.dialog ? 'dialog' : undefined}
-            disabled={disabled}
-            onClick={() => {
-              footer.onClick()
-              // Switching how to reply replaces this link, so focus moves to the new first row.
-              if (!footer.dialog) window.requestAnimationFrame(() => groupRef.current?.querySelector('button')?.focus())
-            }}
-          >
-            {footer.label}
+        {more > 0 ? (
+          <button type="button" className={styles.moreDirections} aria-haspopup="dialog" disabled={disabled} onClick={onMore}>
+            More directions ({more})
           </button>
         ) : null}
       </div>

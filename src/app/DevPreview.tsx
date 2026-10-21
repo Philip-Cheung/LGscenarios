@@ -7,7 +7,7 @@ import { ConversationSession } from '../components/conversation/ConversationSess
 import { SessionView } from '../components/SessionView'
 import { Welcome } from '../components/Welcome'
 import type { ScenarioContent } from '../lib/content'
-import { christiansToo, christiansTooReplies, coffeeChat, sampleDoorstep, weekOne, whoIsGod } from '../scenarios/fixtures'
+import { christiansToo, coffeeChat, sampleDoorstep, weekOne, whoIsGod } from '../scenarios/fixtures'
 import type { SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, SessionActions } from '../sessions/useSessionSync'
 
@@ -77,8 +77,6 @@ interface PreviewState {
   scenario?: ScenarioContent
   /** Renders the "We're Christians too" conversation (schema 3.0) instead of a guided scenario. */
   conversation?: boolean
-  /** With `conversation`: the draft with missionary replies (schema 3.1). */
-  replies?: boolean
 }
 
 const talking = { status: 'active' as const, stage: 'conversation' as const, encounterRelaxed: true }
@@ -86,10 +84,6 @@ const introduced = [
   { speaker: 'missionary' as const, id: 'introduction' },
   { speaker: 'christian' as const, id: 'answer-1' },
 ]
-const askedChristianity = [...introduced, { speaker: 'missionary' as const, id: 'christianity' }]
-const answeredChristianity = [...askedChristianity, { speaker: 'christian' as const, id: 'christianity-eternal-son' }]
-const repliedChristianity = [...answeredChristianity, { speaker: 'missionary' as const, id: 'christianity-reply-who-jesus-is' }]
-
 const STATES: Record<string, PreviewState> = {
   'welcome': { screen: 'welcome' },
   'welcome-notice': { screen: 'welcome-notice' },
@@ -208,22 +202,14 @@ const STATES: Record<string, PreviewState> = {
     conversation: true,
     snapshot: { ...talking, myRole: 'christian', turn: 'christian', history: [{ speaker: 'missionary', id: 'introduction' }] },
   },
-  'replies-missionary-matched': { conversation: true, replies: true, snapshot: { ...talking, history: answeredChristianity } },
-  'replies-missionary-heard': {
+  'conversation-christian-question': {
     conversation: true,
-    replies: true,
-    snapshot: { ...talking, history: [...askedChristianity, { speaker: 'christian', id: 'free' }] },
-  },
-  'replies-christian-responding': {
-    conversation: true,
-    replies: true,
-    snapshot: { ...talking, myRole: 'christian', history: answeredChristianity },
-  },
-  'replies-missionary-continue': { conversation: true, replies: true, snapshot: { ...talking, history: repliedChristianity } },
-  'replies-christian-continue': {
-    conversation: true,
-    replies: true,
-    snapshot: { ...talking, myRole: 'christian', history: repliedChristianity },
+    snapshot: {
+      ...talking,
+      myRole: 'christian',
+      turn: 'christian',
+      history: [...introduced, { speaker: 'missionary', id: 'christianity' }],
+    },
   },
   'left': { screen: 'left' },
   'partner-left': { screen: 'partnerLeft' },
@@ -295,14 +281,13 @@ export default function DevPreview() {
   )
 
   if (entry.conversation) {
-    const conversation = entry.replies ? christiansTooReplies : christiansToo
     return (
       <>
         <div style={{ padding: '8px 16px 0' }}>{picker}</div>
         <ConversationSession
           key={state}
-          content={conversation}
-          snapshot={{ ...base, scenarioId: conversation.id, scenarioVersion: conversation.version, ...entry.snapshot }}
+          content={christiansToo}
+          snapshot={{ ...base, scenarioId: christiansToo.id, scenarioVersion: christiansToo.version, ...entry.snapshot }}
           connection="live"
           pending={null}
           notice={null}

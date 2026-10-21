@@ -1,7 +1,7 @@
 {
   "$schema": "../scenario.schema.json",
   "status": "draft",
-  "schemaVersion": "3.1",
+  "schemaVersion": "3.0",
   "id": "week-one-christians-too",
   "version": 2,
   "title": "Week 1 · We’re Christians too",
@@ -70,63 +70,15 @@
         "text": "We believe in Jesus Christ too. In John 14:6, Jesus says, “[I am the way, the truth, and the life: no man cometh unto the Father, but by me.](ref:john-14-1-6)” What does being a Christian mean to you?",
         "caption": "John 14:6 · KJV",
         "help": {
-          "hint": "Acknowledge the shared language, then clarify who Jesus is and what trusting him means.",
+          "hint": "Acknowledge the shared language, then explain who you believe Jesus is and what trusting him means.",
           "answers": [
-            {
-              "id": "christianity-eternal-son",
-              "text": "Following Jesus is central to my faith too. I believe Jesus is the eternal, uncreated Son who became human to save us. What do you believe about who he is?",
-              "reply": "christianity-reply-who-jesus-is"
-            },
-            {
-              "id": "christianity-compare-meaning",
-              "text": "Could we compare what we each mean by believing in Jesus before deciding how much we agree?",
-              "reply": "christianity-reply-compare"
-            }
+            "For me, being a Christian means trusting Jesus Christ as my Saviour and following him. I believe he is the eternal Son of God who became human, died for our sins, and rose again."
           ],
-          "clarify": "When you say you believe in Jesus, what do you believe about who he is?",
           "context": "Shared names do not necessarily mean shared beliefs. Explore identity and the gospel without presuming to judge an individual’s heart.",
           "passages": [
             "john-14-1-6",
             "john-1-1-3"
           ]
-        },
-        "respond": {
-          "replies": [
-            {
-              "id": "christianity-reply-who-jesus-is",
-              "label": "Explain who Jesus is to us",
-              "text": "We believe Jesus Christ is the Son of God: the Firstborn of the Father and his Only Begotten in the flesh. Under the Father’s direction he created the earth, and through his Atonement and Resurrection we can return to God.",
-              "next": "continue"
-            },
-            {
-              "id": "christianity-reply-compare",
-              "label": "Agree to compare beliefs",
-              "text": "That sounds fair. For us, being Christian means faith in Jesus Christ as our Savior, repenting, being baptized, and following him every day. I’m happy to compare what we each mean.",
-              "next": "continue"
-            },
-            {
-              "id": "christianity-reply-read-together",
-              "label": "Read John 14 together",
-              "text": "Of course. Let’s read [John 14:1–6](ref:john-14-1-6) together. For me, Jesus’ words there mean he is the only way back to our Father in Heaven.",
-              "next": "continue"
-            }
-          ],
-          "heard": [
-            {
-              "label": "Asked what we believe about Jesus",
-              "reply": "christianity-reply-who-jesus-is"
-            },
-            {
-              "label": "Wanted to compare what we each mean",
-              "reply": "christianity-reply-compare"
-            },
-            {
-              "label": "Asked to read the passage together",
-              "reply": "christianity-reply-read-together"
-            }
-          ],
-          "clarifyReply": "christianity-reply-who-jesus-is",
-          "notSureReply": "christianity-reply-read-together"
         }
       },
       "followUps": [
@@ -137,58 +89,15 @@
           "help": {
             "hint": "Acknowledge their self-identification and explain your own doctrinal use of the word.",
             "answers": [
-              {
-                "id": "christianity-call-us-compare",
-                "text": "I understand that you identify as Christian. When I describe my faith, I mean trusting the Jesus taught in Scripture, including his identity and saving work. Could we compare those beliefs?",
-                "reply": "christianity-reply-why-christian"
-              }
+              "I understand that you identify as Christians and believe in Jesus. When I describe my own Christian faith, I mean trusting Jesus as the eternal Son of God. Our beliefs about him differ in important ways, even though we use some of the same words."
             ],
-            "clarify": "What beliefs about Jesus do you think are essential?",
             "context": "Discuss the meaning of the term without treating the conversation as a verdict on a person.",
             "passages": [
               "john-1-1-3"
             ]
           },
           "title": "Would you call us Christians?",
-          "summary": "Explore what the word Christian means.",
-          "respond": {
-            "replies": [
-              {
-                "id": "christianity-reply-why-christian",
-                "label": "Say why we call ourselves Christian",
-                "text": "Thank you. We call ourselves Christians because we worship God the Eternal Father in the name of Jesus Christ and rely on his Atonement for salvation. I’m glad to compare what we believe about him.",
-                "next": "continue"
-              },
-              {
-                "id": "christianity-reply-essentials",
-                "label": "Share what we see as essential",
-                "text": "For us, the essentials are that Jesus is the Son of God, that he suffered for our sins, died, and rose again, and that we follow him through faith, repentance, and baptism.",
-                "next": "continue"
-              },
-              {
-                "id": "christianity-reply-no-pressure",
-                "label": "Take the pressure off",
-                "text": "That’s okay. You don’t have to decide today. I just hope you can see how much Jesus Christ means to us.",
-                "next": "continue"
-              }
-            ],
-            "heard": [
-              {
-                "label": "Explained how they use the word Christian",
-                "reply": "christianity-reply-why-christian"
-              },
-              {
-                "label": "Asked which beliefs are essential",
-                "reply": "christianity-reply-essentials"
-              },
-              {
-                "label": "Said they weren’t sure",
-                "reply": "christianity-reply-no-pressure"
-              }
-            ],
-            "clarifyReply": "christianity-reply-essentials",
-            "notSureReply": "christianity-reply-no-pressure"
-          }
+          "summary": "Explore what the word Christian means."
         },
         {
           "id": "christianity-why-trinity",
@@ -197,13 +106,8 @@
           "help": {
             "hint": "Explain the beliefs behind the term: one God, three distinct persons.",
             "answers": [
-              {
-                "id": "christianity-trinity-one-being",
-                "text": "It concerns who God is. I believe there is one God, and the Father, Son, and Spirit are distinct persons who share the one divine being. Could we compare those claims?",
-                "reply": "christianity-reply-godhead"
-              }
+              "The Trinity matters because it describes who I believe God is. I believe in one God: the Father, Son, and Holy Spirit are distinct persons, and each is fully God. That shapes how I understand Jesus and worship him."
             ],
-            "clarify": "Do you mean one divine being or three beings united in purpose?",
             "context": "The Trinitarian claim is not that Jesus is the Father.",
             "passages": [
               "john-1-1-3",
@@ -211,45 +115,7 @@
             ]
           },
           "title": "Why does the Trinity matter?",
-          "summary": "Discuss why beliefs about God matter.",
-          "respond": {
-            "replies": [
-              {
-                "id": "christianity-reply-godhead",
-                "label": "Explain the Godhead",
-                "text": "We understand it differently. We believe the Father, the Son, and the Holy Ghost are three distinct beings, perfectly united in purpose. The Father and the Son have glorified bodies; the Holy Ghost is a personage of spirit.",
-                "next": "continue"
-              },
-              {
-                "id": "christianity-reply-one-in-purpose",
-                "label": "Three beings, one in purpose",
-                "text": "Three beings, united in purpose. We believe they are one in the way Jesus prayed [his disciples would be one](ref:john-17-20-23): one in will, love, and work.",
-                "next": "continue"
-              },
-              {
-                "id": "christianity-reply-in-short",
-                "label": "Give a short summary",
-                "text": "That’s fine. In short, we believe the Father, the Son, and the Holy Ghost are separate beings who are one in purpose, and we pray to the Father in Jesus’ name.",
-                "next": "continue"
-              }
-            ],
-            "heard": [
-              {
-                "label": "Explained their understanding of the Trinity",
-                "reply": "christianity-reply-godhead"
-              },
-              {
-                "label": "Asked if we mean three beings",
-                "reply": "christianity-reply-one-in-purpose"
-              },
-              {
-                "label": "Said they weren’t sure",
-                "reply": "christianity-reply-in-short"
-              }
-            ],
-            "clarifyReply": "christianity-reply-one-in-purpose",
-            "notSureReply": "christianity-reply-in-short"
-          }
+          "summary": "Discuss why beliefs about God matter."
         }
       ]
     },
@@ -265,16 +131,8 @@
         "help": {
           "hint": "You do not need to defend everything your denomination has done. Explain how you evaluate a church.",
           "answers": [
-            {
-              "id": "history-a1",
-              "text": "I evaluate my church’s teaching against Scripture and the gospel the apostles preached. Churches can make mistakes, but disagreement alone does not establish that Christ’s authority disappeared or that Joseph Smith restored it."
-            },
-            {
-              "id": "history-a2",
-              "text": "I agree there is one faith. What in this passage establishes a loss of authority followed by a restoration through Joseph Smith?"
-            }
+            "I look at whether my church’s teaching agrees with Scripture and the gospel Jesus’ apostles taught. I don’t think my church gets everything right. But disagreement between churches doesn’t, by itself, convince me that Jesus’ Church disappeared or needed to be restored through Joseph Smith."
           ],
-          "clarify": "What evidence establishes that priesthood authority was lost?",
           "context": "Ephesians 4 calls existing believers to unity. A restoration claim needs an argument beyond the existence of disagreement.",
           "passages": [
             "ephesians-4-1-6",
@@ -288,14 +146,10 @@
           "text": "James 1:5 says, “[If any of you lack wisdom, let him ask of God.](ref:james-1-2-6)” We believe Joseph Smith did that and God called him to restore his Church. How would you evaluate his claim?",
           "caption": "Follow-up · The right church",
           "help": {
-            "hint": "Affirm prayer while asking how a reported revelation is tested.",
+            "hint": "Affirm prayer, then explain how you would test a reported revelation.",
             "answers": [
-              {
-                "id": "history-ask-god-for-wisdom-a1",
-                "text": "I agree that we should ask God for wisdom. But the invitation to pray does not by itself establish that a particular vision comes from God. I would examine the claim, its evidence, and its teaching."
-              }
+              "I agree that we should pray for wisdom. I would also examine Joseph Smith’s teaching and the evidence for his claims. A sincere spiritual experience alone wouldn’t settle it for me; I would compare the message with Scripture."
             ],
-            "clarify": "How should we test a spiritual experience when people reach conflicting conclusions?",
             "context": "James connects wisdom with trials and maturity. That context does not make all prayer about other questions inappropriate.",
             "passages": [
               "james-1-2-6",
@@ -312,12 +166,8 @@
           "help": {
             "hint": "Distinguish failures in the Church from a universal loss of authority.",
             "answers": [
-              {
-                "id": "history-authority-lost-a1",
-                "text": "My confidence rests on Jesus’ promises to build his Church and remain with his people. I would also examine the historical evidence. What establishes that its authority was completely lost?"
-              }
+              "My confidence begins with Jesus’ promise to build his Church and remain with his people. Christians and churches have made serious mistakes, but I don’t see those failures as proof that all authority was lost. I would need convincing evidence for that claim."
             ],
-            "clarify": "When do you believe the loss happened, and what evidence shows it?",
             "context": "Christians disagree about how authority continues. Do not present a single verse as a complete historical demonstration.",
             "passages": [
               "matthew-16-18"
@@ -340,16 +190,8 @@
         "help": {
           "hint": "The Trinity distinguishes the Father from the Son. Jesus praying to the Father is compatible with that distinction.",
           "answers": [
-            {
-              "id": "god-a1",
-              "text": "I agree that Jesus and the Father are distinct. The Trinity does not mean Jesus is the Father. It means the Father, Son, and Holy Spirit are distinct persons who share the one divine being."
-            },
-            {
-              "id": "god-a2",
-              "text": "The Father is [the only true God](ref:john-17-1-5). In this same prayer Jesus speaks of glory shared before creation, and John begins his Gospel by calling the Word God. How do we hold those statements together?"
-            }
+            "I agree that Jesus and the Father are distinct. The Trinity doesn’t mean Jesus is the Father. I believe the Father, Son, and Holy Spirit are distinct persons who share the one divine being."
           ],
-          "clarify": "Are you distinguishing persons, or saying they are separate divine beings?",
           "context": "The evangelical case considers monotheism, the divinity of Father, Son and Spirit, and their personal distinction together.",
           "passages": [
             "john-17-1-5",
@@ -367,14 +209,10 @@
           "text": "In John 17:21, Jesus prays that his followers “[may be one; as thou, Father, art in me, and I in thee.](ref:john-17-20-23)” We understand the Godhead as united in purpose. Why do you understand their oneness differently?",
           "caption": "Follow-up · Godhead or Trinity?",
           "help": {
-            "hint": "Unity is present, but ask what the comparison establishes about God’s nature.",
+            "hint": "Explain how you read this passage alongside other passages about God.",
             "answers": [
-              {
-                "id": "god-one-in-purpose-a1",
-                "text": "That passage certainly includes unity. But it does not by itself establish that the Father and Son are separate gods. I read it alongside passages about one God and Jesus’ divine identity."
-              }
+              "I agree that Jesus is speaking about unity in that prayer. I also read it alongside passages that affirm one God and call Jesus divine. So I understand the Father and Son as more than separate beings who happen to share the same purpose."
             ],
-            "clarify": "Does an analogy about believers’ unity establish everything about God’s nature?",
             "context": "Do not deny that John 17 concerns unity. Explain why Trinitarians also consider other passages.",
             "passages": [
               "john-17-20-23",
@@ -391,12 +229,8 @@
           "help": {
             "hint": "The Son addresses the Father; Trinitarians do not identify them as the same person.",
             "answers": [
-              {
-                "id": "god-why-jesus-prays-a1",
-                "text": "He is praying to the Father. I believe the Son became truly human and relates to the Father as a distinct person. That distinction is part of the Trinity, not a contradiction of it."
-              }
+              "Jesus is praying to the Father. Christians believe the Son and the Father are distinct persons, so the Trinity doesn’t mean Jesus is talking to himself. Jesus also became truly human and lived in obedience to the Father."
             ],
-            "clarify": "Do you understand the Trinity to mean that the Father and Son are the same person?",
             "context": "Avoid water, ice, and steam analogies, which can blur personal distinctions.",
             "passages": [
               "john-17-1-5"
@@ -417,18 +251,10 @@
         "text": "We both value the Bible. Paul says, “[In the mouth of two or three witnesses shall every word be established.](ref:2-corinthians-13-1-3)” We believe the Book of Mormon is another witness of Jesus Christ alongside the Bible. Why couldn’t God provide additional scripture?",
         "caption": "2 Corinthians 13:1 · KJV",
         "help": {
-          "hint": "Ask how this particular book is authenticated. A claim to be another witness is not itself proof.",
+          "hint": "Explain how you would evaluate a claim that a book is Scripture.",
           "answers": [
-            {
-              "id": "bible-a1",
-              "text": "The question for me is whether this particular book comes from God. Calling it another witness does not establish that its testimony is true. I would compare its teaching about God and the gospel with the apostolic message."
-            },
-            {
-              "id": "bible-a2",
-              "text": "In 2 Corinthians 13, Paul discusses his coming visit and dealing with wrongdoing. How do we get from that principle about witnesses to identifying the Book of Mormon as Scripture?"
-            }
+            "I wouldn’t accept a book as Scripture simply because it calls itself another witness. I would examine its message and the evidence for it, and compare its teaching with the gospel the apostles taught. That’s why I don’t automatically accept the Book of Mormon as Scripture."
           ],
-          "clarify": "What evidence would distinguish a genuine revelation from a mistaken claim?",
           "context": "LDS missionary teaching applies the witness principle to the two books. The Christian response questions that application, rather than denying the principle.",
           "passages": [
             "2-corinthians-13-1-3",
@@ -444,12 +270,8 @@
           "help": {
             "hint": "Distinguish manuscript differences, translation choices, and interpretation.",
             "answers": [
-              {
-                "id": "bible-has-it-changed-a1",
-                "text": "Copies and translations need careful checking. Comparing manuscripts helps us assess the wording. A difference does not automatically mean the original is unknowable. Which passage do you think was changed, and what evidence supports that?"
-              }
+              "I don’t believe every copy or translation is identical. Comparing manuscripts helps us identify differences and assess the wording. There are passages with textual uncertainties, but that doesn’t mean the whole Bible is unreliable or its message is lost."
             ],
-            "clarify": "Are you asking about a copying difference, a translation, or an interpretation?",
             "context": "Real textual variants and uncertainties exist. Do not claim every manuscript is identical or that all disputed readings are settled.",
             "passages": [
               "galatians-1-6-9"
@@ -465,13 +287,9 @@
           "help": {
             "hint": "Disagreement calls for examining reasons; it does not automatically authenticate a new authority.",
             "answers": [
-              {
-                "id": "bible-many-interpretations-a1",
-                "text": "I can be mistaken, so I examine context, related passages, and reasons for each reading. Disagreement does not by itself establish another book’s authority. Could we work through one passage together?"
-              }
+              "I can misunderstand a passage, so I try to read it in context, compare it with related passages, and consider other Christians’ reasons. Disagreement means we need to examine our interpretations carefully. It doesn’t automatically establish that another book or church has the right answer."
             ],
-            "clarify": "Which specific interpretation should we examine together?",
-            "context": "Focus on a specific passage rather than trying to solve every disagreement at once.",
+            "context": "Christians do disagree about some passages. Explain how you weigh a reading, rather than trying to settle every disagreement at once.",
             "passages": [
               "2-corinthians-13-1-3"
             ]
@@ -493,12 +311,8 @@
         "help": {
           "hint": "Different dwelling places do not automatically establish three kingdoms or their entry requirements.",
           "answers": [
-            {
-              "id": "afterlife-a1",
-              "text": "I believe Jesus prepares a place for his people. But “many mansions” does not specify three kingdoms or their entry requirements. Could we read the surrounding verses and distinguish what Jesus says from what later revelation adds?"
-            }
+            "I understand Jesus to be promising his followers a place with him. In that passage, he doesn’t describe three kingdoms or different requirements for entering them. So I don’t take ‘many mansions’ by itself as teaching the LDS view of the afterlife."
           ],
-          "clarify": "Which parts come from this passage, and which from later LDS revelation?",
           "context": "Jesus comforts his disciples with the promise of being with him. LDS teaching describes celestial, terrestrial, and telestial kingdoms; avoid the claim that everyone outside the LDS Church goes to hell.",
           "passages": [
             "john-14-1-6"
@@ -513,12 +327,8 @@
           "help": {
             "hint": "Read Paul’s opening question: what kind of body do the raised dead receive?",
             "answers": [
-              {
-                "id": "afterlife-sun-moon-stars-a1",
-                "text": "Paul introduces this discussion by asking how the dead are raised and what body they receive. I understand these comparisons as part of his explanation of resurrection bodies. Where does the passage establish three kingdoms with different requirements?"
-              }
+              "Paul begins that discussion by talking about the resurrection and the bodies people will receive. I understand his comparisons with the sun, moon, and stars in that context. I don’t see the passage itself setting out three kingdoms with different entry requirements."
             ],
-            "clarify": "How does the question in verse 35 shape your reading of verses 40–42?",
             "context": "This is an evangelical contextual objection. LDS interpreters connect the passage with later revelation. The KJV does not name a telestial kingdom.",
             "passages": [
               "1-corinthians-15-35-42"
@@ -532,14 +342,10 @@
           "text": "We believe the restored Church provides the authority and ordinances needed for exaltation. What do you believe is necessary to live with God forever?",
           "caption": "Follow-up · Life after death",
           "help": {
-            "hint": "Clarify salvation and exaltation before comparing requirements.",
+            "hint": "Explain your belief about eternal life; LDS teaching distinguishes salvation from exaltation.",
             "answers": [
-              {
-                "id": "afterlife-restored-ordinances-a1",
-                "text": "Could you explain the difference between salvation and exaltation? I believe eternal life is God’s gift through Christ. What establishes that these additional ordinances are required?"
-              }
+              "I believe eternal life is God’s gift through Jesus Christ, received by grace through faith. Good works belong in the Christian life as a response to that gift. I’m not convinced that ordinances restored through Joseph Smith are necessary to live with God."
             ],
-            "clarify": "When you say salvation and exaltation, do you mean the same thing?",
             "context": "The evangelical response emphasizes salvation by grace and good works as its result. Explain the difference rather than assuming the two traditions use identical definitions.",
             "passages": [
               "ephesians-2-8-10"
@@ -551,18 +357,6 @@
       ]
     }
   ],
-  "clarification": {
-    "id": "clarify",
-    "text": "Could you explain what you mean by that?",
-    "caption": "Clarify",
-    "help": {
-      "hint": "Explain your meaning in your own words, or ask to read the passage together.",
-      "answers": [
-        "What I mean is… Could we read the passage together?"
-      ]
-    }
-  },
-  "notSureAnswer": "I’m not sure yet. Could we read that passage together?",
   "closing": {
     "id": "closing",
     "text": "Thanks for taking the time to talk with me. I should get going, but I’ve enjoyed our conversation. Have a good day!",
@@ -612,7 +406,7 @@
       {
         "id": "ephesians-4-1-6",
         "label": "Ephesians 4:1–6",
-        "context": "Paul urges existing believers to walk in humility and preserve unity. The Christian objection asks whether this passage establishes a later loss and restoration of authority.",
+        "context": "Paul urges existing believers to walk in humility and preserve unity. Many Christians read it as a call to unity, not as evidence of a later loss and restoration of authority.",
         "verses": [
           {
             "number": 1,
@@ -831,7 +625,7 @@
       {
         "id": "ephesians-2-8-10",
         "label": "Ephesians 2:8–10",
-        "context": "An evangelical response emphasizes salvation as God’s gift and good works as its result. Ask what the missionary means by salvation and exaltation before assuming identical definitions.",
+        "context": "An evangelical response emphasizes salvation as God’s gift and good works as its result. LDS teaching distinguishes salvation from exaltation, so the two traditions may not use these words in the same way.",
         "verses": [
           {
             "number": 8,
@@ -861,7 +655,7 @@
       {
         "id": "isaiah-43-10",
         "label": "Isaiah 43:10",
-        "context": "God contrasts himself with rival gods. An evangelical response asks whether unity of purpose among separate divine beings sufficiently accounts for this claim.",
+        "context": "God contrasts himself with rival gods. Evangelicals argue that unity of purpose among separate divine beings does not fully account for this claim.",
         "verses": [
           {
             "number": 10,
@@ -905,5 +699,5 @@
       }
     ]
   },
-  "sourceNotes": "Extracted verbatim from the approved prototype (doorstep-prototype.html, version 24, AI developer guide of 21 October 2026). Christian responses represent the authored evangelical apologetic perspective. Quotations are KJV; each quoted phrase links to its supplied passage range. Weekly reading links point to Watchman Fellowship.\n\nv2 (draft, schema 3.1) adds missionary replies for Being Christian. Replies are roleplay paraphrases of Latter-day Saint self-description, not quotations; a reviewer must verify them before publishing. Sources: christianity-reply-who-jesus-is: “The Living Christ: The Testimony of the Apostles” (2000); Gospel Topics, “Jesus Christ”. christianity-reply-compare: Articles of Faith 1:4. christianity-reply-read-together: John 14:6; 2 Nephi 31:21. christianity-reply-why-christian: Gospel Topics, “Christians”; Articles of Faith 1:3. christianity-reply-essentials: Teachings of Presidents of the Church: Joseph Smith, ch. 3 (“The fundamental principles of our religion…”). christianity-reply-no-pressure: no doctrinal claim. christianity-reply-godhead: Doctrine and Covenants 130:22; Gospel Topics, “Godhead”; Articles of Faith 1:1. christianity-reply-one-in-purpose: John 17:20–23; Jeffrey R. Holland, “The Only True God and Jesus Christ Whom He Hath Sent” (October 2007 general conference). christianity-reply-in-short: Gospel Topics, “Godhead”; 3 Nephi 18:19. The other four topics have answer ids but no replies yet; until they do, the missionary goes straight on to the next question there."
+  "sourceNotes": "Version 2: prepared questions only. The missionary asks the five main questions and ten follow-ups from version 1 unchanged; the Christian answers and the missionary moves on. Each Christian suggestion is one complete answer, taken from the revised answer set of 21 October 2026, and never asks the missionary a question back. Removed from version 1: the universal “not sure / read that passage together” answer, the missionary clarification (“Ask them to explain”) and its filler answer, each beat’s clarifying question (“Help me clarify”), and alternative answers that asked questions back. Hints were revised to help the Christian form an answer. Christian answers are conversational expressions of an evangelical, Trinitarian perspective, not Bible quotations. Quotations are KJV; each quoted phrase links to its supplied passage range. Weekly reading links point to Watchman Fellowship."
 }
