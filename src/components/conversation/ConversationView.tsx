@@ -23,8 +23,6 @@ import {
 import { OpenPassageContext } from './passageContext'
 import { Sheet } from './Sheet'
 
-/** Messages kept in view; older ones fold into "Earlier messages". */
-const VISIBLE_MESSAGES = 4
 /** Within this distance of the bottom, a new message scrolls into view. */
 const NEAR_BOTTOM_PX = 96
 /** Rows in the missionary's choice card; the rest are under "More directions". */
@@ -73,7 +71,6 @@ export function ConversationView({
   const [draft, setDraft] = useState<Draft>({ forLength: -1, id: null })
   /** The history length at which the missionary said "They said something else". */
   const [heardFor, setHeardFor] = useState(-1)
-  const [earlierOpen, setEarlierOpen] = useState(false)
   const restoreFocus = useRef(true)
   const sendRef = useRef<HTMLButtonElement>(null)
   const scrollRef = useRef<HTMLElement>(null)
@@ -108,6 +105,17 @@ export function ConversationView({
     if (nearBottom.current || history.at(-1)?.speaker === role) pane.scrollTop = pane.scrollHeight
   }, [history, role])
 
+  // When the composer grows or shrinks, a reader at the bottom stays at the bottom.
+  useLayoutEffect(() => {
+    const pane = scrollRef.current
+    if (!pane || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      if (nearBottom.current) pane.scrollTop = pane.scrollHeight
+    })
+    observer.observe(pane)
+    return () => observer.disconnect()
+  }, [])
+
   const choose = (id: string | null) => {
     setDraft({ forLength: history.length, id })
     restoreFocus.current = false
@@ -129,8 +137,6 @@ export function ConversationView({
     onCommit(chosenId ?? FREE_RESPONSE_ID)
   }
 
-  const visible = messages.slice(-VISIBLE_MESSAGES)
-  const earlier = messages.slice(0, -VISIBLE_MESSAGES)
   const latest = messages.at(-1)
   const allTopicsUsed = progress.started && !progress.responding && suggestNext(content, progress) === null
   // On the missionary's turn the composer becomes a choice card: a reply to
@@ -215,26 +221,8 @@ export function ConversationView({
         <h1 className={styles.srOnly}>Conversation</h1>
         <p className={styles.sceneContext}>The door is open. Your conversation begins here.</p>
         <div className={styles.thread} aria-label="Conversation prompts" role="region">
-          {earlier.length > 0 ? (
-            <details
-              className={styles.earlier}
-              open={earlierOpen}
-              onToggle={(event) => setEarlierOpen(event.currentTarget.open)}
-            >
-              <summary>Earlier messages ({earlier.length})</summary>
-              {earlier.map((message, index) => (
-                <Message key={index} content={content} message={message} role={role} latest={false} />
-              ))}
-            </details>
-          ) : null}
-          {visible.map((message, index) => (
-            <Message
-              key={earlier.length + index}
-              content={content}
-              message={message}
-              role={role}
-              latest={index === visible.length - 1}
-            />
+          {messages.map((message, index) => (
+            <Message key={index} content={content} message={message} role={role} latest={index === messages.length - 1} />
           ))}
         </div>
         <p className={styles.srOnly} aria-live="polite">

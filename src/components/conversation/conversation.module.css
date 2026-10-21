@@ -691,10 +691,26 @@
   color: var(--color-chip-ink);
 }
 
-/* The conversation: a scrolling thread above a pinned composer. */
+/*
+ * The conversation, like a messaging app: the header stays at the top, the
+ * composer at the bottom, and only the thread between them scrolls. Messages
+ * sit just above the composer, newest last.
+ */
+
+/* With very large text the frame still scrolls; the header stays in place. */
+.appConversation .header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-surface);
+}
 
 .conversation {
+  /* Contains the screen-reader announcement, which would otherwise stretch the frame. */
+  position: relative;
+  display: flex;
   flex: 1 0 auto;
+  flex-direction: column;
   min-width: 0;
   height: 0;
   min-height: min(45dvh, 18rem);
@@ -706,28 +722,17 @@
 }
 
 .sceneContext {
-  margin: 0 0 18px;
+  margin: auto 0 18px;
   font-size: var(--text-small);
   text-align: center;
   color: var(--color-muted);
 }
 
 .thread {
+  flex: none;
+  width: 100%;
   max-width: 860px;
   margin: 0 auto;
-}
-
-.earlier {
-  margin: 0 0 19px;
-  font-size: var(--text-small);
-  color: var(--color-muted);
-}
-
-.earlier summary {
-  min-height: 44px;
-  padding: 10px 0;
-  text-align: center;
-  cursor: pointer;
 }
 
 .message {
