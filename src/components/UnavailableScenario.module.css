@@ -1,0 +1,174 @@
+/* The "couldn't find this scenario" page. Follows the scenario-unavailable handoff exactly. */
+.canvas {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background: var(--color-unavailable-canvas);
+  color: var(--color-unavailable-ink);
+  font: 16px / 1.55 var(--font-unavailable-body);
+  padding: 32px 20px;
+}
+
+.screen {
+  width: 100%;
+  max-width: 464px;
+  background: var(--color-unavailable-surface);
+  border: 1px solid var(--color-unavailable-line);
+  border-radius: 24px;
+  padding: 28px;
+}
+
+.brand {
+  font: 25px / 1.3 var(--font-unavailable-heading);
+  letter-spacing: -0.5px;
+  border-bottom: 1px solid var(--color-unavailable-line);
+  padding-bottom: 20px;
+}
+
+.body {
+  padding-top: 28px;
+}
+
+.art {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto 20px;
+}
+
+.title {
+  font: 400 clamp(28px, 7.6vw, 34px) / 1.14 var(--font-unavailable-heading);
+  letter-spacing: -0.8px;
+  max-width: 330px;
+  margin: 0 0 16px;
+}
+
+.text,
+.scenarioSubtitle,
+.help {
+  margin: 0;
+  color: var(--color-unavailable-muted);
+}
+
+.scenario {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin: 28px 0 16px;
+  padding: 16px;
+  border: 1px solid var(--color-unavailable-line);
+  border-radius: 16px;
+}
+
+.scenarioIcon {
+  flex: none;
+  width: 40px;
+  height: 44px;
+  color: var(--color-unavailable-teal);
+  display: grid;
+  place-items: center;
+  background: var(--color-unavailable-sage);
+  border-radius: 10px;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.35px;
+  font-weight: 650;
+  text-transform: uppercase;
+  color: var(--color-unavailable-muted);
+  margin-bottom: 4px;
+}
+
+.scenarioName {
+  font: 400 22px / 1.25 var(--font-unavailable-heading);
+  letter-spacing: normal;
+  margin: 0 0 3px;
+}
+
+.scenarioSubtitle {
+  font-size: 14px;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 14px 18px;
+  width: 100%;
+  border: 1px solid var(--color-unavailable-teal);
+  border-radius: 14px;
+  background: var(--color-unavailable-teal);
+  color: var(--color-unavailable-surface);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.cta:hover {
+  background: var(--color-unavailable-teal-hover);
+}
+
+.cta:focus-visible {
+  outline: 3px solid var(--color-unavailable-focus);
+  outline-offset: 4px;
+}
+
+.cta svg {
+  flex: none;
+}
+
+.help {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-unavailable-line);
+}
+
+.help strong {
+  font-weight: 550;
+  color: var(--color-unavailable-ink);
+}
+
+@media (max-width: 360px) {
+  .canvas {
+    padding: 16px 12px;
+  }
+
+  .screen {
+    padding: 22px;
+  }
+
+  .art {
+    width: 210px;
+  }
+
+  .body {
+    padding-top: 22px;
+  }
+
+  .scenario {
+    margin-top: 22px;
+  }
+}
+
+@media (max-height: 700px) {
+  .canvas {
+    align-items: start;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .art {
+    width: 180px;
+    margin-bottom: 16px;
+  }
+
+  .body {
+    padding-top: 16px;
+  }
+}

@@ -55,8 +55,21 @@
   --color-hard-mode-paper: #fffdf4;
   --color-hard-mode-focus: #ffe275;
 
+  /* The "couldn't find this scenario" page, matching its handoff (scenario-unavailable). */
+  --color-unavailable-canvas: #faf7f0;
+  --color-unavailable-surface: #fffdf8;
+  --color-unavailable-ink: #26332f;
+  --color-unavailable-muted: #5b655f;
+  --color-unavailable-teal: #205c50;
+  --color-unavailable-teal-hover: #174a40;
+  --color-unavailable-sage: #e7eee6;
+  --color-unavailable-line: #d9ddd3;
+  --color-unavailable-focus: #bc8060;
+
   --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --font-heading: var(--font-body);
+  --font-unavailable-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-unavailable-heading: Georgia, 'Times New Roman', serif;
 
   --text-small: 0.8125rem;
   --text-body: 1rem;

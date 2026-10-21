@@ -3,6 +3,7 @@ import { Navigate, useParams } from 'react-router'
 import { LoadingCard, MessageCard } from '../components/MessageCard'
 import { PageShell } from '../components/PageShell'
 import { ScenarioFlow } from '../components/ScenarioFlow'
+import { UnavailableScenario } from '../components/UnavailableScenario'
 import styles from '../components/screens.module.css'
 import { configResult, type AppConfig } from '../lib/env'
 import { getSupabase } from '../lib/supabase'
@@ -61,14 +62,7 @@ function FeaturedRedirect({ config }: { config: AppConfig }) {
 }
 
 export function NotFoundPage() {
-  return (
-    <PageShell>
-      <title>Scenario not found · Doorstep practice</title>
-      <MessageCard heading="We could not find that scenario">
-        <p>Check that you opened the full link your group leader shared.</p>
-      </MessageCard>
-    </PageShell>
-  )
+  return <UnavailableScenario />
 }
 
 function ConfigErrorPage({ problems }: { problems: string[] }) {

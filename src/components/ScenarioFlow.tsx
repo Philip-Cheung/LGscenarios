@@ -17,6 +17,7 @@ import { HumanCheck } from './HumanCheck'
 import { JoinForm } from './JoinForm'
 import { LoadingCard, MessageCard } from './MessageCard'
 import { PageShell } from './PageShell'
+import { UnavailableScenario } from './UnavailableScenario'
 import { RoleSelect } from './RoleSelect'
 import { SessionScreen } from './SessionScreen'
 import { Welcome } from './Welcome'
@@ -242,6 +243,8 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
     return <Navigate to={`/s/${startsAt}`} replace state={notice ? { notice } : null} />
   }
 
+  if (phase.kind === 'missing') return <UnavailableScenario />
+
   const current = phase.kind === 'session' ? phase.scenario : landing
   const title = current?.title
   const documentTitle = <title>{title ? `${title} · Doorstep practice` : 'Doorstep practice'}</title>
@@ -421,11 +424,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
           </MessageCard>
         )
       case 'missing':
-        return (
-          <MessageCard heading="This scenario is not available" focusOnMount>
-            <p>Check that you opened the full link your group leader shared.</p>
-          </MessageCard>
-        )
+        return <UnavailableScenario />
       case 'resumeError':
         return (
           <MessageCard
