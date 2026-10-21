@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { Role } from '../../sessions/types'
+import { Masthead } from '../Masthead'
 import { Portrait } from './art'
 import styles from './conversation.module.css'
 
@@ -18,17 +19,7 @@ interface ConversationShellProps {
 export function ConversationShell({ subtitle, action, strip, layout = 'screen', children }: ConversationShellProps) {
   return (
     <div className={[styles.app, layout === 'conversation' ? styles.appConversation : ''].filter(Boolean).join(' ')}>
-      <header className={styles.header}>
-        <div>
-          <strong className={styles.wordmark}>Doorstep practice</strong>
-          <small className={styles.subtitle}>{subtitle}</small>
-        </div>
-        {action ? (
-          <button type="button" className={styles.exit} disabled={action.disabled} onClick={action.onClick}>
-            {action.label}
-          </button>
-        ) : null}
-      </header>
+      <Masthead subtitle={subtitle} action={action} className={styles.header} />
       {strip}
       {children}
     </div>

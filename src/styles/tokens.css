@@ -55,6 +55,16 @@
   --color-hard-mode-paper: #fffdf4;
   --color-hard-mode-focus: #ffe275;
 
+  /* The editorial masthead, matching its handoff (premium-header). */
+  --color-masthead: #f5f3eb;
+  --color-masthead-line: #dce0d5;
+  --color-masthead-ink: #26332f;
+  --color-masthead-muted: #626b60;
+  --color-masthead-mark: #205c50;
+  --color-masthead-leave: #945642;
+  --color-masthead-leave-hover: #f0e7df;
+  --color-masthead-focus: #bc8060;
+
   /* The "couldn't find this scenario" page, matching its handoff (scenario-unavailable). */
   --color-unavailable-canvas: #faf7f0;
   --color-unavailable-surface: #fffdf8;
@@ -68,8 +78,9 @@
 
   --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --font-heading: var(--font-body);
+  --font-serif: Georgia, 'Times New Roman', serif;
   --font-unavailable-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-unavailable-heading: Georgia, 'Times New Roman', serif;
+  --font-unavailable-heading: var(--font-serif);
 
   --text-small: 0.8125rem;
   --text-body: 1rem;

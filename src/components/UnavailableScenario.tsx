@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
 import wayfindingUrl from '../assets/wayfinding.svg'
 import { FALLBACK_SCENARIO } from '../scenarios/fallback'
+import { Masthead } from './Masthead'
 import styles from './UnavailableScenario.module.css'
 
 /** Recovery page for a link that does not lead to a live scenario. It never redirects or starts a practice. */
@@ -12,12 +13,12 @@ export function UnavailableScenario() {
   }, [])
 
   return (
-    <main className={styles.canvas}>
+    <div className={styles.page}>
       <title>Scenario not found · Doorstep practice</title>
       <meta name="robots" content="noindex" />
-      <article className={styles.screen} aria-labelledby="unavailable-title">
-        <header className={styles.brand}>Doorstep practice</header>
-        <div className={styles.body}>
+      <Masthead />
+      <main className={styles.canvas}>
+        <article className={styles.screen} aria-labelledby="unavailable-title">
           <img className={styles.art} src={wayfindingUrl} alt="" width={280} height={180} />
           <h1 id="unavailable-title" ref={headingRef} tabIndex={-1} className={styles.title}>
             We couldn’t find this scenario.
@@ -68,8 +69,8 @@ export function UnavailableScenario() {
             <br />
             Ask your group leader for the latest link.
           </p>
-        </div>
-      </article>
-    </main>
+        </article>
+      </main>
+    </div>
   )
 }
