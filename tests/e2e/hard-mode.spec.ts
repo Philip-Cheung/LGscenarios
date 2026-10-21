@@ -8,7 +8,7 @@ import { closePair, heading, openPhone, readPairCode, type Pair } from './helper
  * Hard mode on two phones: Lesson 1 to its reflection, a Hard mode request
  * accepted by the partner, the Hard mode intro in place of the door, then a two-sided exchange in the Hard mode
  * scenario and its own reflection. Runs against temporary copies of
- * content/scenarios/lesson-one-first-vision.v3.json and week-one-hard-mode.v1.json,
+ * content/scenarios/lesson-one-first-vision.v4.json and week-one-hard-mode.v2.json,
  * registered under their own ids with an old publication date so neither is
  * ever the featured scenario. Both are deleted afterwards.
  */
@@ -16,7 +16,7 @@ const SUFFIX = randomUUID().slice(0, 8)
 const LESSON = `test-lesson-hard-${SUFFIX}`
 const HARD = `test-hard-${SUFFIX}`
 
-const hardFile = JSON.parse(readFileSync('content/scenarios/week-one-hard-mode.v1.json', 'utf8'))
+const hardFile = JSON.parse(readFileSync('content/scenarios/week-one-hard-mode.v2.json', 'utf8'))
 const firstQuestion = hardFile.topics[0].question
 const COPY = {
   lessonOpening: 'Hi! We’re missionaries from The Church of Jesus Christ of Latter-day Saints. Do you have a few minutes to talk about our beliefs?',
@@ -45,8 +45,8 @@ test.beforeAll(async () => {
   const client = db()
   await client.connect()
   for (const [id, content] of [
-    [HARD, load('content/scenarios/week-one-hard-mode.v1.json', HARD)],
-    [LESSON, load('content/scenarios/lesson-one-first-vision.v3.json', LESSON, HARD)],
+    [HARD, load('content/scenarios/week-one-hard-mode.v2.json', HARD)],
+    [LESSON, load('content/scenarios/lesson-one-first-vision.v4.json', LESSON, HARD)],
   ] as const) {
     await client.query(
       `insert into public.scenario_registry
@@ -119,7 +119,7 @@ test('Hard mode: its own address starts nothing; new practices begin at Lesson 1
   const phone = await openPhone(browser, 375, 740, `/s/${HARD}`)
   await expect(phone.page).toHaveURL(new RegExp(`/s/${LESSON}$`))
   await expect(phone.page).toHaveTitle('Introduction & First Vision · Doorstep practice')
-  await expect(phone.page.getByRole('button', { name: /^Mormon missionary/ })).toBeVisible()
+  await expect(phone.page.getByRole('button', { name: /^LDS Missionary/ })).toBeVisible()
   await phone.context.close()
 })
 
@@ -128,7 +128,7 @@ test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sid
   const missionary = await openPhone(browser, 375, 740, `/s/${LESSON}`)
   const christian = await openPhone(browser, 375, 740, `/s/${LESSON}`)
   const pair: Pair = { missionary, christian }
-  await missionary.page.getByRole('button', { name: /^Mormon missionary/ }).click()
+  await missionary.page.getByRole('button', { name: /^LDS Missionary/ }).click()
   const code = await readPairCode(missionary.page)
   await christian.page.getByRole('button', { name: /^Christian/ }).click()
   await christian.page.getByLabel('Pairing code').fill(code.replace(' ', ''))
@@ -151,7 +151,7 @@ test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sid
   await confirm.getByRole('button', { name: 'Ask to start' }).click()
   await expect(christian.page.getByRole('dialog', { name: 'Waiting for your partner' })).toContainText('You asked to try Hard mode.')
   const prompt = missionary.page.getByRole('dialog', { name: 'Your partner wants to try Hard mode' })
-  await expect(prompt).toContainText('This time the missionary responds to what the Christian says.')
+  await expect(prompt).toContainText('This time the LDS Missionary responds to what the Christian says.')
   await shot(missionary.page, '375-02-partner-asks')
 
   // A decline keeps both on the lesson’s reflection.
@@ -222,10 +222,10 @@ test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sid
     await expect(phone.page).toHaveURL(new RegExp(`/s/${LESSON}$`))
     await expect(phone.page).toHaveTitle('Introduction & First Vision · Doorstep practice')
     await expect(phone.page.getByText(notice)).toBeVisible()
-    await expect(phone.page.getByRole('button', { name: /^Mormon missionary/ })).toBeVisible()
+    await expect(phone.page.getByRole('button', { name: /^LDS Missionary/ })).toBeVisible()
   }
   await missionary.page.reload()
-  await expect(missionary.page.getByRole('button', { name: /^Mormon missionary/ })).toBeVisible()
+  await expect(missionary.page.getByRole('button', { name: /^LDS Missionary/ })).toBeVisible()
   await expect(missionary.page.getByText('Session ended for both players.')).toHaveCount(0)
   await closePair(pair)
 })

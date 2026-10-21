@@ -31,9 +31,9 @@ export function Welcome({ notice = null, onCreate, onJoin }: WelcomeProps) {
         <Icon />
         Conversation practice for Christians
       </span>
-      <h1 tabIndex={-1}>Practice talking with Mormon missionaries.</h1>
+      <h1 tabIndex={-1}>Practice talking with LDS Missionaries.</h1>
       <p>Build confidence in explaining your faith, asking thoughtful questions, and responding with kindness.</p>
-      <p>Practise with a partner. One person takes the Christian role; the other plays a Mormon missionary.</p>
+      <p>Practise with a partner. One person takes the Christian role; the other plays an LDS Missionary.</p>
     </AppScreen>
   )
 }

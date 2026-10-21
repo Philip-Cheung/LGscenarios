@@ -222,7 +222,7 @@ test('a creator who changes roles before anyone joins stays the creator, and the
   const firstCode = await createPractice(creator.page)
   await creator.page.getByRole('button', { name: 'Change roles' }).click()
   await expect(heading(creator.page, SCREENS.chooseRole)).toBeVisible()
-  await expect(creator.page.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
+  await expect(creator.page.getByRole('radio', { name: /LDS Missionary$/ })).toBeChecked()
 
   await creator.page.getByRole('radio', { name: /Christian$/ }).check()
   await creator.page.getByRole('button', { name: 'Get a pairing code' }).click()

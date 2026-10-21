@@ -134,7 +134,7 @@ export function EncounterScreen({
             </Button>
           ) : (
             <p className={styles.fine} role="status">
-              {bothReady ? 'Both ready. The missionary can start.' : 'You’re ready. Waiting for your partner.'}
+              {bothReady ? 'Both ready. The LDS Missionary can start.' : 'You’re ready. Waiting for your partner.'}
             </p>
           )}
         </div>

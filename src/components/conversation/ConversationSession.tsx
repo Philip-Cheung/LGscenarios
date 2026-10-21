@@ -381,9 +381,9 @@ export function ConversationSession({
             }
             description={
               request.kind === 'swap'
-                ? `Accept to clear this round and start at Ready as the ${snapshot.myRole === 'missionary' ? 'Christian' : 'missionary'}.`
+                ? `Accept to clear this round and start at Ready as the ${snapshot.myRole === 'missionary' ? 'Christian' : 'LDS Missionary'}.`
                 : request.kind === 'hardMode'
-                  ? 'Accept to start Hard mode at Ready with the same roles. This time the missionary responds to what the Christian says.'
+                  ? 'Accept to start Hard mode at Ready with the same roles. This time the LDS Missionary responds to what the Christian says.'
                   : 'Accept to clear this conversation and start at Ready with the same roles.'
             }
             busy={pending !== null}

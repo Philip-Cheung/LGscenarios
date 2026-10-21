@@ -73,7 +73,7 @@ export function RoleChoice({ content, busy, error, notice, onChoose }: RoleChoic
         {busy ? 'Creating your pairing code…' : null}
       </p>
       <p className={styles.pairError} role="alert">
-        {error ? `${error} Choose Mormon missionary to try again.` : null}
+        {error ? `${error} Choose ${content.roles.missionary.label} to try again.` : null}
       </p>
       <details className={styles.startReading}>
         <summary>{content.resources.heading}</summary>
@@ -236,7 +236,7 @@ export function JoinPartner({ content, initialValue, busy, error, onJoin, onChan
     <main className={`${styles.journey} ${styles.pairingLayout}`}>
       <div className={styles.journeyKicker}>CHRISTIAN · PAIR UP</div>
       <h1 className={styles.journeyTitle}>Join your partner</h1>
-      <p className={styles.journeyDescription}>Enter the six-digit code shown on your missionary partner’s phone.</p>
+      <p className={styles.journeyDescription}>Enter the six-digit code shown on your LDS Missionary partner’s phone.</p>
       <form className={styles.joinForm} onSubmit={submit} noValidate>
         <label className={styles.codeLabel} htmlFor={inputId}>
           Pairing code

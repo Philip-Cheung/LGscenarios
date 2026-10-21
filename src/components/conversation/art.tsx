@@ -91,7 +91,7 @@ export type DoorstepPhase = 'closed' | 'knocking' | 'opening'
 export function DoorstepScene({ phase }: { phase: DoorstepPhase }) {
   const clipId = useId()
   const label =
-    phase === 'opening' ? 'The Christian opens the door to the missionary' : 'A missionary stands outside a closed front door'
+    phase === 'opening' ? 'The Christian opens the door to the LDS Missionary' : 'An LDS Missionary stands outside a closed front door'
   return (
     <div
       className={[styles.doorstep, phase === 'knocking' ? styles.knocking : '', phase === 'opening' ? styles.opening : '']
@@ -169,7 +169,7 @@ export function OutroScene({ elapsedMs, paused }: { elapsedMs: number; paused: b
       <svg viewBox="0 0 640 420" role="img" aria-labelledby={`${titleId} ${descId}`} xmlns="http://www.w3.org/2000/svg">
         <title id={titleId}>Goodbye at the doorstep</title>
         <desc id={descId}>
-          The Christian waves goodbye and closes the front door. The missionary turns and walks away from the home.
+          The Christian waves goodbye and closes the front door. The LDS Missionary turns and walks away from the home.
         </desc>
         <defs>
           <linearGradient id={skyId} x2="0" y2="1">
