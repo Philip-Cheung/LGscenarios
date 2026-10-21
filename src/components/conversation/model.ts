@@ -18,6 +18,8 @@ export interface ThreadMessage {
   /** The line as rich text; the free response is the neutral marker, never a transcript. */
   text: string
   caption: string
+  /** A passage the caption opens. */
+  passage?: string
   /** The Christian answered in their own words. */
   free: boolean
 }
@@ -31,6 +33,9 @@ export interface BeatHelp {
   clarify?: string
   context?: string
   passages: readonly string[]
+  note?: string
+  evidence?: { heading: string; text: string; context?: string }
+  reading?: { label: string; url: string }
 }
 
 /** An authored missionary line, with where it sits in the conversation. */
@@ -38,6 +43,8 @@ export interface Beat {
   id: string
   text: string
   caption: string
+  /** A passage the caption opens. */
+  passage?: string
   help: BeatHelp | null
   /** The topic a question or follow-up belongs to. */
   topicId: string | null
@@ -75,6 +82,7 @@ export function findBeat(content: ConversationContent, id: string): Beat | null 
         id,
         text: item.text,
         caption: item.caption,
+        passage: item.passage,
         help: {
           greeting: false,
           hint: item.help.hint,
@@ -82,6 +90,9 @@ export function findBeat(content: ConversationContent, id: string): Beat | null 
           clarify: item.help.clarify,
           context: item.help.context,
           passages: item.help.passages ?? [],
+          note: item.help.note,
+          evidence: item.help.evidence,
+          reading: item.help.reading,
         },
         topicId: topic.id,
       }
@@ -117,7 +128,9 @@ export function threadMessages(content: ConversationContent, history: readonly H
   for (const entry of history) {
     if (entry.speaker === 'missionary') {
       lastBeat = findBeat(content, entry.id)
-      if (lastBeat) messages.push({ speaker: 'missionary', text: lastBeat.text, caption: lastBeat.caption, free: false })
+      if (lastBeat) {
+        messages.push({ speaker: 'missionary', text: lastBeat.text, caption: lastBeat.caption, passage: lastBeat.passage, free: false })
+      }
       continue
     }
     if (entry.id === FREE_RESPONSE_ID) {
@@ -192,13 +205,18 @@ export function directionChoices(content: ConversationContent, progress: Convers
 
 /**
  * The missionary's next suggested line: the introduction, then the next
- * follow-up in the active topic, then the next topic not yet asked. Null once
- * every topic is exhausted, when only the closing remains.
+ * follow-up in the active topic, then the next topic not yet asked, and the
+ * closing once every topic is exhausted.
  */
-export function suggestNext(content: ConversationContent, progress: ConversationProgress): string | null {
+export function suggestNext(content: ConversationContent, progress: ConversationProgress): string {
   if (!progress.started) return OPENING_ID
   const { continueTopic, otherDirections } = directionChoices(content, progress)
-  return continueTopic[0]?.beatId ?? otherDirections[0]?.beatId ?? null
+  return continueTopic[0]?.beatId ?? otherDirections[0]?.beatId ?? CLOSING_ID
+}
+
+/** Every question and follow-up the missionary can still reach has been spoken; only the closing remains. */
+export function topicsExhausted(content: ConversationContent, progress: ConversationProgress): boolean {
+  return progress.started && suggestNext(content, progress) === CLOSING_ID
 }
 
 /** Whether the missionary may speak this line next; mirrors commit_utterance. */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import file from '../../../content/scenarios/week-one-christians-too.v1.json'
+import lessonFile from '../../../content/scenarios/lesson-one-first-vision.v1.json'
 import preparedFile from '../../../content/scenarios/week-one-christians-too.v3.json'
 import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { parseScenarioFile, toStoredContent } from '../../lib/content'
@@ -17,6 +18,7 @@ import {
   responseText,
   suggestNext,
   threadMessages,
+  topicsExhausted,
 } from './model'
 
 const parsed = parseScenarioFile(file)
@@ -95,13 +97,17 @@ describe('conversation model', () => {
     expect(progress.activeTopicId).toBe(god.id)
   })
 
-  it('leaves only the closing once every topic and follow-up has been spoken', () => {
+  it('prepares the closing once every topic and follow-up has been spoken', () => {
     const all: HistoryEntry[] = [m(OPENING_ID), c(FREE_RESPONSE_ID)]
     for (const topic of content.topics) {
-      for (const beat of [topic.question, ...topic.followUps]) all.push(m(beat.id), c(FREE_RESPONSE_ID))
+      for (const beat of [topic.question, ...topic.followUps]) {
+        expect(topicsExhausted(content, conversationProgress(content, all))).toBe(false)
+        all.push(m(beat.id), c(FREE_RESPONSE_ID))
+      }
     }
     const progress = conversationProgress(content, all)
-    expect(suggestNext(content, progress)).toBeNull()
+    expect(suggestNext(content, progress)).toBe(CLOSING_ID)
+    expect(topicsExhausted(content, progress)).toBe(true)
     expect(directionChoices(content, progress)).toEqual({ continueTopic: [], otherDirections: [] })
     expect(canSpeak(content, progress, CLOSING_ID)).toBe(true)
   })
@@ -132,7 +138,7 @@ describe('conversation model, prepared questions only (week one v2)', () => {
     const expected = prepared.topics.flatMap((topic) => [topic.question.id, ...topic.followUps.map((followUp) => followUp.id)])
     const history: HistoryEntry[] = [m(OPENING_ID), c(answerId(0))]
     const suggested: string[] = []
-    for (let next = suggestNext(prepared, conversationProgress(prepared, history)); next; ) {
+    for (let next = suggestNext(prepared, conversationProgress(prepared, history)); next !== CLOSING_ID; ) {
       suggested.push(next)
       history.push(m(next), c(answerId(0)))
       next = suggestNext(prepared, conversationProgress(prepared, history))
@@ -155,5 +161,52 @@ describe('conversation model, prepared questions only (week one v2)', () => {
     const thread = threadMessages(prepared, [...asked, c(answerId(0))])
     expect(thread.at(-1)).toMatchObject({ speaker: 'christian', text: prepared.topics[0].question.help.answers[0], free: false })
     expect(threadMessages(prepared, [...asked, c(FREE_RESPONSE_ID)]).at(-1)).toMatchObject({ text: FREE_RESPONSE_TEXT, free: true })
+  })
+})
+
+const parsedLesson = parseScenarioFile(lessonFile)
+if (!parsedLesson.success) throw new Error('lesson-one-first-vision.v1.json does not parse')
+const lesson = toStoredContent(parsedLesson.data) as ConversationContent
+
+describe('conversation model, Lesson 1 (Introduction & First Vision)', () => {
+  const LESSON_ORDER = ['church-name', 'first-vision-accounts', 'gospel-comparison', 'age-difference', 'unfamiliar-accounts']
+
+  it('prepares the five exchanges in worksheet order after the introduction, then the wrap-up', () => {
+    const history: HistoryEntry[] = [m(OPENING_ID), c(answerId(0))]
+    const suggested: string[] = []
+    for (let next = suggestNext(lesson, conversationProgress(lesson, history)); next !== CLOSING_ID; ) {
+      suggested.push(next)
+      history.push(m(next), c(answerId(0)))
+      next = suggestNext(lesson, conversationProgress(lesson, history))
+    }
+    expect(suggested).toEqual(LESSON_ORDER)
+    expect(topicsExhausted(lesson, conversationProgress(lesson, history))).toBe(true)
+  })
+
+  it('completes an exchange only once it is spoken, and keeps track of exchanges chosen out of order', () => {
+    const opened = conversationProgress(lesson, [m(OPENING_ID), c(answerId(0))])
+    expect(opened.askedTopicIds.size).toBe(0)
+    const jumped = [m(OPENING_ID), c(answerId(0)), m('age-difference'), c(FREE_RESPONSE_ID)]
+    const progress = conversationProgress(lesson, jumped)
+    expect([...progress.askedTopicIds]).toEqual(['age-difference'])
+    expect(suggestNext(lesson, progress)).toBe('church-name')
+    expect(canSpeak(lesson, progress, 'age-difference')).toBe(false)
+  })
+
+  it('offers one suggested answer per exchange, with the learning note and other help kept on the beat', () => {
+    for (const id of LESSON_ORDER) {
+      const beat = findBeat(lesson, id)
+      expect(beat && responseOptions(lesson, beat)).toHaveLength(1)
+      expect(beat?.help?.note).toBeTruthy()
+    }
+    expect(findBeat(lesson, 'age-difference')?.help?.evidence?.heading).toBe('What do the accounts say?')
+    expect(findBeat(lesson, 'unfamiliar-accounts')?.help?.reading?.url).toBe(
+      'https://www.churchofjesuschrist.org/study/manual/gospel-topics-essays/first-vision-accounts?lang=eng',
+    )
+  })
+
+  it('lets a caption open the passage it names, on both phones', () => {
+    const thread = threadMessages(lesson, [m(OPENING_ID), c(answerId(0)), m('church-name')])
+    expect(thread.at(-1)).toMatchObject({ speaker: 'missionary', caption: '3 Nephi 27:7–8 · Book of Mormon', passage: '3-nephi-27-7-8' })
   })
 })

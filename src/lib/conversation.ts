@@ -21,6 +21,17 @@ export const CLOSING_ID = 'closing'
 
 const beatId = identifier.max(40)
 
+const httpsUrl = z
+  .string()
+  .max(400)
+  .refine((value) => {
+    try {
+      return new URL(value).protocol === 'https:'
+    } catch {
+      return false
+    }
+  }, 'Use an https link')
+
 /** Christian help for one missionary beat. */
 const beatHelpSchema = z
   .object({
@@ -33,6 +44,12 @@ const beatHelpSchema = z
     /** Evangelical reading context, shown with the passages. */
     context: plainText(600).optional(),
     passages: z.array(identifier).min(1).max(8).optional(),
+    /** Why the exchange matters, shown only when the Christian asks for it. */
+    note: plainText(600).optional(),
+    /** A short panel on what the sources say, under its own heading. */
+    evidence: z.object({ heading: plainText(60), text: plainText(400), context: plainText(400).optional() }).strict().optional(),
+    /** A reading the Christian can open or point their partner to. */
+    reading: z.object({ label: plainText(80), url: httpsUrl }).strict().optional(),
   })
   .strict()
 
@@ -43,6 +60,8 @@ const beatSchema = z
     text: richText(700),
     /** The small line under the spoken message, e.g. "John 14:6 · KJV". */
     caption: plainText(80),
+    /** A passage the caption names but the line doesn't quote; the caption opens it on both phones. */
+    passage: identifier.optional(),
     help: beatHelpSchema,
   })
   .strict()
@@ -82,16 +101,7 @@ const resourceSchema = z
   .object({
     title: plainText(80),
     format: z.enum(['PDF', 'Article']),
-    url: z
-      .string()
-      .max(400)
-      .refine((value) => {
-        try {
-          return new URL(value).protocol === 'https:'
-        } catch {
-          return false
-        }
-      }, 'Use an https link'),
+    url: httpsUrl,
   })
   .strict()
 
@@ -100,6 +110,8 @@ const passageSchema = z
     id: identifier,
     /** Exactly as shown, e.g. "John 14:1–6". */
     label: plainText(60),
+    /** Where the text comes from when it isn't the scenario's translation, e.g. "Book of Mormon". */
+    source: plainText(40).optional(),
     /** Reading context for the Christian; the missionary sees a neutral note. */
     context: plainText(600),
     verses: z
@@ -114,6 +126,12 @@ const contentShape = {
   id: identifier,
   version: z.number().int().positive(),
   title: plainText(80),
+  /**
+   * For scenarios whose missionary lines are mostly statements: both send
+   * buttons read "Speak aloud", the instructions say when to tap it, and the
+   * missionary chooses lines rather than questions.
+   */
+  speakAloud: z.boolean().optional(),
   /** The role choice screen. */
   intro: z.object({ kicker: plainText(60), heading: plainText(80), description: plainText(300) }).strict(),
   roles: z.object({ missionary: roleSchema, christian: roleSchema }).strict(),
@@ -227,6 +245,13 @@ function checkConversation(scenario: ParsedConversation, ctx: z.RefinementCtx) {
       list?.forEach((id, i) => {
         if (!passages.has(id)) issue(`Unknown passage "${id}"`, [...path, i])
       })
+    }
+    const captions: [(string | number)[], string | undefined][] = [
+      [['topics', t, 'question', 'passage'], topic.question.passage],
+      ...topic.followUps.map((f, i): [(string | number)[], string | undefined] => [['topics', t, 'followUps', i, 'passage'], f.passage]),
+    ]
+    for (const [path, id] of captions) {
+      if (id && !passages.has(id)) issue(`Unknown passage "${id}"`, path)
     }
   })
 }

@@ -626,6 +626,9 @@
           "minLength": 1,
           "maxLength": 80
         },
+        "speakAloud": {
+          "type": "boolean"
+        },
         "intro": {
           "type": "object",
           "properties": {
@@ -863,6 +866,11 @@
                     "minLength": 1,
                     "maxLength": 80
                   },
+                  "passage": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
                   "help": {
                     "type": "object",
                     "properties": {
@@ -900,6 +908,55 @@
                           "maxLength": 64,
                           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
                         }
+                      },
+                      "note": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "evidence": {
+                        "type": "object",
+                        "properties": {
+                          "heading": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                          },
+                          "text": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 400
+                          },
+                          "context": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 400
+                          }
+                        },
+                        "required": [
+                          "heading",
+                          "text"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "reading": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          "url": {
+                            "type": "string",
+                            "maxLength": 400
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "url"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "required": [
@@ -938,6 +995,11 @@
                       "minLength": 1,
                       "maxLength": 80
                     },
+                    "passage": {
+                      "type": "string",
+                      "maxLength": 64,
+                      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                    },
                     "help": {
                       "type": "object",
                       "properties": {
@@ -975,6 +1037,55 @@
                             "maxLength": 64,
                             "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
                           }
+                        },
+                        "note": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 600
+                        },
+                        "evidence": {
+                          "type": "object",
+                          "properties": {
+                            "heading": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 400
+                            },
+                            "context": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 400
+                            }
+                          },
+                          "required": [
+                            "heading",
+                            "text"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "reading": {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 400
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "url"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1141,6 +1252,11 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 60
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
                   },
                   "context": {
                     "type": "string",
