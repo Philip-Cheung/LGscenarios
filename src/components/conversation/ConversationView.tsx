@@ -52,7 +52,7 @@ interface Draft {
  * The doorstep conversation: a shared thread rebuilt from the server's
  * history, and a private composer. The missionary prepares a line and speaks
  * it aloud; the Christian answers in their own words or picks a suggested
- * reply. Only "Speak aloud" commits anything.
+ * reply. Only the send button ("Ask question", "Respond"…) commits anything.
  */
 export function ConversationView({
   content,
@@ -161,6 +161,7 @@ export function ConversationView({
   let text: string
   let hasDraft = false
   let sendLabel: string
+  let sendText: string
   let canSend = false
   if (role === 'missionary') {
     if (awaitingAnswer) {
@@ -168,12 +169,21 @@ export function ConversationView({
       note = 'Speak together aloud'
       text = 'Read your message aloud, then listen to your partner…'
       sendLabel = 'Waiting for Christian response'
+      sendText = 'Ask question'
     } else {
       const ownWords = missionaryDraftId === FREE_RESPONSE_ID
       hasDraft = !!missionaryDraft || ownWords
       caption = hasDraft ? 'Your next line' : 'Conversation'
-      note = ownWords ? 'Reply aloud, then send' : hasDraft ? 'Read aloud after posting' : 'Speak together aloud'
+      note = ownWords ? 'Reply aloud, then tap Reply' : hasDraft ? 'Read aloud after posting' : 'Speak together aloud'
       text = missionaryDraft?.text ?? 'Choose what to say…'
+      sendText =
+        missionaryDraftId === CLOSING_ID
+          ? 'Say goodbye'
+          : ownWords || missionaryDraft?.next || (responding && !hasDraft)
+            ? 'Reply'
+            : progress.started
+              ? 'Ask question'
+              : 'Introduce'
       sendLabel =
         missionaryDraftId === CLOSING_ID
           ? 'Send closing'
@@ -191,13 +201,15 @@ export function ConversationView({
   } else if (awaitingAnswer) {
     hasDraft = !!christianText
     caption = hasDraft ? 'Your next line' : 'Your response'
-    note = hasDraft ? 'Speak aloud, then send' : 'Try to answer on your own first'
+    note = hasDraft ? 'Say it aloud, then tap Respond' : 'Try to answer on your own first'
     text = christianText ?? 'Respond aloud in your own words…'
     sendLabel = 'Send response'
+    sendText = 'Respond'
     canSend = true
   } else {
     caption = 'Conversation'
     note = 'Speak together aloud'
+    sendText = 'Respond'
     text = !progress.started
       ? 'Your visitor will introduce themselves first…'
       : progress.responding
@@ -314,7 +326,7 @@ export function ConversationView({
               disabled={!canSend || !usable}
               onClick={send}
             >
-              Speak aloud
+              {sendText}
             </button>
           </div>
         </div>
@@ -458,7 +470,7 @@ function replyCard(
     id: FREE_RESPONSE_ID,
     title: 'I responded in my own words',
     summary: 'Reply aloud, then confirm.',
-    note: 'Reply aloud in your own words, then tap Speak aloud.',
+    note: 'Reply aloud in your own words, then tap Reply.',
   }
   const candidates = respond.replies.flatMap((reply) => replyRow(reply.id, reply.label) ?? [])
 
