@@ -1,6 +1,6 @@
 import coffeeChatV3 from '../../content/scenarios/coffee-chat.v4.json'
 import sampleDoorstepV5 from '../../content/scenarios/sample-doorstep.v6.json'
-import christiansTooV2 from '../../content/scenarios/week-one-christians-too.v2.json'
+import christiansTooV3 from '../../content/scenarios/week-one-christians-too.v3.json'
 import weekOneV1 from '../../content/scenarios/week-one-first-vision.v1.json'
 import whoIsGodV1 from '../../content/scenarios/who-is-god.v1.json'
 import { scenarioFileSchema, toStoredContent, type ScenarioContent } from '../lib/content'
@@ -15,4 +15,4 @@ export const coffeeChat: ScenarioContent = toStoredContent(scenarioFileSchema.pa
 export const sampleDoorstep: ScenarioContent = toStoredContent(scenarioFileSchema.parse(sampleDoorstepV5))
 export const weekOne: ScenarioContent = toStoredContent(scenarioFileSchema.parse(weekOneV1))
 /** The newest "We’re Christians too": prepared questions only, no clarification or "not sure". */
-export const christiansToo: ConversationContent = toStoredContent(conversationFileSchema.parse(christiansTooV2))
+export const christiansToo: ConversationContent = toStoredContent(conversationFileSchema.parse(christiansTooV3))
