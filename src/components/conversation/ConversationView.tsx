@@ -1,5 +1,5 @@
 import { useContext, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { CLARIFICATION_ID, CLOSING_ID, type ConversationContent } from '../../lib/conversation'
+import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { richTextOneLine } from '../../lib/richText'
 import type { Role, SessionSnapshot } from '../../sessions/types'
 import { Portrait } from './art'
@@ -15,6 +15,7 @@ import {
   responseText,
   suggestNext,
   threadMessages,
+  topicsExhausted,
   type Beat,
   type DirectionChoice,
   type ThreadMessage,
@@ -51,7 +52,8 @@ interface Draft {
  * The doorstep conversation: a shared thread rebuilt from the server's
  * history, and a private composer. The missionary prepares a line and speaks
  * it aloud; the Christian answers in their own words or picks a suggested
- * reply. Only the send button ("Ask question", "Answer question"…) commits anything.
+ * reply. Only the send button ("Ask question", "Answer question", or "Speak
+ * aloud" in scenarios that set `speakAloud`) commits anything.
  */
 export function ConversationView({
   content,
@@ -132,12 +134,17 @@ export function ConversationView({
   }
 
   const latest = messages.at(-1)
-  const allTopicsUsed = progress.started && suggestNext(content, progress) === null
+  const allTopicsUsed = topicsExhausted(content, progress)
   // On the missionary's turn the composer becomes a choice card, until only the closing remains.
   const card = role === 'missionary' && !awaitingAnswer && progress.started && !allTopicsUsed ? cardChoices(content, progress, missionaryDraftId) : null
+  const speakAloud = content.speakAloud === true
+  // Shown once: the turn comes back to the missionary after the introduction exchange.
+  const turnCue = role === 'missionary' && !awaitingAnswer && progress.spoken.length === 1
 
   let caption: string
   let note: string
+  /** The note is an instruction that needs its own line. */
+  let instruction = false
   let text: string
   let hasDraft = false
   let sendLabel: string
@@ -147,34 +154,59 @@ export function ConversationView({
     if (awaitingAnswer) {
       caption = 'Conversation'
       note = 'Speak together aloud'
-      text = 'Read your message aloud, then listen to your partner…'
+      text = speakAloud ? 'Listen to your partner’s answer…' : 'Read your message aloud, then listen to your partner…'
       sendLabel = 'Waiting for Christian response'
-      sendText = 'Ask question'
+      sendText = speakAloud ? 'Speak aloud' : 'Ask question'
     } else {
       hasDraft = !!missionaryDraft
+      const closing = missionaryDraftId === CLOSING_ID
       caption = hasDraft ? 'Your next line' : 'Conversation'
-      note = hasDraft ? 'Read aloud after posting' : 'Speak together aloud'
       text = missionaryDraft?.text ?? 'Choose what to say…'
-      sendText = missionaryDraftId === CLOSING_ID ? 'Say goodbye' : progress.started ? 'Ask question' : 'Introduce'
-      sendLabel =
-        missionaryDraftId === CLOSING_ID ? 'Send closing' : progress.started ? 'Send question' : 'Send introduction'
+      sendText = speakAloud ? 'Speak aloud' : closing ? 'Say goodbye' : progress.started ? 'Ask question' : 'Introduce'
+      sendLabel = closing ? 'Send closing' : progress.started ? 'Send question' : 'Send introduction'
+      if (speakAloud && hasDraft) {
+        instruction = true
+        note = closing ? `Say goodbye to your partner. Then tap ${sendText} to finish.` : `Read this to your partner. Then tap ${sendText}.`
+      } else {
+        note = hasDraft ? 'Read aloud after posting' : 'Speak together aloud'
+      }
       canSend = hasDraft
     }
   } else if (awaitingAnswer) {
     hasDraft = !!christianText
     caption = hasDraft ? 'Your next line' : 'Your response'
-    note = hasDraft ? 'Say it aloud, then tap Answer question' : 'Try to answer on your own first'
+    sendText = speakAloud ? 'Speak aloud' : 'Answer question'
+    if (speakAloud) {
+      instruction = true
+      note = hasDraft
+        ? `When you’ve answered, tap ${sendText}.`
+        : progress.lastBeat?.id === OPENING_ID
+          ? 'Answer in your own words. Tap Need help? if you’d like a suggested answer.'
+          : 'Try to answer on your own first'
+    } else {
+      note = hasDraft ? 'Say it aloud, then tap Answer question' : 'Try to answer on your own first'
+    }
     text = christianText ?? 'Respond aloud in your own words…'
     sendLabel = 'Send response'
-    sendText = 'Answer question'
     canSend = true
   } else {
     caption = 'Conversation'
     note = 'Speak together aloud'
-    sendText = 'Answer question'
-    text = progress.started ? 'Your partner is choosing what to ask next…' : 'Your visitor will introduce themselves first…'
+    sendText = speakAloud ? 'Speak aloud' : 'Answer question'
+    text = !progress.started
+      ? 'Your visitor will introduce themselves first…'
+      : allTopicsUsed
+        ? 'Your partner is finishing the conversation.'
+        : speakAloud
+          ? 'Your partner is choosing what to say next…'
+          : 'Your partner is choosing what to ask next…'
     sendLabel = 'Waiting for your partner'
   }
+  const noteClass = instruction
+    ? `${styles.composeNote} ${styles.composeHint} ${styles.composeInstruction}`
+    : role === 'christian' && awaitingAnswer
+      ? `${styles.composeNote} ${styles.composeHint}`
+      : styles.composeNote
 
   return (
     <>
@@ -198,6 +230,11 @@ export function ConversationView({
         </p>
       </main>
       <section className={card ? `${styles.tools} ${styles.toolsChoosing}` : styles.tools} aria-label="Private conversation choices">
+        {turnCue ? (
+          <p className={styles.turnCue} role="status">
+            It’s your turn again. Your next line is ready below.
+          </p>
+        ) : null}
         {role === 'christian' && awaitingAnswer ? (
           <div className={styles.helpEntry}>
             <button type="button" className={styles.helpTrigger} aria-haspopup="dialog" disabled={!canAct} onClick={() => openSheet('help')}>
@@ -208,29 +245,10 @@ export function ConversationView({
             </button>
           </div>
         ) : null}
-        {role === 'missionary' && !awaitingAnswer && progress.started && !card ? (
-          <div className={styles.directionControls}>
-            <button
-              type="button"
-              className={styles.directionToggle}
-              aria-haspopup="dialog"
-              disabled={!canAct}
-              onClick={() => openSheet('questions')}
-            >
-              Take another direction
-            </button>
-          </div>
-        ) : null}
-        {role === 'missionary' && !awaitingAnswer && allTopicsUsed && !missionaryDraft ? (
-          <div className={styles.suggestionChips}>
-            <button type="button" className={styles.suggestion} disabled={!canAct} onClick={() => choose(CLOSING_ID)}>
-              End the conversation
-            </button>
-          </div>
-        ) : null}
         <div className={card ? `${styles.composeBox} ${styles.choiceCard}` : hasDraft ? `${styles.composeBox} ${styles.hasDraft}` : styles.composeBox}>
           {card ? (
             <NextChoices
+              heading={speakAloud ? 'What would you like to say next?' : 'What would you like to ask next?'}
               choices={card.rows}
               recommendedId={card.recommendedId}
               selectedId={missionaryDraftId}
@@ -260,9 +278,7 @@ export function ConversationView({
             >
               +
             </button>
-            <span className={role === 'christian' && awaitingAnswer ? `${styles.composeNote} ${styles.composeHint}` : styles.composeNote}>
-              {note}
-            </span>
+            <span className={noteClass}>{note}</span>
             {hasDraft && role === 'christian' ? (
               <button
                 type="button"
@@ -292,7 +308,12 @@ export function ConversationView({
       </section>
 
       {sheet === 'questions' && role === 'missionary' && !awaitingAnswer ? (
-        <Sheet title="Choose your next question" closeLabel="Close questions" onClose={() => setSheet(null)} restoreFocusRef={restoreFocus}>
+        <Sheet
+          title={speakAloud ? 'Choose your next line' : 'Choose your next question'}
+          closeLabel="Close questions"
+          onClose={() => setSheet(null)}
+          restoreFocusRef={restoreFocus}
+        >
           <QuestionChoices content={content} snapshot={snapshot} selectedId={missionaryDraftId} onChoose={choose} />
         </Sheet>
       ) : null}
@@ -329,8 +350,10 @@ export function Message({
   role: Role
   latest: boolean
 }) {
+  const openPassage = useContext(OpenPassageContext)
   const mine = message.speaker === role
   const classes = [styles.message, mine ? styles.mine : '', latest ? styles.latest : '', message.free ? styles.spokenReply : '']
+  const { passage } = message
   return (
     <div className={classes.filter(Boolean).join(' ')}>
       <div className={styles.speaker}>
@@ -343,7 +366,19 @@ export function Message({
           <span>
             <ConversationText text={message.text} />
           </span>
-          <span className={styles.ref}>{message.caption}</span>
+          {passage && openPassage ? (
+            <button
+              type="button"
+              className={`${styles.ref} ${styles.refLink}`}
+              aria-haspopup="dialog"
+              aria-label={`${message.caption} — read the passage`}
+              onClick={() => openPassage(passage)}
+            >
+              {message.caption}
+            </button>
+          ) : (
+            <span className={styles.ref}>{message.caption}</span>
+          )}
         </div>
       </div>
     </div>
@@ -385,6 +420,7 @@ function cardChoices(content: ConversationContent, progress: ReturnType<typeof c
 
 /** The missionary's choice card: a question, a few numbered rows, and the selected line to read aloud. */
 function NextChoices({
+  heading,
   choices,
   recommendedId,
   selectedId,
@@ -394,6 +430,7 @@ function NextChoices({
   onChoose,
   onMore,
 }: {
+  heading: string
   choices: DirectionChoice[]
   recommendedId: string | null
   selectedId: string | null
@@ -416,7 +453,7 @@ function NextChoices({
   return (
     <>
       <h2 id={headingId} className={styles.choiceHeading}>
-        What would you like to ask next?
+        {heading}
       </h2>
       <div role="group" aria-labelledby={headingId} className={styles.choiceList} onKeyDown={onKeyDown}>
         {choices.map((choice, index) => {
@@ -547,7 +584,7 @@ function QuestionChoices({
   )
 }
 
-type HelpTab = 'hint' | 'responses' | 'context' | 'clarify' | null
+type HelpTab = 'hint' | 'responses' | 'context' | 'clarify' | 'note' | 'evidence' | null
 
 function ReplyHelp({ content, beat, onChoose }: { content: ConversationContent; beat: Beat; onChoose(id: string): void }) {
   const [tab, setTab] = useState<HelpTab>(null)
@@ -569,7 +606,10 @@ function ReplyHelp({ content, beat, onChoose }: { content: ConversationContent; 
     )
   }
 
-  const label = (id: string) => content.passages.items.find((item) => item.id === id)?.label ?? id
+  const label = (id: string) => {
+    const passage = content.passages.items.find((item) => item.id === id)
+    return passage ? `${passage.label} · ${passage.source ?? 'KJV'}` : id
+  }
   return (
     <>
       <div className={styles.helpTabs} role="group" aria-label="Choose the help you need">
@@ -611,7 +651,7 @@ function ReplyHelp({ content, beat, onChoose }: { content: ConversationContent; 
               <div className={styles.supportPassages}>
                 {help.passages.map((id) => (
                   <button key={id} type="button" className={styles.passageReference} aria-haspopup="dialog" onClick={() => openPassage?.(id)}>
-                    {label(id)} · KJV
+                    {label(id)}
                   </button>
                 ))}
               </div>
@@ -625,16 +665,50 @@ function ReplyHelp({ content, beat, onChoose }: { content: ConversationContent; 
               </button>
             </>
           ) : null}
+          {tab === 'note' && help.note ? (
+            <>
+              <h3 className={styles.sheetSectionTitle}>Learning note</h3>
+              <p>{help.note}</p>
+            </>
+          ) : null}
+          {tab === 'evidence' && help.evidence ? (
+            <>
+              <h3 className={styles.sheetSectionTitle}>{help.evidence.heading}</h3>
+              <p>{help.evidence.text}</p>
+              {help.evidence.context ? <p className={styles.evidenceContext}>{help.evidence.context}</p> : null}
+            </>
+          ) : null}
           <div className={styles.sheetSecondaryActions}>
             {help.passages.length > 0 ? (
               <button type="button" className={styles.helpDetailAction} onClick={() => setTab('context')}>
                 Explain the verse
               </button>
             ) : null}
+            {help.evidence ? (
+              <button type="button" className={styles.helpDetailAction} onClick={() => setTab('evidence')}>
+                {help.evidence.heading}
+              </button>
+            ) : null}
+            {help.note ? (
+              <button type="button" className={styles.helpDetailAction} onClick={() => setTab('note')}>
+                Learning note
+              </button>
+            ) : null}
             {help.clarify ? (
               <button type="button" className={styles.helpDetailAction} onClick={() => setTab('clarify')}>
                 Help me clarify
               </button>
+            ) : null}
+            {help.reading ? (
+              <a
+                className={styles.helpDetailAction}
+                href={help.reading.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${help.reading.label}, opens in a new tab`}
+              >
+                {help.reading.label} ↗
+              </a>
             ) : null}
           </div>
         </section>

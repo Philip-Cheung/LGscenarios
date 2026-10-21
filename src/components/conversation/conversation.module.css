@@ -795,6 +795,19 @@
   color: var(--color-muted);
 }
 
+/* A caption naming a passage the line doesn't quote; it opens that passage. */
+.refLink {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
 .verseLink {
   text-decoration: underline dotted;
   text-decoration-thickness: 1px;
@@ -836,6 +849,19 @@
   display: flex;
   justify-content: flex-end;
   margin: 0 0 8px;
+}
+
+/* Once, after the introduction: the turn is back and the next line is ready. */
+.turnCue {
+  margin: 0 0 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--color-selected-line);
+  border-radius: var(--radius-control);
+  background: var(--color-chip);
+  font-size: var(--text-small);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-teal);
 }
 
 .directionToggle {
@@ -1097,6 +1123,16 @@
   font-size: var(--text-small);
   line-height: 1.4;
   color: var(--color-muted);
+}
+
+/* An instruction naming the button to tap gets its own line above the buttons, at every width. */
+.composeBar:has(.composeInstruction) {
+  flex-wrap: wrap;
+}
+
+.composeNote.composeInstruction {
+  flex-basis: 100%;
+  order: -1;
 }
 
 .composeClear {
@@ -1413,6 +1449,17 @@
   font-size: 0.875rem;
   color: var(--color-chip-ink);
   text-align: left;
+}
+
+a.helpDetailAction {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.evidenceContext {
+  font-size: var(--text-small);
+  color: var(--color-muted);
 }
 
 .composeMenu {

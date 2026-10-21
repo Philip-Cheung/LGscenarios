@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import v1 from '../../content/scenarios/week-one-christians-too.v1.json'
 import v2 from '../../content/scenarios/week-one-christians-too.v2.json'
 import v3 from '../../content/scenarios/week-one-christians-too.v3.json'
+import lesson from '../../content/scenarios/lesson-one-first-vision.v1.json'
 import { conversationFileSchema } from './conversation'
 
 function errors(file: unknown): string[] {
@@ -68,5 +69,61 @@ describe('week one, version 3: the three kingdoms stated up front', () => {
     )
     afterlife(rest3).text = afterlife(rest2).text
     expect(rest3).toEqual(rest2)
+  })
+})
+
+describe('Lesson 1: Introduction & First Vision', () => {
+  const answer = (id: string) => lesson.topics.find((topic) => topic.id === id)!.question.help.answers[0]
+  const spoken = [lesson.opening.text, ...lesson.topics.map((topic) => topic.question.text), lesson.closing.text]
+  const christian = [...lesson.opening.help.answers, ...lesson.topics.map((topic) => topic.question.help.answers[0])]
+
+  it('is a valid, separate scenario with the five exchanges in worksheet order and no follow-ups', () => {
+    expect(errors(lesson)).toEqual([])
+    expect(lesson).toMatchObject({ id: 'lesson-one-first-vision', title: 'Introduction & First Vision', speakAloud: true })
+    expect(lesson.topics.map((topic) => topic.id)).toEqual([
+      'church-name',
+      'first-vision-accounts',
+      'gospel-comparison',
+      'age-difference',
+      'unfamiliar-accounts',
+    ])
+    for (const topic of lesson.topics) expect(topic.followUps).toEqual([])
+    expect(lesson.reflection.prompts).toEqual(['Which course point do you feel more ready to explain now?'])
+  })
+
+  it('never has the Christian ask a question back, and keeps every answer and line free of filler', () => {
+    for (const text of christian) expect(text).not.toContain('?')
+    for (const text of [...spoken, ...christian]) expect(text).not.toMatch(/…|\.\.\./)
+  })
+
+  it('keeps the course’s arguments, stated accurately', () => {
+    expect(answer('church-name')).toContain('“I’m a Mormon.”')
+    expect(answer('church-name')).toMatch(/President Nelson said leaving Jesus’ name out of the Church’s name was a victory for Satan/)
+    expect(answer('first-vision-accounts')).toMatch(/nine written accounts: four .* and five written by people who heard him tell it/)
+    expect(answer('age-difference')).toMatch(/The 1832 account places him at 15, while later accounts say he was about 14/)
+    const { sourceNotes: _notes, ...shown } = lesson
+    const all = JSON.stringify(shown)
+    expect(all).not.toMatch(/6\.1|million/)
+    expect(all).not.toMatch(/age 16|16 years old/)
+    expect(all).toContain('“sixteenth year,” which means age 15')
+  })
+
+  it('labels the Book of Mormon passage as such, and every other passage as KJV', () => {
+    const sources = Object.fromEntries(lesson.passages.items.map((passage) => [passage.id, 'source' in passage ? passage.source : 'KJV']))
+    expect(sources).toEqual({
+      '3-nephi-27-7-8': 'Book of Mormon',
+      'james-1-2-6': 'KJV',
+      '1-john-4-1-3': 'KJV',
+      'luke-1-1-4': 'KJV',
+      'proverbs-18-13-17': 'KJV',
+      '1-peter-3-13-16': 'KJV',
+    })
+    expect(lesson.topics[0].question.caption).toBe('3 Nephi 27:7–8 · Book of Mormon')
+  })
+
+  it('refuses a caption that names an unknown passage', () => {
+    const file = structuredClone(lesson)
+    file.topics[0].question.passage = 'missing-passage'
+    expect(errors(file)).toEqual(['topics.0.question.passage Unknown passage "missing-passage"'])
   })
 })

@@ -13,7 +13,8 @@ interface PassageDialogProps {
 }
 
 /**
- * The full supplied KJV range for a quotation, on a native modal <dialog>.
+ * The full supplied passage range for a quotation (KJV unless the passage
+ * names another source), on a native modal <dialog>.
  * It can open above the help sheet; closing it returns focus to the
  * quotation or button that opened it, so the sheet and draft stay as they were.
  */
@@ -65,7 +66,7 @@ export function PassageDialog({ content, passageId, role, onClose }: PassageDial
         </div>
         {passage ? (
           <>
-            <p className={styles.passageVersion}>{content.passages.translation}</p>
+            <p className={styles.passageVersion}>{passage.source ?? content.passages.translation}</p>
             <div className={styles.passageBody} tabIndex={0} aria-label={`${passage.label} text`}>
               {passage.verses.map((verse) => (
                 <p key={verse.number} className={styles.verseLine}>
