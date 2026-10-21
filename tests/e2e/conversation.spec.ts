@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { closePair, heading, openPhone, readPairCode, type Pair } from './helpers'
 
-/** Copy from content/scenarios/week-one-christians-too.v2.json, the published version. */
+/** Copy from content/scenarios/week-one-christians-too.v3.json, the published version. */
 const PATH = '/s/week-one-christians-too'
 const COPY = {
   title: 'Week 1 · We’re Christians too',

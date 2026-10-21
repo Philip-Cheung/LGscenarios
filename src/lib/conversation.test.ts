@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import v1 from '../../content/scenarios/week-one-christians-too.v1.json'
 import v2 from '../../content/scenarios/week-one-christians-too.v2.json'
+import v3 from '../../content/scenarios/week-one-christians-too.v3.json'
 import { conversationFileSchema } from './conversation'
 
 function errors(file: unknown): string[] {
@@ -53,5 +54,19 @@ describe('week one, version 2: prepared questions only', () => {
 
   it('words hints as help forming an answer, not as questions for the missionary', () => {
     for (const beat of beats(v2)) expect(beat.help.hint).not.toMatch(/\bask\b/i)
+  })
+})
+
+describe('week one, version 3: the three kingdoms stated up front', () => {
+  it('changes only the main "Life after death" question from version 2', () => {
+    expect(errors(v3)).toEqual([])
+    const { version: _v3, sourceNotes: _v3Notes, ...rest3 } = structuredClone(v3)
+    const { version: _v2, sourceNotes: _v2Notes, ...rest2 } = structuredClone(v2)
+    const afterlife = (file: typeof rest2) => file.topics.find((topic) => topic.id === 'afterlife')!.question
+    expect(afterlife(rest3).text).toBe(
+      'We believe that after resurrection and judgment, almost everyone will receive a place in one of three kingdoms of glory: the celestial, terrestrial, or telestial kingdom. The celestial is the highest, where people can live in Heavenly Father’s presence.\n\nWe believe God revealed more about these kingdoms through Joseph Smith. We connect this teaching with Jesus’ words, “[In my Father’s house are many mansions.](ref:john-14-1-6)” How do you understand that promise?',
+    )
+    afterlife(rest3).text = afterlife(rest2).text
+    expect(rest3).toEqual(rest2)
   })
 })

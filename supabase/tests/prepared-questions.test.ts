@@ -4,8 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { expectError, expectOk, Harness, rpc, type SessionState, type TestUser } from './harness'
 
 /**
- * Prepared questions only, against a temporary copy of the draft
- * content/scenarios/week-one-christians-too.v2.json: no clarification, no
+ * Prepared questions only, against a temporary copy of
+ * content/scenarios/week-one-christians-too.v3.json: no clarification, no
  * "not sure", one authored answer per question. The copy is registered under
  * its own id and an old publication date, so it is never the featured
  * scenario, and it is deleted afterwards.
@@ -13,7 +13,7 @@ import { expectError, expectOk, Harness, rpc, type SessionState, type TestUser }
 const SCENARIO = `test-prepared-${randomUUID().slice(0, 8)}`
 
 function testContent() {
-  const file = JSON.parse(readFileSync('content/scenarios/week-one-christians-too.v2.json', 'utf8'))
+  const file = JSON.parse(readFileSync('content/scenarios/week-one-christians-too.v3.json', 'utf8'))
   const { $schema: _schema, status: _status, ...content } = file
   return { ...content, id: SCENARIO, version: 1 }
 }

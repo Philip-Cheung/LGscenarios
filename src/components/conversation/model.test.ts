@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import file from '../../../content/scenarios/week-one-christians-too.v1.json'
-import preparedFile from '../../../content/scenarios/week-one-christians-too.v2.json'
+import preparedFile from '../../../content/scenarios/week-one-christians-too.v3.json'
 import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { parseScenarioFile, toStoredContent } from '../../lib/content'
 import type { HistoryEntry } from '../../sessions/types'
@@ -108,7 +108,7 @@ describe('conversation model', () => {
 })
 
 const parsedPrepared = parseScenarioFile(preparedFile)
-if (!parsedPrepared.success) throw new Error('week-one-christians-too.v2.json does not parse')
+if (!parsedPrepared.success) throw new Error('week-one-christians-too.v3.json does not parse')
 const prepared = toStoredContent(parsedPrepared.data) as ConversationContent
 
 describe('conversation model, prepared questions only (week one v2)', () => {
