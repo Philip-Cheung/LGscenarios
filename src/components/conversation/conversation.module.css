@@ -1885,6 +1885,13 @@ a.helpDetailAction {
   margin-top: 24px;
 }
 
+.hardModeNote {
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
 /* Narrow phones */
 
 @media (max-width: 420px) {

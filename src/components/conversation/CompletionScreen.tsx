@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { ConversationContent } from '../../lib/conversation'
 import { prefersReducedMotion } from '../../lib/motion'
 import type { SessionSnapshot } from '../../sessions/types'
@@ -32,6 +32,7 @@ export function CompletionScreen({ content, snapshot, playOutro, paused, canAct,
   const [outroDone, setOutroDone] = useState(!playOutro)
   const elapsed = useRef(0)
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const hardModeNoteId = useId()
 
   useEffect(() => {
     if (outroDone || paused) return
@@ -86,17 +87,22 @@ export function CompletionScreen({ content, snapshot, playOutro, paused, canAct,
         ))}
       </ol>
       <div className={styles.completionActions}>
-        <Button disabled={!canAct} onClick={() => onSessionRequest('swap')}>
+        {content.hardMode ? (
+          <>
+            <p id={hardModeNoteId} className={styles.hardModeNote}>
+              Ready for more? In Hard mode, the missionary responds to what the Christian says.
+            </p>
+            <Button disabled={!canAct} aria-describedby={hardModeNoteId} onClick={() => onSessionRequest('hardMode')}>
+              Hard mode
+            </Button>
+          </>
+        ) : null}
+        <Button variant={content.hardMode ? 'secondary' : 'primary'} disabled={!canAct} onClick={() => onSessionRequest('swap')}>
           Switch roles
         </Button>
         <Button variant="secondary" disabled={!canAct} onClick={() => onSessionRequest('restart')}>
           Play again
         </Button>
-        {content.hardMode ? (
-          <Button variant="secondary" disabled={!canAct} onClick={() => onSessionRequest('hardMode')}>
-            Hard mode
-          </Button>
-        ) : null}
         <button type="button" className={styles.quiet} onClick={onLeave}>
           Leave session
         </button>
