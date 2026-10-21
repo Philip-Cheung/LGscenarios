@@ -1,0 +1,206 @@
+{
+  "$schema": "../scenario.schema.json",
+  "status": "draft",
+  "schemaVersion": "3.0",
+  "id": "lesson-one-first-vision",
+  "version": 3,
+  "title": "Introduction & First Vision",
+  "speakAloud": true,
+  "intro": {
+    "kicker": "LESSON 1 · DOORSTEP PRACTICE",
+    "heading": "Who will you play?",
+    "description": "Practise a conversation aloud with a partner. It takes about 8–10 minutes, and your phone gives you prompts when you need them."
+  },
+  "roles": {
+    "missionary": {
+      "label": "Mormon missionary",
+      "speaker": "Missionary",
+      "description": "Read the prepared lines aloud. You don’t need to invent any answers."
+    },
+    "christian": {
+      "label": "Christian",
+      "speaker": "Christian",
+      "description": "Welcome your visitor and answer in your own words."
+    }
+  },
+  "resources": {
+    "heading": "This lesson’s reading",
+    "source": "Church-published sources",
+    "items": [
+      {
+        "title": "First Vision Accounts",
+        "format": "Article",
+        "url": "https://www.churchofjesuschrist.org/study/manual/gospel-topics-essays/first-vision-accounts?lang=eng"
+      },
+      {
+        "title": "The First Vision accounts collection",
+        "format": "Article",
+        "url": "https://www.churchofjesuschrist.org/study/manual/first-vision-accounts?lang=eng"
+      },
+      {
+        "title": "Why the accounts give different ages",
+        "format": "Article",
+        "url": "https://www.churchofjesuschrist.org/study/manual/first-vision-accounts-faq/05-why-do-accounts?lang=eng"
+      },
+      {
+        "title": "Primary accounts of the First Vision",
+        "format": "Article",
+        "url": "https://www.josephsmithpapers.org/articles/primary-accounts-of-first-vision?lang=eng"
+      },
+      {
+        "title": "The Correct Name of the Church (October 2018)",
+        "format": "Article",
+        "url": "https://www.churchofjesuschrist.org/study/general-conference/2018/10/the-correct-name-of-the-church?lang=eng"
+      }
+    ]
+  },
+  "opening": {
+    "id": "introduction",
+    "text": "Hi! We’re missionaries from The Church of Jesus Christ of Latter-day Saints. Do you have a few minutes to talk about our beliefs?",
+    "caption": "Introduction",
+    "help": {
+      "prompt": "Answer in your own words, or use this reply.",
+      "answers": [
+        "Sure, I have a few minutes. I’m a Christian myself."
+      ]
+    }
+  },
+  "topics": [
+    {
+      "id": "word-mormon",
+      "title": "The word Mormon",
+      "summary": "Lesson question 1.",
+      "background": "Read the lesson question as written. Your partner gives the lesson answer.",
+      "question": {
+        "id": "word-mormon",
+        "text": "Why is the use or non-use of the word Mormon a good thing to bring up with your Mormon friend?",
+        "caption": "Lesson 1 · Question 1",
+        "help": {
+          "hint": "Try answering from the lesson first. Tap Suggested responses to see the lesson answer.",
+          "answers": [
+            "Because the Mormon church ran the “I’m a Mormon” campaign, and then in 2018 President Nelson taught that to remove the Lord’s name from the Lord’s Church is “a major victory for Satan.”"
+          ]
+        }
+      },
+      "followUps": []
+    },
+    {
+      "id": "first-vision-accounts",
+      "title": "First Vision accounts",
+      "summary": "Lesson question 2.",
+      "background": "Read the lesson question as written. Your partner gives the lesson answer.",
+      "question": {
+        "id": "first-vision-accounts",
+        "text": "How many different first vision accounts does the LDS church recognize and how do they defend the differing accounts?",
+        "caption": "Lesson 1 · Question 2",
+        "help": {
+          "hint": "Try answering from the lesson first. Tap Suggested responses to see the lesson answer.",
+          "answers": [
+            "There are nine different documented first vision accounts. Many Mormons will say that the differing accounts can be harmonized, similar to how the four gospels are harmonized."
+          ]
+        }
+      },
+      "followUps": []
+    },
+    {
+      "id": "expected-response",
+      "title": "The expected response",
+      "summary": "Lesson question 3.",
+      "background": "Read the lesson question as written. Your partner gives the lesson answer.",
+      "question": {
+        "id": "expected-response",
+        "text": "Suppose you were to share with your Mormon friend that there were multiple first vision accounts. What kind of response should you expect from a Mormon regarding the multiple first vision accounts?",
+        "caption": "Lesson 1 · Question 3",
+        "help": {
+          "hint": "Try answering from the lesson first. Tap Suggested responses to see the lesson answer.",
+          "answers": [
+            "The most common response will be likened to the idea that there is a harmony to be found within the accounts."
+          ]
+        }
+      },
+      "followUps": []
+    },
+    {
+      "id": "best-rejoinder",
+      "title": "The best rejoinder",
+      "summary": "Lesson question 4.",
+      "background": "Read the lesson question as written. Your partner gives the lesson answer.",
+      "question": {
+        "id": "best-rejoinder",
+        "text": "Given the “typical” response to multiple versions, what would be the best rejoinder?",
+        "caption": "Lesson 1 · Question 4",
+        "help": {
+          "hint": "Try answering from the lesson first. Tap Suggested responses to see the lesson answer.",
+          "answers": [
+            "Use a question to help move your point. For example, you could ask, “Have you ever considered that the accounts present Joseph at different ages?” “Is it possible there were multiple first visions?” This is obviously making the point that if there were multiple “first visions,” then there was really only one first vision, and subsequent visions would be considered another vision; but that is not what the LDS church teaches. You may have to work this out with them and guide them into discovering the problem for themselves."
+          ]
+        }
+      },
+      "followUps": []
+    },
+    {
+      "id": "unaware-friend",
+      "title": "Someone unaware of the accounts",
+      "summary": "Lesson question 5.",
+      "background": "Read the lesson question as written. Your partner gives the lesson answer.",
+      "question": {
+        "id": "unaware-friend",
+        "text": "How would you respond if your Mormon friend or neighbor was unaware that there were multiple first vision accounts?",
+        "caption": "Lesson 1 · Question 5",
+        "help": {
+          "hint": "Try answering from the lesson first. Tap Suggested responses to see the lesson answer.",
+          "answers": [
+            "You would want to let them know, and provide references to, the various first vision accounts. You might even wish to begin with the church’s admission as such in the presentation at the Church History Museum in Salt Lake City, Utah, across from Temple Square and the Salt Lake Temple."
+          ]
+        }
+      },
+      "followUps": []
+    }
+  ],
+  "closing": {
+    "id": "closing",
+    "text": "Thanks for talking with me. I’ve enjoyed hearing what you think. Have a good evening!",
+    "caption": "Wrap up conversation"
+  },
+  "reflection": {
+    "prompts": [
+      "Which course point do you feel more ready to explain now?"
+    ]
+  },
+  "hardMode": {
+    "scenarioId": "week-one-hard-mode"
+  },
+  "passages": {
+    "translation": "King James Version (KJV)",
+    "items": [
+      {
+        "id": "james-1-2-6",
+        "label": "James 1:2–6",
+        "context": "James encourages believers facing trials to ask God for wisdom, in faith. Joseph Smith said verse 5 led him to pray.",
+        "verses": [
+          {
+            "number": 2,
+            "text": "My brethren, count it all joy when ye fall into divers temptations;"
+          },
+          {
+            "number": 3,
+            "text": "Knowing this, that the trying of your faith worketh patience."
+          },
+          {
+            "number": 4,
+            "text": "But let patience have her perfect work, that ye may be perfect and entire, wanting nothing."
+          },
+          {
+            "number": 5,
+            "text": "If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him."
+          },
+          {
+            "number": 6,
+            "text": "But let him ask in faith, nothing wavering. For he that wavereth is like a wave of the sea driven with the wind and tossed."
+          }
+        ]
+      }
+    ]
+  },
+  "sourceNotes": "Lesson 1 v2: the course’s exact worksheet questions and answer key (lesson-one-exact-scenario.md, 21 October 2026), in worksheet order, between the existing introduction and goodbye. Questions are the Mormon’s lines; answers are the Christian’s single suggested response, hidden until asked for. No learning notes, evidence panels, scripture links or reading links in the help; the one passage is kept only because the content format requires at least one. Typos fixed: “bring up you’re your” to “bring up with your”, “do the LDS church” to “does”, “document” to “documented”, “firs vision” to “first vision”, plus small punctuation. Accuracy changes kept from v1: answer 1 drops the answer key’s unverified $6.1 million figure and the claim that the campaign ended the same year, and quotes President Nelson exactly (October 2018, The Correct Name of the Church: “To remove the Lord’s name from the Lord’s Church is a major victory for Satan.”) instead of saying every use of “Mormon” is a victory for Satan. Answer 4 keeps “multiple first visions” only as a question the Christian could ask, not as a historical claim; the different ages are 15 (a scribe’s addition to the 1832 account, “sixteenth year”) and about 14 in later accounts. Answer 5 keeps the course’s Church History Museum suggestion as written. The wrap-up beat uses the app’s fixed closing id “closing”."
+}

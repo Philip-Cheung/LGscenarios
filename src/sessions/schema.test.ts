@@ -68,6 +68,14 @@ describe('parseRpcResult', () => {
     expect(result).toMatchObject({ ok: true, session: { openingQuestionAsked: true, exchange: 'follow_up' } })
     expect(parseRpcResult({ ok: true, session: { ...state, exchange: 'third' } }).ok).toBe(false)
   })
+
+  it('marks a Hard mode request, and treats servers without the flag as a plain restart', () => {
+    expect(parseRpcResult({ ok: true, session: { ...state, restart_hard_mode: true } })).toMatchObject({
+      ok: true,
+      session: { restartHardMode: true },
+    })
+    expect(parseRpcResult({ ok: true, session: state })).toMatchObject({ ok: true, session: { restartHardMode: false } })
+  })
 })
 
 describe('snapshotFromRealtimeRow', () => {
@@ -120,6 +128,9 @@ describe('snapshotFromRealtimeRow', () => {
     const asked = { ...row, restart_requested_by: CHRISTIAN, restart_requested_at: new Date().toISOString() }
     expect(snapshotFromRealtimeRow(asked, CHRISTIAN)).toMatchObject({ isCreator: true, restartPending: true, restartByMe: true })
     expect(snapshotFromRealtimeRow(asked, MISSIONARY)).toMatchObject({ isCreator: false, restartPending: true, restartByMe: false })
+    expect(snapshotFromRealtimeRow(asked, MISSIONARY)).toMatchObject({ restartHardMode: false })
+    expect(snapshotFromRealtimeRow({ ...asked, restart_hard_mode: true }, MISSIONARY)).toMatchObject({ restartHardMode: true })
+    expect(snapshotFromRealtimeRow({ ...row, restart_hard_mode: true }, MISSIONARY)).toMatchObject({ restartHardMode: false })
   })
 
   it('gives a waiting creator the role they chose', () => {

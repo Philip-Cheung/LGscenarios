@@ -116,6 +116,10 @@ export class SessionApi {
     return this.call('request_restart', { p_session_id: sessionId, p_expected_revision: expectedRevision })
   }
 
+  requestHardMode(sessionId: string, expectedRevision: number) {
+    return this.call('request_hard_mode', { p_session_id: sessionId, p_expected_revision: expectedRevision })
+  }
+
   respondRestart(sessionId: string, accept: boolean, expectedRevision: number) {
     return this.call('respond_restart', {
       p_session_id: sessionId,

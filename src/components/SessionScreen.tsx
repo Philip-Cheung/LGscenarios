@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router'
 import { isConversation, type AnyScenarioContent } from '../lib/content'
 import type { SessionApi } from '../sessions/api'
-import { clearPointer } from '../sessions/pointer'
+import { clearPointer, writePointer } from '../sessions/pointer'
 import type { SessionSnapshot } from '../sessions/types'
 import { useSessionSync } from '../sessions/useSessionSync'
 import { ConversationNotice, ConversationSession } from './conversation/ConversationSession'
@@ -61,7 +62,20 @@ export function SessionScreen({
     if (ended === 'ended' || snapshot.status === 'ended') onEnded(endedByPartner, lastLiveStatus.current === 'waiting')
   }, [ended, endedByPartner, onEnded, snapshot.status])
 
-  if (ended === 'ended' || snapshot.status === 'ended') return null
+  // Hard mode moves the pair to another scenario; its page resumes this session.
+  const navigate = useNavigate()
+  const movedTo =
+    !ended && snapshot.status !== 'ended' && isConversation(scenario) && snapshot.scenarioId !== scenario.id
+      ? snapshot.scenarioId
+      : null
+  useEffect(() => {
+    if (!movedTo) return
+    writePointer(movedTo, snapshot.id)
+    clearPointer(slug)
+    void navigate(`/s/${movedTo}`, { replace: true })
+  }, [movedTo, navigate, slug, snapshot.id])
+
+  if (ended === 'ended' || snapshot.status === 'ended' || movedTo) return null
   const outdated = snapshot.scenarioId !== scenario.id || snapshot.scenarioVersion !== scenario.version
 
   if (isConversation(scenario)) {

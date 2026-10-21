@@ -92,6 +92,11 @@ export function CompletionScreen({ content, snapshot, playOutro, paused, canAct,
         <Button variant="secondary" disabled={!canAct} onClick={() => onSessionRequest('restart')}>
           Play again
         </Button>
+        {content.hardMode ? (
+          <Button variant="secondary" disabled={!canAct} onClick={() => onSessionRequest('hardMode')}>
+            Hard mode
+          </Button>
+        ) : null}
         <button type="button" className={styles.quiet} onClick={onLeave}>
           Leave session
         </button>

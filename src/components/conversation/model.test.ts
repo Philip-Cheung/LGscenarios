@@ -3,6 +3,7 @@ import file from '../../../content/scenarios/week-one-christians-too.v1.json'
 import lessonFile from '../../../content/scenarios/lesson-one-first-vision.v1.json'
 import lessonV2File from '../../../content/scenarios/lesson-one-first-vision.v2.json'
 import preparedFile from '../../../content/scenarios/week-one-christians-too.v3.json'
+import hardFile from '../../../content/scenarios/week-one-hard-mode.v1.json'
 import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { parseScenarioFile, toStoredContent } from '../../lib/content'
 import type { HistoryEntry } from '../../sessions/types'
@@ -15,6 +16,7 @@ import {
   FREE_RESPONSE_ID,
   FREE_RESPONSE_TEXT,
   NOT_SURE_ID,
+  OWN_WORDS_TEXT,
   responseOptions,
   responseText,
   suggestNext,
@@ -139,7 +141,7 @@ describe('conversation model, prepared questions only (week one v2)', () => {
     const expected = prepared.topics.flatMap((topic) => [topic.question.id, ...topic.followUps.map((followUp) => followUp.id)])
     const history: HistoryEntry[] = [m(OPENING_ID), c(answerId(0))]
     const suggested: string[] = []
-    for (let next = suggestNext(prepared, conversationProgress(prepared, history)); next !== CLOSING_ID; ) {
+    for (let next = suggestNext(prepared, conversationProgress(prepared, history)); next && next !== CLOSING_ID; ) {
       suggested.push(next)
       history.push(m(next), c(answerId(0)))
       next = suggestNext(prepared, conversationProgress(prepared, history))
@@ -175,7 +177,7 @@ describe('conversation model, Lesson 1 (Introduction & First Vision)', () => {
   it('prepares the five exchanges in worksheet order after the introduction, then the wrap-up', () => {
     const history: HistoryEntry[] = [m(OPENING_ID), c(answerId(0))]
     const suggested: string[] = []
-    for (let next = suggestNext(lesson, conversationProgress(lesson, history)); next !== CLOSING_ID; ) {
+    for (let next = suggestNext(lesson, conversationProgress(lesson, history)); next && next !== CLOSING_ID; ) {
       suggested.push(next)
       history.push(m(next), c(answerId(0)))
       next = suggestNext(lesson, conversationProgress(lesson, history))
@@ -220,7 +222,7 @@ describe('conversation model, Lesson 1 version 2 (worksheet questions)', () => {
   it('prepares the five questions in worksheet order after the introduction, then the wrap-up', () => {
     const history: HistoryEntry[] = [m(OPENING_ID), c(answerId(0))]
     const suggested: string[] = []
-    for (let next = suggestNext(lessonV2, conversationProgress(lessonV2, history)); next !== CLOSING_ID; ) {
+    for (let next = suggestNext(lessonV2, conversationProgress(lessonV2, history)); next && next !== CLOSING_ID; ) {
       suggested.push(next)
       expect(responseOptions(lessonV2, findBeat(lessonV2, next)!)).toHaveLength(1)
       history.push(m(next), c(answerId(0)))
@@ -228,5 +230,67 @@ describe('conversation model, Lesson 1 version 2 (worksheet questions)', () => {
     }
     expect(suggested).toEqual(['word-mormon', 'first-vision-accounts', 'expected-response', 'best-rejoinder', 'unaware-friend'])
     expect(topicsExhausted(lessonV2, conversationProgress(lessonV2, history))).toBe(true)
+  })
+})
+
+const parsedHard = parseScenarioFile(hardFile)
+if (!parsedHard.success) throw new Error('week-one-hard-mode.v1.json does not parse')
+const hard = toStoredContent(parsedHard.data) as ConversationContent
+const [, hardHistory] = hard.topics
+
+describe('conversation model, Hard mode (missionary replies)', () => {
+  const progressOf = (history: readonly HistoryEntry[]) => conversationProgress(hard, history)
+  const started = [m(OPENING_ID), c(answerId(0)), m(hardHistory.question.id)]
+
+  it('walks every question and follow-up, suggesting the reply matched to each Christian answer', () => {
+    const history: HistoryEntry[] = [m(OPENING_ID), c(answerId(0))]
+    const asked: string[] = []
+    for (let next = suggestNext(hard, progressOf(history)); next && next !== CLOSING_ID; ) {
+      asked.push(next)
+      const beat = findBeat(hard, next)!
+      const [answer] = responseOptions(hard, beat)
+      history.push(m(next), c(answer.id))
+      const replying = progressOf(history)
+      expect(replying.responding?.parent.id).toBe(next)
+      const reply = suggestNext(hard, replying)!
+      expect(reply).toBe(beat.help!.answers[0].reply)
+      expect(canSpeak(hard, replying, reply)).toBe(true)
+      expect(topicsExhausted(hard, replying)).toBe(false)
+      history.push(m(reply))
+      expect(progressOf(history)).toMatchObject({ responding: null, afterReply: true })
+      next = suggestNext(hard, progressOf(history))
+    }
+    expect(asked).toEqual(hard.topics.flatMap((topic) => [topic.question.id, ...topic.followUps.map((followUp) => followUp.id)]))
+    expect(topicsExhausted(hard, progressOf(history))).toBe(true)
+  })
+
+  it('labels a reply with its topic and shows it in full', () => {
+    const answer = findBeat(hard, hardHistory.question.id)!.help!.answers[0]
+    const thread = threadMessages(hard, [...started, c(answer.id), m(answer.reply!)])
+    const reply = hardHistory.question.respond!.replies.find((item) => item.id === answer.reply)!
+    expect(thread.at(-1)).toMatchObject({ speaker: 'missionary', text: reply.text, caption: `Reply · ${hardHistory.title}` })
+  })
+
+  it('after a free answer, offers the replies but suggests none, and holds new questions back', () => {
+    const progress = progressOf([...started, c(FREE_RESPONSE_ID)])
+    expect(suggestNext(hard, progress)).toBeNull()
+    for (const reply of hardHistory.question.respond!.replies) expect(canSpeak(hard, progress, reply.id)).toBe(true)
+    expect(canSpeak(hard, progress, hard.topics[2].question.id)).toBe(false)
+    expect(canSpeak(hard, progress, CLOSING_ID)).toBe(true)
+  })
+
+  it('lets the missionary reply in their own words, shown as a marker', () => {
+    const history = [...started, c(FREE_RESPONSE_ID), m(FREE_RESPONSE_ID)]
+    expect(canSpeak(hard, progressOf(history.slice(0, -1)), FREE_RESPONSE_ID)).toBe(true)
+    expect(progressOf(history)).toMatchObject({ responding: null, afterReply: true })
+    expect(threadMessages(hard, history).at(-1)).toMatchObject({ speaker: 'missionary', text: OWN_WORDS_TEXT, free: true })
+  })
+
+  it('matches "not sure" and the clarification to their authored replies', () => {
+    const respond = hardHistory.question.respond!
+    expect(suggestNext(hard, progressOf([...started, c(NOT_SURE_ID)]))).toBe(respond.notSureReply)
+    expect(suggestNext(hard, progressOf([...started, c(CLARIFICATION_ID)]))).toBe(respond.clarifyReply)
+    const clarified = progressOf([...started, c(FREE_RESPONSE_ID), m(CLARIFICATION_ID), c(answerId(0))])
+    expect(clarified.responding).toMatchObject({ parent: { id: hardHistory.question.id }, matchedId: null })
   })
 })

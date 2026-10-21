@@ -128,7 +128,11 @@ export function ConversationSession({
   const restartLive = useRequestLive(snapshot.restartPending, snapshot.restartRequestedAt, false)
   const swapLive = useRequestLive(snapshot.swapPending, snapshot.swapRequestedAt, true)
   const request: Request | null = restartLive
-    ? { kind: 'restart', byMe: snapshot.restartByMe, requestedAt: snapshot.restartRequestedAt }
+    ? {
+        kind: snapshot.restartHardMode ? 'hardMode' : 'restart',
+        byMe: snapshot.restartByMe,
+        requestedAt: snapshot.restartRequestedAt,
+      }
     : swapLive
       ? { kind: 'swap', byMe: snapshot.swapByMe, requestedAt: snapshot.swapRequestedAt }
       : null
@@ -228,7 +232,12 @@ export function ConversationSession({
   }
 
   const requestRound = async (kind: SessionRequestKind) => {
-    const ok = kind === 'swap' ? await actions.requestSwap() : await actions.requestRestart()
+    const ok =
+      kind === 'swap'
+        ? await actions.requestSwap()
+        : kind === 'hardMode'
+          ? await actions.requestHardMode()
+          : await actions.requestRestart()
     if (ok) setConfirm(null)
   }
 
@@ -347,7 +356,9 @@ export function ConversationSession({
             description={
               request.kind === 'swap'
                 ? 'You asked to switch roles. Your current round is paused.'
-                : 'You asked to play again. Your current round is paused.'
+                : request.kind === 'hardMode'
+                  ? 'You asked to try Hard mode. Your current round is paused.'
+                  : 'You asked to play again. Your current round is paused.'
             }
             busy={pending !== null}
             error={pending === null ? notice : null}
@@ -359,11 +370,19 @@ export function ConversationSession({
           </SessionDialog>
         ) : (
           <SessionDialog
-            title={request.kind === 'swap' ? 'Your partner wants to switch roles' : 'Your partner wants to play again'}
+            title={
+              request.kind === 'swap'
+                ? 'Your partner wants to switch roles'
+                : request.kind === 'hardMode'
+                  ? 'Your partner wants to try Hard mode'
+                  : 'Your partner wants to play again'
+            }
             description={
               request.kind === 'swap'
                 ? `Accept to clear this round and start at Ready as the ${snapshot.myRole === 'missionary' ? 'Christian' : 'missionary'}.`
-                : 'Accept to clear this conversation and start at Ready with the same roles.'
+                : request.kind === 'hardMode'
+                  ? 'Accept to start Hard mode at Ready with the same roles. This time the missionary responds to what the Christian says.'
+                  : 'Accept to clear this conversation and start at Ready with the same roles.'
             }
             busy={pending !== null}
             error={pending === null ? notice : null}
@@ -373,7 +392,7 @@ export function ConversationSession({
               Decline
             </Button>
             <Button disabled={!live || pending !== null} loading={pending === 'acceptSwap' || pending === 'acceptRestart'} onClick={() => answer(true)}>
-              {request.kind === 'swap' ? 'Accept and switch' : 'Accept and restart'}
+              {request.kind === 'swap' ? 'Accept and switch' : request.kind === 'hardMode' ? 'Accept and start' : 'Accept and restart'}
             </Button>
           </SessionDialog>
         )
@@ -398,13 +417,15 @@ export function ConversationSession({
         </SessionDialog>
       ) : confirm ? (
         <SessionDialog
-          title={confirm === 'swap' ? 'Switch roles?' : 'Start another round?'}
+          title={confirm === 'swap' ? 'Switch roles?' : confirm === 'hardMode' ? 'Try Hard mode?' : 'Start another round?'}
           description={
             confirm === 'swap'
               ? 'Your partner will be asked to agree. A new round starts with your roles reversed.'
-              : 'Your partner will be asked to agree. The conversation clears and both players return to Ready with the same roles.'
+              : confirm === 'hardMode'
+                ? 'Your partner will be asked to agree. You both move to Hard mode and return to Ready with the same roles.'
+                : 'Your partner will be asked to agree. The conversation clears and both players return to Ready with the same roles.'
           }
-          busy={pending === 'requestSwap' || pending === 'requestRestart'}
+          busy={pending === 'requestSwap' || pending === 'requestRestart' || pending === 'requestHardMode'}
           error={pending === null ? notice : null}
           onDismiss={() => setConfirm(null)}
         >
@@ -413,10 +434,10 @@ export function ConversationSession({
           </Button>
           <Button
             disabled={!canAct && pending === null}
-            loading={pending === 'requestSwap' || pending === 'requestRestart'}
+            loading={pending === 'requestSwap' || pending === 'requestRestart' || pending === 'requestHardMode'}
             onClick={() => void requestRound(confirm)}
           >
-            {confirm === 'swap' ? 'Ask to switch' : 'Ask to restart'}
+            {confirm === 'swap' ? 'Ask to switch' : confirm === 'hardMode' ? 'Ask to start' : 'Ask to restart'}
           </Button>
         </SessionDialog>
       ) : null}

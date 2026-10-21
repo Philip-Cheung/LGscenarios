@@ -17,6 +17,7 @@ const base: SessionSnapshot = {
   restartPending: false,
   restartByMe: false,
   restartRequestedAt: null,
+  restartHardMode: false,
   stage: 'question_selection',
   meReady: true,
   partnerReady: true,
