@@ -191,7 +191,7 @@ export function ConversationView({
   } else if (awaitingAnswer) {
     hasDraft = !!christianText
     caption = hasDraft ? 'Your next line' : 'Your response'
-    note = 'Speak aloud, then send'
+    note = hasDraft ? 'Speak aloud, then send' : 'Try to answer on your own first'
     text = christianText ?? 'Respond aloud in your own words…'
     sendLabel = 'Send response'
     canSend = true
@@ -233,6 +233,9 @@ export function ConversationView({
         {role === 'christian' && awaitingAnswer ? (
           <div className={styles.helpEntry}>
             <button type="button" className={styles.helpTrigger} aria-haspopup="dialog" disabled={!canAct} onClick={() => openSheet('help')}>
+              <span className={styles.helpIcon} aria-hidden="true">
+                ?
+              </span>
               Need help?
             </button>
           </div>
@@ -286,7 +289,9 @@ export function ConversationView({
             >
               +
             </button>
-            <span className={styles.composeNote}>{note}</span>
+            <span className={role === 'christian' && awaitingAnswer ? `${styles.composeNote} ${styles.composeHint}` : styles.composeNote}>
+              {note}
+            </span>
             {hasDraft && role === 'christian' ? (
               <button
                 type="button"

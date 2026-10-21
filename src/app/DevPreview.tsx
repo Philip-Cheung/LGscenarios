@@ -204,6 +204,10 @@ const STATES: Record<string, PreviewState> = {
     },
   },
   'conversation-christian-waiting': { conversation: true, snapshot: { ...talking, myRole: 'christian', history: introduced } },
+  'conversation-christian-answering': {
+    conversation: true,
+    snapshot: { ...talking, myRole: 'christian', turn: 'christian', history: [{ speaker: 'missionary', id: 'introduction' }] },
+  },
   'replies-missionary-matched': { conversation: true, replies: true, snapshot: { ...talking, history: answeredChristianity } },
   'replies-missionary-heard': {
     conversation: true,
