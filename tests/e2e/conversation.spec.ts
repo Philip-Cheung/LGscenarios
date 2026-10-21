@@ -139,19 +139,31 @@ test('Conversation: two phones pair, meet at the door, talk, finish, then restar
   await answerAloud(pair)
   await expect(missionary.page.getByText('Spoken response · not transcribed')).toBeVisible()
 
-  // The missionary takes another direction from the numbered sheet; the choice stays private until spoken.
+  // The choice card: the suggested question is selected, with a few other directions beside it.
+  const card = missionary.page.getByRole('group', { name: 'What would you like to ask next?' })
+  await expect(card.getByRole('button', { name: /^1\. Being Christian \(Recommended\)/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(card.getByRole('button', { name: /^\d\. / })).toHaveCount(3)
   await expect(missionary.page.locator('section').getByText(COPY.christianity)).toBeVisible()
-  await missionary.page.getByRole('button', { name: 'Take another direction' }).click()
+  await expect(christian.page.getByRole('group', { name: 'What would you like to ask next?' })).toHaveCount(0)
+  await shot(missionary.page, '375-09-choice-card')
+
+  // More directions opens the full numbered list; Escape returns to the card.
+  const more = missionary.page.getByRole('button', { name: 'More directions (2)' })
+  await more.click()
   const questions = missionary.page.getByRole('dialog', { name: 'Choose your next question' })
   await expect(questions.getByRole('heading', { name: 'Choose a direction' })).toBeVisible()
   await shot(missionary.page, '375-09-questions')
   await missionary.page.keyboard.press('Escape')
   await expect(questions).toHaveCount(0)
-  await expect(missionary.page.getByRole('button', { name: 'Take another direction' })).toBeFocused()
-  await missionary.page.getByRole('button', { name: 'Take another direction' }).click()
-  await questions.getByRole('button', { name: /^3\. Godhead or Trinity\?/ }).click()
-  await expect(questions).toHaveCount(0)
+  await expect(more).toBeFocused()
+
+  // A number key picks a row while focus is in the card; the choice stays private until spoken.
+  await card.getByRole('button', { name: /^1\. / }).focus()
+  await missionary.page.keyboard.press('3')
   await expect(speakButton(missionary.page, 'Send question')).toBeFocused()
+  await expect(card.getByRole('button', { name: /^3\. Godhead or Trinity\?/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(card.getByRole('button', { name: /^1\. Being Christian/ })).toHaveAttribute('aria-pressed', 'false')
+  await expect(missionary.page.locator('section').getByText(COPY.god)).toBeVisible()
   await expect(christian.page.getByText(COPY.god)).toHaveCount(0)
   await speak(pair, 'Send question', COPY.god)
   await shot(missionary.page, '375-10-thread-missionary')
@@ -322,8 +334,7 @@ test('Conversation: six pairs run at once without crossing over', async ({ brows
     await answerAloud(pair)
     // Pairs choose different directions; each thread holds only its own.
     const direction = index % 2 === 0 ? /^1\. Being Christian/ : /^3\. Godhead or Trinity\?/
-    await pair.missionary.page.getByRole('button', { name: 'Take another direction' }).click()
-    await pair.missionary.page.getByRole('dialog', { name: 'Choose your next question' }).getByRole('button', { name: direction }).click()
+    await pair.missionary.page.getByRole('group', { name: 'What would you like to ask next?' }).getByRole('button', { name: direction }).click()
     await speak(pair, 'Send question', index % 2 === 0 ? COPY.christianity : COPY.god)
     await expect(pair.christian.page.getByText(index % 2 === 0 ? COPY.god : COPY.christianity)).toHaveCount(0)
     await answerAloud(pair)
@@ -374,7 +385,9 @@ for (const viewport of VIEWPORTS) {
       expect(send.width).toBeLessThan(Math.min(240, viewport.width * 0.6))
       expect(send.gapToComposerEdge).toBeLessThan(24)
     }
-    await missionary.page.getByRole('button', { name: 'Take another direction' }).click()
+    // Speak aloud stays reachable beside the choice card.
+    await expect(speakButton(missionary.page, 'Send question')).toBeInViewport()
+    await missionary.page.getByRole('button', { name: /^More directions/ }).click()
     await expectNoHorizontalOverflow(missionary.page)
     await shot(missionary.page, `${name}-09-questions`)
     await closePair(pair)
@@ -399,5 +412,12 @@ test('Conversation stays usable at 200% text size on a 320px screen', async ({ b
   await send.scrollIntoViewIfNeeded()
   await send.click()
   await expect(missionary.page.getByText('Answered aloud', { exact: true })).toBeVisible()
+  // With large text the frame scrolls; the choice card and Speak aloud stay reachable.
+  await expect(missionary.page.getByRole('group', { name: 'What would you like to ask next?' })).toBeVisible()
+  const ask = speakButton(missionary.page, 'Send question')
+  await ask.scrollIntoViewIfNeeded()
+  await expect(ask).toBeInViewport()
+  await expectNoHorizontalOverflow(missionary.page)
+  await shot(missionary.page, '320-200pct-09-choice-card')
   await closePair(pair)
 })

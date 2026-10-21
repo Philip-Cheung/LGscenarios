@@ -3,10 +3,11 @@ import { EndedCard, type EndedReason } from '../components/EndedCard'
 import { JoinForm } from '../components/JoinForm'
 import { PageShell } from '../components/PageShell'
 import { RoleSelect } from '../components/RoleSelect'
+import { ConversationSession } from '../components/conversation/ConversationSession'
 import { SessionView } from '../components/SessionView'
 import { Welcome } from '../components/Welcome'
 import type { ScenarioContent } from '../lib/content'
-import { coffeeChat, sampleDoorstep, weekOne, whoIsGod } from '../scenarios/fixtures'
+import { christiansToo, coffeeChat, sampleDoorstep, weekOne, whoIsGod } from '../scenarios/fixtures'
 import type { SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, SessionActions } from '../sessions/useSessionSync'
 
@@ -74,7 +75,15 @@ interface PreviewState {
   connection?: ConnectionState
   screen?: 'welcome' | 'welcome-notice' | 'role-select' | 'join' | 'join-error' | EndedReason
   scenario?: ScenarioContent
+  /** Renders the "We're Christians too" conversation (schema 3.0) instead of a guided scenario. */
+  conversation?: boolean
 }
+
+const talking = { status: 'active' as const, stage: 'conversation' as const, encounterRelaxed: true }
+const introduced = [
+  { speaker: 'missionary' as const, id: 'introduction' },
+  { speaker: 'christian' as const, id: 'answer-1' },
+]
 
 const STATES: Record<string, PreviewState> = {
   'welcome': { screen: 'welcome' },
@@ -181,6 +190,15 @@ const STATES: Record<string, PreviewState> = {
     scenario: weekOne,
     snapshot: { stage: 'question_selection', openingQuestionAsked: true, answeredQuestionIds: ['faith', 'accounts'] },
   },
+  'conversation-missionary-next': { conversation: true, snapshot: { ...talking, history: introduced } },
+  'conversation-missionary-follow-up': {
+    conversation: true,
+    snapshot: {
+      ...talking,
+      history: [...introduced, { speaker: 'missionary', id: 'christianity' }, { speaker: 'christian', id: 'free' }],
+    },
+  },
+  'conversation-christian-waiting': { conversation: true, snapshot: { ...talking, myRole: 'christian', history: introduced } },
   'left': { screen: 'left' },
   'partner-left': { screen: 'partnerLeft' },
   'expired': { screen: 'expired' },
@@ -231,24 +249,48 @@ export default function DevPreview() {
     )
   }
 
+  const picker = (
+    <label style={{ display: 'block', marginBottom: 16, fontSize: '0.875rem' }}>
+      <span style={{ marginRight: 8 }}>Preview state</span>
+      <select
+        value={state}
+        onChange={(event) => {
+          setState(event.target.value)
+          window.history.replaceState(null, '', `?state=${event.target.value}`)
+        }}
+      >
+        {Object.keys(STATES).map((key) => (
+          <option key={key} value={key}>
+            {key}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+
+  if (entry.conversation) {
+    return (
+      <>
+        <div style={{ padding: '8px 16px 0' }}>{picker}</div>
+        <ConversationSession
+          key={state}
+          content={christiansToo}
+          snapshot={{ ...base, scenarioId: christiansToo.id, scenarioVersion: christiansToo.version, ...entry.snapshot }}
+          connection="live"
+          pending={null}
+          notice={null}
+          lastError={null}
+          actions={actions}
+          clockOffsetMs={0}
+          resumed
+        />
+      </>
+    )
+  }
+
   return (
     <PageShell>
-      <label style={{ display: 'block', marginBottom: 16, fontSize: '0.875rem' }}>
-        <span style={{ marginRight: 8 }}>Preview state</span>
-        <select
-          value={state}
-          onChange={(event) => {
-            setState(event.target.value)
-            window.history.replaceState(null, '', `?state=${event.target.value}`)
-          }}
-        >
-          {Object.keys(STATES).map((key) => (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          ))}
-        </select>
-      </label>
+      {picker}
       {content}
     </PageShell>
   )

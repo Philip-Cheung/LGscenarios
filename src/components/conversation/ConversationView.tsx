@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { CLARIFICATION_ID, CLOSING_ID, type ConversationContent } from '../../lib/conversation'
 import { richTextOneLine } from '../../lib/richText'
 import type { Role, SessionSnapshot } from '../../sessions/types'
@@ -16,6 +16,7 @@ import {
   suggestNext,
   threadMessages,
   type Beat,
+  type DirectionChoice,
   type ThreadMessage,
 } from './model'
 import { OpenPassageContext } from './passageContext'
@@ -25,6 +26,8 @@ import { Sheet } from './Sheet'
 const VISIBLE_MESSAGES = 4
 /** Within this distance of the bottom, a new message scrolls into view. */
 const NEAR_BOTTOM_PX = 96
+/** Rows in the missionary's choice card; the rest are under "More directions". */
+const CARD_CHOICES = 3
 
 type SheetKind = 'questions' | 'help' | 'options'
 export type SessionRequestKind = 'restart' | 'swap'
@@ -124,6 +127,8 @@ export function ConversationView({
   const earlier = messages.slice(0, -VISIBLE_MESSAGES)
   const latest = messages.at(-1)
   const allTopicsUsed = progress.started && suggestNext(content, progress) === null
+  // On the missionary's turn the composer becomes a choice card, until only the closing remains.
+  const card = role === 'missionary' && !awaitingAnswer && progress.started && !allTopicsUsed ? cardChoices(content, progress, missionaryDraftId) : null
 
   let caption: string
   let note: string
@@ -164,7 +169,7 @@ export function ConversationView({
     <>
       <main
         ref={scrollRef}
-        className={styles.conversation}
+        className={card ? `${styles.conversation} ${styles.conversationChoosing}` : styles.conversation}
         onScroll={(event) => {
           const pane = event.currentTarget
           nearBottom.current = pane.scrollHeight - pane.scrollTop - pane.clientHeight < NEAR_BOTTOM_PX
@@ -199,7 +204,7 @@ export function ConversationView({
           {latest ? `${content.roles[latest.speaker].speaker}: ${richTextOneLine(latest.text)}` : ''}
         </p>
       </main>
-      <section className={styles.tools} aria-label="Private conversation choices">
+      <section className={card ? `${styles.tools} ${styles.toolsChoosing}` : styles.tools} aria-label="Private conversation choices">
         {role === 'christian' && awaitingAnswer ? (
           <div className={styles.helpEntry}>
             <button type="button" className={styles.helpTrigger} aria-haspopup="dialog" disabled={!canAct} onClick={() => openSheet('help')}>
@@ -207,7 +212,7 @@ export function ConversationView({
             </button>
           </div>
         ) : null}
-        {role === 'missionary' && !awaitingAnswer && progress.started ? (
+        {role === 'missionary' && !awaitingAnswer && progress.started && !card ? (
           <div className={styles.directionControls}>
             <button
               type="button"
@@ -227,12 +232,27 @@ export function ConversationView({
             </button>
           </div>
         ) : null}
-        <div className={hasDraft ? `${styles.composeBox} ${styles.hasDraft}` : styles.composeBox}>
-          <div className={styles.composeCaption}>{caption}</div>
-          <div className={hasDraft ? styles.composerText : `${styles.composerText} ${styles.placeholder}`}>
-            <ConversationText text={text} />
-          </div>
-          <div className={styles.composeBar}>
+        <div className={card ? `${styles.composeBox} ${styles.choiceCard}` : hasDraft ? `${styles.composeBox} ${styles.hasDraft}` : styles.composeBox}>
+          {card ? (
+            <NextChoices
+              choices={card.rows}
+              recommendedId={card.recommendedId}
+              selectedId={missionaryDraftId}
+              line={missionaryDraft?.text ?? null}
+              more={card.more}
+              disabled={!canAct}
+              onChoose={choose}
+              onMore={() => openSheet('questions')}
+            />
+          ) : (
+            <>
+              <div className={styles.composeCaption}>{caption}</div>
+              <div className={hasDraft ? styles.composerText : `${styles.composerText} ${styles.placeholder}`}>
+                <ConversationText text={text} />
+              </div>
+            </>
+          )}
+          <div className={card ? `${styles.composeBar} ${styles.choiceBar}` : styles.composeBar}>
             <button
               type="button"
               className={styles.composeMore}
@@ -329,6 +349,118 @@ export function Message({
         </div>
       </div>
     </div>
+  )
+}
+
+interface CardChoices {
+  rows: DirectionChoice[]
+  recommendedId: string | null
+  /** Directions not shown in the card. */
+  more: number
+}
+
+/**
+ * The card's rows: the suggested line first, then the next directions. A line
+ * chosen elsewhere (the full list, or "Ask them to explain" / "Wrap up" from
+ * the options menu) takes the first row so the selection is always visible.
+ */
+function cardChoices(content: ConversationContent, progress: ReturnType<typeof conversationProgress>, selectedId: string | null): CardChoices {
+  const { continueTopic, otherDirections } = directionChoices(content, progress)
+  const all = [...continueTopic, ...otherDirections]
+  let rows = all.slice(0, CARD_CHOICES)
+  if (selectedId && !rows.some((row) => row.beatId === selectedId)) {
+    const chosen =
+      all.find((row) => row.beatId === selectedId) ??
+      (selectedId === CLARIFICATION_ID
+        ? { beatId: selectedId, title: 'Ask them to explain', summary: richTextOneLine(content.clarification.text) }
+        : selectedId === CLOSING_ID
+          ? { beatId: selectedId, title: 'Wrap up conversation', summary: 'End the conversation kindly.' }
+          : null)
+    if (chosen) rows = [chosen, ...rows.slice(0, CARD_CHOICES - 1)]
+  }
+  return {
+    rows,
+    recommendedId: all[0]?.beatId ?? null,
+    more: all.filter((choice) => !rows.some((row) => row.beatId === choice.beatId)).length,
+  }
+}
+
+/** The missionary's choice card: a question, a few numbered rows, and the selected line to read aloud. */
+function NextChoices({
+  choices,
+  recommendedId,
+  selectedId,
+  line,
+  more,
+  disabled,
+  onChoose,
+  onMore,
+}: {
+  choices: DirectionChoice[]
+  recommendedId: string | null
+  selectedId: string | null
+  line: string | null
+  /** Directions not shown; they open in the full list. */
+  more: number
+  disabled: boolean
+  onChoose(id: string): void
+  onMore(): void
+}) {
+  const headingId = useId()
+  // Number keys pick a row, but only while focus is inside the card.
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (disabled || event.altKey || event.ctrlKey || event.metaKey) return
+    const choice = choices[Number(event.key) - 1]
+    if (!/^[1-9]$/.test(event.key) || !choice) return
+    event.preventDefault()
+    onChoose(choice.beatId)
+  }
+  return (
+    <>
+      <h2 id={headingId} className={styles.choiceHeading}>
+        What would you like to ask next?
+      </h2>
+      <div role="group" aria-labelledby={headingId} className={styles.choiceList} onKeyDown={onKeyDown}>
+        {choices.map((choice, index) => {
+          const selected = choice.beatId === selectedId
+          const recommended = choice.beatId === recommendedId
+          return (
+            <div key={choice.beatId} className={selected ? `${styles.choiceItem} ${styles.choiceSelected}` : styles.choiceItem}>
+              <button
+                type="button"
+                className={styles.choiceRow}
+                aria-pressed={selected}
+                aria-label={`${index + 1}. ${choice.title}${recommended ? ' (Recommended)' : ''}. ${choice.summary}`}
+                disabled={disabled}
+                onClick={() => onChoose(choice.beatId)}
+              >
+                <span className={styles.choiceNumber} aria-hidden="true">
+                  {index + 1}
+                </span>
+                <span className={styles.choiceRowTitle}>{choice.title}</span>
+                {recommended ? (
+                  <span className={styles.choiceBadge} aria-hidden="true">
+                    Recommended
+                  </span>
+                ) : null}
+              </button>
+              {selected && line ? (
+                <div className={styles.choiceLine}>
+                  <div className={styles.composerText}>
+                    <ConversationText text={line} />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
+        {more > 0 ? (
+          <button type="button" className={styles.moreDirections} aria-haspopup="dialog" disabled={disabled} onClick={onMore}>
+            More directions ({more})
+          </button>
+        ) : null}
+      </div>
+    </>
   )
 }
 
