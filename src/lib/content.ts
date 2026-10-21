@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import {
-  CONVERSATION_SCHEMA_VERSION,
+  CONVERSATION_SCHEMA_VERSIONS,
   conversationContentSchema,
   conversationFileSchema,
   conversationWarnings,
@@ -13,8 +13,8 @@ import { identifier, plainText, richText } from './schemaPrimitives'
 /** Guided scenario JSON contracts. 2.1 adds opening questions, follow-ups, help, and Bible passages. */
 export const SCENARIO_SCHEMA_VERSIONS = ['2.0', '2.1'] as const
 
-/** Every scenario JSON contract this app can render, including conversation scenarios (3.0). */
-export const ALL_SCENARIO_SCHEMA_VERSIONS = [...SCENARIO_SCHEMA_VERSIONS, CONVERSATION_SCHEMA_VERSION] as const
+/** Every scenario JSON contract this app can render, including conversation scenarios (3.x). */
+export const ALL_SCENARIO_SCHEMA_VERSIONS = [...SCENARIO_SCHEMA_VERSIONS, ...CONVERSATION_SCHEMA_VERSIONS] as const
 
 /** Shown on the completion screen when a scenario has no reflection prompt of its own. */
 export const DEFAULT_REFLECTION_PROMPT = 'What helped the conversation feel welcoming?'
@@ -318,16 +318,17 @@ export type ScenarioOpeningQuestion = z.infer<typeof openingQuestionSchema>
 export type ScenarioBible = z.infer<typeof bibleSchema>
 export type BibleReference = ScenarioBible['references'][number]
 
-/** A scenario of either kind: guided (2.x) or conversation (3.0). */
+/** A scenario of either kind: guided (2.x) or conversation (3.x). */
 export type AnyScenarioContent = ScenarioContent | ConversationContent
 export type AnyScenarioFile = ScenarioFile | ConversationFile
 
-export function isConversation(scenario: AnyScenarioContent): scenario is ConversationContent {
-  return scenario.schemaVersion === CONVERSATION_SCHEMA_VERSION
+function declaresConversation(raw: unknown): boolean {
+  const declared = (raw as { schemaVersion?: unknown } | null)?.schemaVersion
+  return (CONVERSATION_SCHEMA_VERSIONS as readonly unknown[]).includes(declared)
 }
 
-function declaresConversation(raw: unknown): boolean {
-  return (raw as { schemaVersion?: unknown } | null)?.schemaVersion === CONVERSATION_SCHEMA_VERSION
+export function isConversation(scenario: AnyScenarioContent): scenario is ConversationContent {
+  return declaresConversation(scenario)
 }
 
 type ParseResult<T> = { success: true; data: T } | { success: false; error: z.ZodError }

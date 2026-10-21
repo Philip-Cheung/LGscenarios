@@ -609,7 +609,10 @@
         },
         "schemaVersion": {
           "type": "string",
-          "const": "3.0"
+          "enum": [
+            "3.0",
+            "3.1"
+          ]
         },
         "id": {
           "type": "string",
@@ -876,9 +879,38 @@
                         "maxItems": 4,
                         "type": "array",
                         "items": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 700
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 700
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "maxLength": 40,
+                                  "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                                },
+                                "text": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 700
+                                },
+                                "reply": {
+                                  "type": "string",
+                                  "maxLength": 40,
+                                  "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "text"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
                         }
                       },
                       "clarify": {
@@ -905,6 +937,131 @@
                     "required": [
                       "hint",
                       "answers"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "respond": {
+                    "type": "object",
+                    "properties": {
+                      "replies": {
+                        "minItems": 1,
+                        "maxItems": 8,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                            },
+                            "label": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 500
+                            },
+                            "next": {
+                              "type": "string",
+                              "enum": [
+                                "continue",
+                                "christian-response"
+                              ]
+                            },
+                            "help": {
+                              "type": "object",
+                              "properties": {
+                                "hint": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 400
+                                },
+                                "answers": {
+                                  "minItems": 1,
+                                  "maxItems": 4,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "maxLength": 40,
+                                        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                                      },
+                                      "text": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 700
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "text"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "hint",
+                                "answers"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "label",
+                            "text",
+                            "next"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "heard": {
+                        "minItems": 2,
+                        "maxItems": 3,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "reply": {
+                              "type": "string",
+                              "maxLength": 40,
+                              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "reply"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "clarifyReply": {
+                        "type": "string",
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                      },
+                      "notSureReply": {
+                        "type": "string",
+                        "maxLength": 40,
+                        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                      }
+                    },
+                    "required": [
+                      "replies",
+                      "heard",
+                      "notSureReply"
                     ],
                     "additionalProperties": false
                   }
@@ -951,9 +1108,38 @@
                           "maxItems": 4,
                           "type": "array",
                           "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 700
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 700
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                                  },
+                                  "text": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 700
+                                  },
+                                  "reply": {
+                                    "type": "string",
+                                    "maxLength": 40,
+                                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "text"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
                           }
                         },
                         "clarify": {
@@ -980,6 +1166,131 @@
                       "required": [
                         "hint",
                         "answers"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "respond": {
+                      "type": "object",
+                      "properties": {
+                        "replies": {
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "text": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              },
+                              "next": {
+                                "type": "string",
+                                "enum": [
+                                  "continue",
+                                  "christian-response"
+                                ]
+                              },
+                              "help": {
+                                "type": "object",
+                                "properties": {
+                                  "hint": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 400
+                                  },
+                                  "answers": {
+                                    "minItems": 1,
+                                    "maxItems": 4,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                                        },
+                                        "text": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 700
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "text"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "hint",
+                                  "answers"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label",
+                              "text",
+                              "next"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "heard": {
+                          "minItems": 2,
+                          "maxItems": 3,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "reply": {
+                                "type": "string",
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                              }
+                            },
+                            "required": [
+                              "label",
+                              "reply"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "clarifyReply": {
+                          "type": "string",
+                          "maxLength": 40,
+                          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                        },
+                        "notSureReply": {
+                          "type": "string",
+                          "maxLength": 40,
+                          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                        }
+                      },
+                      "required": [
+                        "replies",
+                        "heard",
+                        "notSureReply"
                       ],
                       "additionalProperties": false
                     },

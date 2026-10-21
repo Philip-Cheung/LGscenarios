@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import file from '../../../content/scenarios/week-one-christians-too.v1.json'
+import repliesFile from '../../../content/scenarios/week-one-christians-too.v2.json'
 import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { parseScenarioFile, toStoredContent } from '../../lib/content'
 import type { HistoryEntry } from '../../sessions/types'
@@ -11,7 +12,9 @@ import {
   FREE_RESPONSE_ID,
   FREE_RESPONSE_TEXT,
   NOT_SURE_ID,
+  OWN_WORDS_TEXT,
   responseOptions,
+  responseText,
   suggestNext,
   threadMessages,
 } from './model'
@@ -101,5 +104,82 @@ describe('conversation model', () => {
     expect(suggestNext(content, progress)).toBeNull()
     expect(directionChoices(content, progress)).toEqual({ continueTopic: [], otherDirections: [] })
     expect(canSpeak(content, progress, CLOSING_ID)).toBe(true)
+  })
+})
+
+const parsedReplies = parseScenarioFile(repliesFile)
+if (!parsedReplies.success) throw new Error('week-one-christians-too.v2.json does not parse')
+const replies = toStoredContent(parsedReplies.data) as ConversationContent
+
+describe('conversation model with missionary replies (3.1)', () => {
+  const asked = [m(OPENING_ID), c(answerId(0)), m('christianity')]
+
+  it('offers the Christian authored answers by id and resolves them in the thread', () => {
+    const beat = conversationProgress(replies, asked).lastBeat
+    expect(beat && responseOptions(replies, beat).map((option) => option.id)).toEqual([
+      'christianity-eternal-son',
+      'christianity-compare-meaning',
+      NOT_SURE_ID,
+    ])
+    expect(responseText(replies, beat, 'christianity-eternal-son')).toMatch(/^Following Jesus is central/)
+    expect(responseText(replies, beat, answerId(0))).toBeNull()
+  })
+
+  it('suggests the reply matched to the confirmed answer and allows only replies, own words, clarify, or closing', () => {
+    const progress = conversationProgress(replies, [...asked, c('christianity-eternal-son')])
+    expect(progress.responding?.parent.id).toBe('christianity')
+    expect(progress.responding?.matchedId).toBe('christianity-reply-who-jesus-is')
+    expect(suggestNext(replies, progress)).toBe('christianity-reply-who-jesus-is')
+    for (const id of ['christianity-reply-compare', FREE_RESPONSE_ID, CLARIFICATION_ID, CLOSING_ID]) {
+      expect(canSpeak(replies, progress, id)).toBe(true)
+    }
+    for (const id of ['history', 'christianity-call-us-christians', 'christianity-reply-godhead']) {
+      expect(canSpeak(replies, progress, id)).toBe(false)
+    }
+  })
+
+  it('maps the clarifying question and "not sure", and has no match for a free answer', () => {
+    const matched = (id: string) => conversationProgress(replies, [...asked, c(id)]).responding?.matchedId
+    expect(matched(CLARIFICATION_ID)).toBe('christianity-reply-who-jesus-is')
+    expect(matched(NOT_SURE_ID)).toBe('christianity-reply-read-together')
+    expect(matched(FREE_RESPONSE_ID)).toBeNull()
+    expect(suggestNext(replies, conversationProgress(replies, [...asked, c(FREE_RESPONSE_ID)]))).toBeNull()
+  })
+
+  it('continues after a reply: the topic’s follow-ups again, no more replies', () => {
+    const progress = conversationProgress(replies, [...asked, c('christianity-eternal-son'), m('christianity-reply-who-jesus-is')])
+    expect(progress.responding).toBeNull()
+    expect(progress.afterReply).toBe(true)
+    expect(progress.activeTopicId).toBe('christianity')
+    expect(suggestNext(replies, progress)).toBe('christianity-call-us-christians')
+    expect(canSpeak(replies, progress, 'christianity-reply-compare')).toBe(false)
+    expect(canSpeak(replies, progress, FREE_RESPONSE_ID)).toBe(false)
+  })
+
+  it('returns to the same line after the clarification, without a match and without a second clarification', () => {
+    const progress = conversationProgress(replies, [...asked, c(FREE_RESPONSE_ID), m(CLARIFICATION_ID), c(answerId(0))])
+    expect(progress.responding?.parent.id).toBe('christianity')
+    expect(progress.responding?.matchedId).toBeNull()
+    expect(canSpeak(replies, progress, CLARIFICATION_ID)).toBe(false)
+  })
+
+  it('skips replies on a line that has none yet', () => {
+    const progress = conversationProgress(replies, [m(OPENING_ID), c(answerId(0)), m('history'), c('history-a1')])
+    expect(progress.responding).toBeNull()
+    expect(canSpeak(replies, progress, 'history-ask-god-for-wisdom')).toBe(true)
+  })
+
+  it('shows replies with their topic, and a reply in their own words as a neutral marker', () => {
+    const thread = threadMessages(replies, [
+      ...asked,
+      c('christianity-eternal-son'),
+      m('christianity-reply-who-jesus-is'),
+      m('christianity-why-trinity'),
+      c(FREE_RESPONSE_ID),
+      m(FREE_RESPONSE_ID),
+    ])
+    expect(thread[4]).toMatchObject({ speaker: 'missionary', caption: 'Reply · Being Christian', free: false })
+    expect(thread[4].text).toMatch(/^We believe Jesus Christ is the Son of God/)
+    expect(thread.at(-1)).toMatchObject({ speaker: 'missionary', text: OWN_WORDS_TEXT, free: true })
   })
 })
