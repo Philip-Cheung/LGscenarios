@@ -40,8 +40,8 @@ for (const [width, height] of [
     await expect(back).toBeVisible()
     expect((await back.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
     expect(await overflow(page)).toBeLessThanOrEqual(0)
-    // The "Christian (You)" strip below starts at the same left edge as the door mark.
-    const strip = await page.getByText(/\(You\)$/).locator('..').boundingBox()
+    // The partner strip below starts at the same left edge as the door mark.
+    const strip = await page.locator('[class*="roleStrip"]').locator('[class*="portrait"]').boundingBox()
     const mark = await header.locator('svg').boundingBox()
     expect(Math.round(strip?.x ?? -1)).toBe(Math.round(mark?.x ?? 0))
     await context.close()

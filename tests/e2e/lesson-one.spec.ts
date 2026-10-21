@@ -78,6 +78,47 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: `${SHOTS}/${name}.png` })
 }
 
+/** Scrolled back through the thread, messages pass beneath the sticky, frosted role strip; then back to the latest. */
+async function expectFrostedStrip(page: Page, name: string) {
+  const state = await page.evaluate(() => {
+    const pane = document.querySelector('[aria-label="Conversation prompts"]')!.closest('main')!
+    const strip = pane.querySelector<HTMLElement>('[class*="roleStrip"]')!
+    pane.scrollTop = Math.max(0, pane.scrollHeight - pane.clientHeight - 150)
+    const header = document.querySelector('header')!.getBoundingClientRect()
+    const box = strip.getBoundingClientRect()
+    const style = getComputedStyle(strip)
+    const messages = [...pane.querySelectorAll('[aria-label="Conversation prompts"] > *')]
+    return {
+      scrolled: pane.scrollTop > 0,
+      flushWithHeader: Math.round(box.top - header.bottom) === 0,
+      position: getComputedStyle(strip.parentElement!).position,
+      background: style.backgroundColor,
+      blur: style.backdropFilter,
+      opacity: style.opacity,
+      messageBeneath: messages.some((message) => {
+        const rect = message.getBoundingClientRect()
+        return rect.top < box.bottom && rect.bottom > box.top
+      }),
+      overflow: document.documentElement.scrollWidth - window.innerWidth,
+    }
+  })
+  expect(state).toMatchObject({
+    scrolled: true,
+    flushWithHeader: true,
+    position: 'sticky',
+    background: 'rgba(249, 250, 245, 0.58)',
+    blur: 'blur(8px)',
+    opacity: '1',
+    messageBeneath: true,
+  })
+  expect(state.overflow).toBeLessThanOrEqual(0)
+  await shot(page, name)
+  await page.evaluate(() => {
+    const pane = document.querySelector('[aria-label="Conversation prompts"]')!.closest('main')!
+    pane.scrollTop = pane.scrollHeight
+  })
+}
+
 const speakButton = (page: Page, name: string) => page.getByRole('button', { name, exact: true })
 
 /** Pairs two phones, readies both with relaxed timing, and opens the door. */
@@ -244,6 +285,7 @@ test('Lesson 1: the introduction teaches the controls, five exchanges follow in 
   await expect(christian.page.getByText(COPY.closing)).toHaveCount(0)
   await shot(missionary.page, '375-06-wrap-up')
   await shot(christian.page, '375-07-partner-finishing')
+  await expectFrostedStrip(christian.page, '375-07b-history-beneath-strip')
 
   // A refresh keeps the prepared wrap-up.
   await Promise.all([missionary.page.reload(), christian.page.reload()])

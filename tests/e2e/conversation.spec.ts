@@ -273,9 +273,9 @@ test('Conversation: two phones pair, meet at the door, talk, finish, then restar
     await expect(heading(phone.page, 'Meet at the door')).toBeVisible()
     await expect(phone.page.getByText('Roles switched. Get ready for a new round.')).toBeVisible()
   }
-  await expect(missionary.page.getByRole('banner').locator('..').getByText('Christian (You)').first()).toBeVisible()
-  await expect(christian.page.getByText('Missionary (You)').first()).toBeVisible()
-  await expect(missionary.page.getByText('Missionary (You)')).toHaveCount(0)
+  // The strip names the partner: the first phone now faces a missionary, the second a Christian.
+  await expect(missionary.page.locator('[class*="roleStrip"]')).toContainText('Your partner: Missionary')
+  await expect(christian.page.locator('[class*="roleStrip"]')).toContainText('Your partner: Christian')
   await closePair(pair)
 })
 
