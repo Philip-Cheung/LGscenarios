@@ -1,6 +1,6 @@
 {
   "$schema": "../scenario.schema.json",
-  "status": "draft",
+  "status": "published",
   "schemaVersion": "3.0",
   "id": "lesson-one-first-vision",
   "version": 3,

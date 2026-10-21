@@ -1,6 +1,6 @@
 {
   "$schema": "../scenario.schema.json",
-  "status": "draft",
+  "status": "published",
   "schemaVersion": "3.1",
   "id": "week-one-hard-mode",
   "version": 1,
