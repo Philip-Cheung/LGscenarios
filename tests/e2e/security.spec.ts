@@ -38,7 +38,7 @@ test('unknown and draft scenario links get the same friendly explanation', async
 
 test('the site root opens the most recently published scenario', async ({ page }) => {
   await page.goto('/')
-  await expect(page).toHaveURL(/\/s\/week-one-christians-too$/)
+  await expect(page).toHaveURL(/\/s\/lesson-one-first-vision$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Who will you play?' })).toBeVisible()
 })
 
