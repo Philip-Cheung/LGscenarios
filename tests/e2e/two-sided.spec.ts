@@ -136,6 +136,7 @@ test('Replies: the missionary answers what the Christian said before choosing wh
   await missionary.page.keyboard.press('2')
   await expect(heard.getByRole('button', { name: /^2\. Wanted to compare what we each mean/ })).toHaveAttribute('aria-pressed', 'true')
   await expect(speakButton(missionary.page, 'Send reply')).toBeFocused()
+  await expect(speakButton(missionary.page, 'Send reply')).toHaveText('Reply')
 
   // Back to the suggested reply, and speak it.
   await missionary.page.getByRole('button', { name: 'Use the suggested reply' }).click()
@@ -149,6 +150,7 @@ test('Replies: the missionary answers what the Christian said before choosing wh
   const next = missionary.page.getByRole('group', { name: 'What would you like to ask next?' })
   await expect(next.getByRole('button', { name: /^1\. Would you call us Christians\? \(Recommended\)/ })).toHaveAttribute('aria-pressed', 'true')
   await shot(missionary.page, '375-05-continue')
+  await expect(speakButton(missionary.page, 'Send question')).toHaveText('Ask question')
   await speak(pair, 'Send question', COPY.callUsChristians)
 
   // A free answer: what did they say? The clarification hands the turn back, then returns here without itself.
@@ -162,7 +164,7 @@ test('Replies: the missionary answers what the Christian said before choosing wh
 
   // Replying in their own words leaves a neutral marker on both phones.
   await heard.getByRole('button', { name: /^4\. I responded in my own words/ }).click()
-  await expect(missionary.page.getByText('Reply aloud in your own words, then tap Speak aloud.')).toBeVisible()
+  await expect(missionary.page.getByText('Reply aloud in your own words, then tap Reply.')).toBeVisible()
   await speakButton(missionary.page, 'Confirm you replied aloud').click()
   for (const phone of [missionary, christian]) await expect(phone.page.getByText('Responded aloud', { exact: true })).toBeVisible()
   await expect(next).toBeVisible()

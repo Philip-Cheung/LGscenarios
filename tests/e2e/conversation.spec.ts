@@ -387,7 +387,7 @@ for (const viewport of VIEWPORTS) {
         .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height).filter((height) => height > 0))
       for (const height of heights) expect(height).toBeGreaterThanOrEqual(36)
       // The send control stays compact and right-aligned.
-      const send = await page.locator('button', { hasText: 'Speak aloud' }).evaluate((el) => {
+      const send = await page.locator('button[class*="composeSend"]').evaluate((el) => {
         const box = el.getBoundingClientRect()
         const composer = el.closest('[class*="composeBox"]')?.getBoundingClientRect()
         return { width: box.width, gapToComposerEdge: composer ? composer.right - box.right : Infinity }
@@ -395,7 +395,9 @@ for (const viewport of VIEWPORTS) {
       expect(send.width).toBeLessThan(Math.min(240, viewport.width * 0.6))
       expect(send.gapToComposerEdge).toBeLessThan(24)
     }
-    // Speak aloud stays reachable beside the choice card.
+    await expect(missionary.page.locator('button[class*="composeSend"]')).toHaveText('Ask question')
+    await expect(christian.page.locator('button[class*="composeSend"]')).toHaveText('Respond')
+    // The send button stays reachable beside the choice card.
     await expect(speakButton(missionary.page, 'Send question')).toBeInViewport()
     await missionary.page.getByRole('button', { name: /^More directions/ }).click()
     await expectNoHorizontalOverflow(missionary.page)
