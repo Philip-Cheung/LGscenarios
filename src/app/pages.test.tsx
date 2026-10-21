@@ -24,9 +24,9 @@ describe('ScenarioPage', () => {
     expect(screen.queryByRole('button', { name: 'Mormon missionary' })).toBeNull()
   })
 
-  it('shows a friendly not-found view for links that cannot be a scenario id', () => {
+  it('shows the recovery page for links that cannot be a scenario id', () => {
     renderAt('/s/Not_A_Scenario!')
-    expect(screen.getByRole('heading', { name: 'We could not find that scenario' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'We couldn’t find this scenario.' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Go to Lesson 1' })).toHaveAttribute('href', '/s/lesson-one-first-vision')
   })
 })

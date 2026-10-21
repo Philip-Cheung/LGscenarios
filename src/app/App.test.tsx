@@ -18,6 +18,6 @@ describe('App routing', () => {
   it('shows the not-found page for unknown paths', async () => {
     window.history.replaceState(null, '', '/somewhere/else')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'We could not find that scenario' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'We couldn’t find this scenario.' })).toBeInTheDocument()
   })
 })

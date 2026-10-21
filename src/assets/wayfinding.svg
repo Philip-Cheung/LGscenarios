@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 180" role="img" aria-labelledby="title"><title id="title">A signpost pointing toward a welcoming green door</title>
+<ellipse cx="145" cy="161" rx="112" ry="10" fill="#e7eee6"/>
+<path d="M119 158c3-29 61-12 71-43" fill="none" stroke="#c7b18e" stroke-width="3" stroke-dasharray="4 7" stroke-linecap="round"/>
+<path d="M186 143V34a8 8 0 0 1 8-8h48a8 8 0 0 1 8 8v109" fill="#f2e3cd"/>
+<path d="M192 143V38a5 5 0 0 1 5-5h40a5 5 0 0 1 5 5v105" fill="#a7b9a5"/>
+<path d="m194 35 33 11v105l-33-8Z" fill="#205c50"/>
+<path d="m200 48 20 6v31l-20-4Zm0 44 20 4v39l-20-5Z" fill="none" stroke="#70958a" stroke-width="1.5"/><circle cx="219" cy="91" r="2.5" fill="#edc78d"/>
+<path d="M79 159V50" stroke="#a77d5d" stroke-width="7" stroke-linecap="round"/>
+<path d="M46 63h75l17 17-17 17H46a4 4 0 0 1-4-4V67a4 4 0 0 1 4-4Z" fill="#e7eee6" stroke="#205c50" stroke-width="2"/>
+<path d="M65 80h49m-8-7 8 7-8 7" fill="none" stroke="#205c50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39 146c-10-13-3-27 10-28 6 13 0 25-10 28Z" fill="#a7b9a5"/><path d="M40 158v-25" stroke="#65816b" stroke-width="2" stroke-linecap="round"/>
+<path d="M258 148c-8-10-4-20 6-22 5 10 3 18-6 22Z" fill="#a7b9a5"/>
+<path d="m159 45 3-9m6 15 8-5" stroke="#bd9272" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

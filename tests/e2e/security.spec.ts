@@ -27,13 +27,13 @@ test('serves the security headers and a strict content security policy', async (
 
 test('unknown and draft scenario links get the same friendly explanation', async ({ page }) => {
   await page.goto('/s/not-a-real-scenario')
-  await expect(page.getByRole('heading', { level: 1, name: 'This scenario is not available' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'We couldn’t find this scenario.' })).toBeVisible()
   // Drafts are hidden by row-level security until they are published, and look like any unknown link.
   await page.goto('/s/who-is-god')
-  await expect(page.getByRole('heading', { level: 1, name: 'This scenario is not available' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'We couldn’t find this scenario.' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Create a room' })).toHaveCount(0)
   await page.goto('/s/Not_A_Link')
-  await expect(page.getByRole('heading', { name: 'We could not find that scenario' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'We couldn’t find this scenario.' })).toBeVisible()
 })
 
 test('the site root opens the most recently published scenario', async ({ page }) => {
@@ -44,7 +44,7 @@ test('the site root opens the most recently published scenario', async ({ page }
 
 test('the development preview gallery is not shipped', async ({ page }) => {
   await page.goto('/dev/preview')
-  await expect(page.getByRole('heading', { name: 'We could not find that scenario' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'We couldn’t find this scenario.' })).toBeVisible()
 })
 
 test('no secrets are present in the shipped JavaScript', async ({ page }) => {
