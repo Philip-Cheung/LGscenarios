@@ -10,12 +10,23 @@ let h: Harness
 let missionary: TestUser
 let christian: TestUser
 
+// Week 1 · We’re Christians too replaced this scenario for new pairs. Pairs
+// already pinned to it keep working, so it opens here only for these tests.
+const setOpenForNewPairs = (open: boolean) =>
+  h.sql('update public.scenario_registry set active_for_new_sessions = $1 where scenario_id = $2 and version = $3', [
+    open,
+    WEEK_ONE,
+    WEEK_ONE_VERSION,
+  ])
+
 beforeAll(async () => {
   h = new Harness()
   ;[missionary, christian] = await h.usersN(2)
+  await setOpenForNewPairs(true)
 })
 
 afterAll(async () => {
+  if (h) await setOpenForNewPairs(false)
   await h?.cleanup()
 })
 

@@ -1,5 +1,5 @@
 import * as z from 'zod/mini'
-import { isRestartCurrent } from './snapshot'
+import { isRequestCurrent } from './snapshot'
 import type { RpcResult, SessionErrorCode, SessionSnapshot } from './types'
 
 const uuid = z.uuid()
@@ -13,6 +13,8 @@ const stage = z.enum([
   'question_selection',
   'response',
   'closing',
+  'encounter',
+  'conversation',
   'conclusion',
 ])
 const contentId = z.string().check(z.maxLength(40), z.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/))
@@ -21,6 +23,8 @@ const positiveInt = z.int().check(z.positive())
 const nonnegativeInt = z.int().check(z.nonnegative())
 const answeredIds = z.array(contentId).check(z.maxLength(12))
 const exchange = z.enum(['initial', 'follow_up'])
+const encounterPhase = z.enum(['knock', 'open'])
+const history = z.array(z.object({ speaker: role, id: contentId })).check(z.maxLength(100))
 
 const sessionStateSchema = z.object({
   id: uuid,
@@ -33,6 +37,8 @@ const sessionStateSchema = z.object({
   is_creator: z.boolean(),
   partner_joined: z.boolean(),
   swap_pending: z.boolean(),
+  swap_by_me: z.optional(z.boolean()),
+  swap_requested_at: z.optional(z.nullable(z.string())),
   restart_pending: z.optional(z.boolean()),
   restart_by_me: z.optional(z.boolean()),
   restart_requested_at: z.optional(z.nullable(z.string())),
@@ -43,6 +49,12 @@ const sessionStateSchema = z.object({
   answered_question_ids: answeredIds,
   opening_question_asked: z.boolean(),
   exchange,
+  turn: z.optional(role),
+  history: z.optional(history),
+  encounter_phase: z.optional(z.nullable(encounterPhase)),
+  encounter_deadline: z.optional(z.nullable(z.string())),
+  encounter_relaxed: z.optional(z.boolean()),
+  server_now: z.optional(z.string()),
   partner_fresh: z.nullable(z.boolean()),
   expires_at: z.string(),
   pair_code: z.nullable(z.string().check(z.regex(/^[0-9]{6}$/))),
@@ -63,6 +75,7 @@ const knownErrors = [
   'session_expired',
   'rate_limited',
   'partner_stale',
+  'deadline_passed',
   'out_of_range',
 ] as const satisfies readonly SessionErrorCode[]
 
@@ -87,6 +100,8 @@ function toSnapshot(state: z.infer<typeof sessionStateSchema>): SessionSnapshot 
     isCreator: state.is_creator,
     partnerJoined: state.partner_joined,
     swapPending: state.swap_pending,
+    swapByMe: state.swap_pending && (state.swap_by_me ?? false),
+    swapRequestedAt: state.swap_requested_at ?? null,
     restartPending: state.restart_pending ?? false,
     restartByMe: state.restart_by_me ?? false,
     restartRequestedAt: state.restart_requested_at ?? null,
@@ -97,6 +112,12 @@ function toSnapshot(state: z.infer<typeof sessionStateSchema>): SessionSnapshot 
     answeredQuestionIds: state.answered_question_ids,
     openingQuestionAsked: state.opening_question_asked,
     exchange: state.exchange,
+    turn: state.turn ?? 'missionary',
+    history: state.history ?? [],
+    encounterPhase: state.encounter_phase ?? null,
+    encounterDeadline: state.encounter_deadline ?? null,
+    encounterRelaxed: state.encounter_relaxed ?? false,
+    serverNow: state.server_now,
     partnerFresh: state.partner_fresh,
     expiresAt: state.expires_at,
     pairCode: state.pair_code,
@@ -128,6 +149,7 @@ const realtimeRowSchema = z.object({
   revision: z.pipe(z.coerce.number(), nonnegativeInt),
   round: positiveInt,
   swap_requested_by: z.nullable(uuid),
+  swap_requested_at: z.optional(z.nullable(z.string())),
   restart_requested_by: z.optional(z.nullable(uuid)),
   restart_requested_at: z.optional(z.nullable(z.string())),
   stage,
@@ -137,6 +159,11 @@ const realtimeRowSchema = z.object({
   answered_question_ids: answeredIds,
   opening_question_asked: z.boolean(),
   exchange,
+  turn: z.optional(role),
+  history: z.optional(history),
+  encounter_phase: z.optional(z.nullable(encounterPhase)),
+  encounter_deadline: z.optional(z.nullable(z.string())),
+  encounter_relaxed: z.optional(z.boolean()),
   expires_at: z.string(),
 })
 
@@ -155,6 +182,9 @@ export function snapshotFromRealtimeRow(row: unknown, viewerId: string): Session
   if (!isMissionary && value.christian_user_id !== viewerId) return null
   // While waiting, the creator holds the missionary seat whichever role they chose.
   const myRole = value.status === 'waiting' ? value.creator_role : isMissionary ? 'missionary' : 'christian'
+  const swapRequestedAt = value.swap_requested_by !== null ? (value.swap_requested_at ?? null) : null
+  // Rows from before swap requests carried a time stay pending until the server answers.
+  const swapPending = value.swap_requested_by !== null && (swapRequestedAt === null || isRequestCurrent(swapRequestedAt))
   return {
     id: value.id,
     scenarioId: value.scenario_id,
@@ -165,8 +195,10 @@ export function snapshotFromRealtimeRow(row: unknown, viewerId: string): Session
     myRole,
     isCreator: value.creator_user_id === viewerId,
     partnerJoined: value.christian_user_id !== null,
-    swapPending: value.swap_requested_by !== null,
-    restartPending: value.restart_requested_by != null && isRestartCurrent(value.restart_requested_at ?? null),
+    swapPending,
+    swapByMe: swapPending && value.swap_requested_by === viewerId,
+    swapRequestedAt,
+    restartPending: value.restart_requested_by != null && isRequestCurrent(value.restart_requested_at ?? null),
     restartByMe: value.restart_requested_by != null && value.restart_requested_by === viewerId,
     restartRequestedAt: value.restart_requested_at ?? null,
     stage: value.stage,
@@ -176,6 +208,12 @@ export function snapshotFromRealtimeRow(row: unknown, viewerId: string): Session
     answeredQuestionIds: value.answered_question_ids,
     openingQuestionAsked: value.opening_question_asked,
     exchange: value.exchange,
+    turn: value.turn ?? 'missionary',
+    history: value.history ?? [],
+    encounterPhase: value.encounter_phase ?? null,
+    encounterDeadline: value.encounter_deadline ?? null,
+    encounterRelaxed: value.encounter_relaxed ?? false,
+    serverNow: undefined,
     partnerFresh: undefined,
     expiresAt: value.expires_at,
     pairCode: undefined,

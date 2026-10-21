@@ -95,8 +95,8 @@ test('the production build styles the primary action from the design tokens', as
     fill: getComputedStyle(el).backgroundColor,
     height: el.getBoundingClientRect().height,
   }))
-  expect(styles.radius).toBe('14px')
-  expect(styles.fill).toBe('rgb(32, 92, 80)')
+  expect(styles.radius).toBe('12px')
+  expect(styles.fill).toBe('rgb(63, 81, 59)')
   expect(styles.text).not.toBe(styles.fill)
   expect(styles.height).toBeGreaterThanOrEqual(52)
 })

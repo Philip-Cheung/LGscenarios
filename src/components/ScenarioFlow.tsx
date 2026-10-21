@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ScenarioContent } from '../lib/content'
+import { isConversation, type AnyScenarioContent } from '../lib/content'
+import type { ConversationContent } from '../lib/conversation'
 import type { AppConfig } from '../lib/env'
 import { getSupabase } from '../lib/supabase'
 import { fetchActiveScenario, fetchScenarioVersion } from '../scenarios/catalog'
@@ -8,6 +9,8 @@ import { ensureIdentity, getExistingUserId } from '../sessions/identity'
 import { messageForError } from '../sessions/messages'
 import { clearPointer, readPointer, writePointer } from '../sessions/pointer'
 import type { Role, SessionSnapshot } from '../sessions/types'
+import { ConversationShell, RoleStrip } from './conversation/ConversationShell'
+import { JoinPartner, RoleChoice } from './conversation/PairingScreens'
 import { EndedCard, type EndedReason } from './EndedCard'
 import { HumanCheck } from './HumanCheck'
 import { JoinForm } from './JoinForm'
@@ -25,7 +28,7 @@ type Phase =
   | { kind: 'create' }
   | { kind: 'join' }
   | { kind: 'captcha'; intent: Intent }
-  | { kind: 'session'; userId: string; snapshot: SessionSnapshot; scenario: ScenarioContent; resumed?: boolean }
+  | { kind: 'session'; userId: string; snapshot: SessionSnapshot; scenario: AnyScenarioContent; resumed?: boolean }
   | { kind: 'ended'; reason: EndedReason }
   | { kind: 'outdated' }
   | { kind: 'missing' }
@@ -40,7 +43,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
   const client = useMemo(() => getSupabase(config), [config])
   const api = useMemo(() => new SessionApi(client), [client])
   const [phase, setPhase] = useState<Phase>({ kind: 'boot' })
-  const [landing, setLanding] = useState<ScenarioContent | null>(null)
+  const [landing, setLanding] = useState<AnyScenarioContent | null>(null)
   const [busy, setBusy] = useState<Intent['kind'] | null>(null)
   const [createRole, setCreateRole] = useState<Role>('missionary')
   const [error, setError] = useState<string | null>(null)
@@ -172,22 +175,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
         if (result.ok) {
           requestRef.current = null
           writePointer(slug, result.session.id)
-          // A partner who joins by code takes the room's scenario, whichever link they opened.
-          const { scenarioId: roomId, scenarioVersion: roomVersion } = result.session
-          let scenario = resolved.scenario
-          if (roomId !== scenarioId || roomVersion !== version) {
-            const room = await fetchScenarioVersion(client, roomId, roomVersion)
-            if (room.status === 'outdated') {
-              setPhase({ kind: 'outdated' })
-              return
-            }
-            if (room.status !== 'ok') {
-              setPhase({ kind: 'resumeError' })
-              return
-            }
-            scenario = room.scenario
-          }
-          setPhase({ kind: 'session', userId: identity.userId, snapshot: result.session, scenario })
+          setPhase({ kind: 'session', userId: identity.userId, snapshot: result.session, scenario: resolved.scenario })
           return
         }
         if (result.error !== 'unavailable') requestRef.current = null
@@ -223,19 +211,102 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
         else restartBoot()
         return
       }
+      // Conversation scenarios go straight back to the role cards.
+      if (landing && isConversation(landing)) {
+        setNotice(byPartner ? 'Your partner ended the session.' : 'Session ended for both players.')
+        setPhase({ kind: 'welcome' })
+        return
+      }
       setPhase({ kind: 'ended', reason: byPartner ? 'partnerLeft' : 'left' })
     },
     [landing, restartBoot, slug],
   )
 
-  const title = phase.kind === 'session' ? phase.scenario.title : landing?.title
+  const current = phase.kind === 'session' ? phase.scenario : landing
+  const title = current?.title
+  const documentTitle = <title>{title ? `${title} · Doorstep practice` : 'Doorstep practice'}</title>
+
+  // Conversation scenarios fill the screen with their own app frame.
+  if (current && isConversation(current)) {
+    const screen = renderConversationPhase(current)
+    if (screen) {
+      return (
+        <>
+          {documentTitle}
+          {screen}
+        </>
+      )
+    }
+  }
 
   return (
     <PageShell>
-      <title>{title ? `${title} · Doorstep practice` : 'Doorstep practice'}</title>
+      {documentTitle}
       {renderPhase()}
     </PageShell>
   )
+
+  function renderConversationPhase(content: ConversationContent) {
+    switch (phase.kind) {
+      case 'welcome':
+      case 'create':
+        return (
+          <ConversationShell subtitle={content.title}>
+            <RoleChoice
+              content={content}
+              busy={busy === 'create'}
+              error={phase.kind === 'create' ? error : null}
+              notice={notice}
+              onChoose={(role) => {
+                setError(null)
+                setNotice(null)
+                if (role === 'christian') {
+                  setPhase({ kind: 'join' })
+                  return
+                }
+                setCreateRole(role)
+                void proceed({ kind: 'create', role })
+              }}
+            />
+          </ConversationShell>
+        )
+      case 'join':
+        return (
+          <ConversationShell
+            subtitle={content.title}
+            action={{
+              label: 'Back',
+              disabled: busy === 'join',
+              onClick: () => {
+                setError(null)
+                setPhase({ kind: 'welcome' })
+              },
+            }}
+            strip={<RoleStrip role="christian" speaker={content.roles.christian.speaker} connection="waiting" />}
+          >
+            <JoinPartner
+              key="join"
+              content={content}
+              initialValue={lastCode}
+              busy={busy === 'join'}
+              error={error}
+              onJoin={(code) => {
+                setLastCode(code)
+                void proceed({ kind: 'join', code })
+              }}
+              onChangeRoles={() => {
+                setError(null)
+                setPhase({ kind: 'welcome' })
+              }}
+            />
+          </ConversationShell>
+        )
+      case 'session':
+        return renderPhase()
+      default:
+        return null
+    }
+  }
 
   function renderPhase() {
     switch (phase.kind) {
@@ -258,7 +329,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
           />
         )
       case 'create':
-        if (!landing) return <LoadingCard />
+        if (!landing || isConversation(landing)) return <LoadingCard />
         return (
           <RoleSelect
             scenario={landing}

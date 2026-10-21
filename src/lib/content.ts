@@ -1,30 +1,23 @@
 import { z } from 'zod'
-import { referencedPassages, richTextProblems } from './richText'
+import {
+  CONVERSATION_SCHEMA_VERSION,
+  conversationContentSchema,
+  conversationFileSchema,
+  conversationWarnings,
+  type ConversationContent,
+  type ConversationFile,
+} from './conversation'
+import { referencedPassages } from './richText'
+import { identifier, plainText, richText } from './schemaPrimitives'
 
-/** Scenario JSON contracts this app can render. 2.1 adds opening questions, follow-ups, help, and Bible passages. */
+/** Guided scenario JSON contracts. 2.1 adds opening questions, follow-ups, help, and Bible passages. */
 export const SCENARIO_SCHEMA_VERSIONS = ['2.0', '2.1'] as const
+
+/** Every scenario JSON contract this app can render, including conversation scenarios (3.0). */
+export const ALL_SCENARIO_SCHEMA_VERSIONS = [...SCENARIO_SCHEMA_VERSIONS, CONVERSATION_SCHEMA_VERSION] as const
 
 /** Shown on the completion screen when a scenario has no reflection prompt of its own. */
 export const DEFAULT_REFLECTION_PROMPT = 'What helped the conversation feel welcoming?'
-
-const identifier = z
-  .string()
-  .max(64)
-  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Use lowercase letters, digits, and single hyphens')
-
-const plainText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .min(1, 'Must not be empty')
-    .max(max)
-    .refine((value) => !/[<>]/.test(value), 'Plain text only; angle brackets are not allowed')
-
-/** Plain text that may also contain passage references and allowed source links (see `richText.ts`). */
-const richText = (max: number) =>
-  plainText(max).superRefine((value, ctx) => {
-    for (const problem of richTextProblems(value)) ctx.addIssue({ code: 'custom', message: problem })
-  })
 
 /** A collapsible block of extra help: reasoning, Bible context, or a fallback line. */
 const helpSectionSchema = z
@@ -325,8 +318,43 @@ export type ScenarioOpeningQuestion = z.infer<typeof openingQuestionSchema>
 export type ScenarioBible = z.infer<typeof bibleSchema>
 export type BibleReference = ScenarioBible['references'][number]
 
+/** A scenario of either kind: guided (2.x) or conversation (3.0). */
+export type AnyScenarioContent = ScenarioContent | ConversationContent
+export type AnyScenarioFile = ScenarioFile | ConversationFile
+
+export function isConversation(scenario: AnyScenarioContent): scenario is ConversationContent {
+  return scenario.schemaVersion === CONVERSATION_SCHEMA_VERSION
+}
+
+function declaresConversation(raw: unknown): boolean {
+  return (raw as { schemaVersion?: unknown } | null)?.schemaVersion === CONVERSATION_SCHEMA_VERSION
+}
+
+type ParseResult<T> = { success: true; data: T } | { success: false; error: z.ZodError }
+
+/** Stored registry content of either kind; the declared schemaVersion picks the contract. */
+export function parseScenarioContent(raw: unknown): ParseResult<AnyScenarioContent> {
+  return declaresConversation(raw) ? conversationContentSchema.safeParse(raw) : scenarioContentSchema.safeParse(raw)
+}
+
+/** A reviewed scenario file of either kind. */
+export function parseScenarioFile(raw: unknown): ParseResult<AnyScenarioFile> {
+  return declaresConversation(raw) ? conversationFileSchema.safeParse(raw) : scenarioFileSchema.safeParse(raw)
+}
+
+/** Source for content/scenario.schema.json, so editors check files of either kind. */
+export const scenarioFileJsonSchemaSource = z.union([scenarioFileSchema, conversationFileSchema])
+
+/** Questions in a guided scenario, topics in a conversation scenario. */
+export function promptCount(scenario: AnyScenarioContent): number {
+  return isConversation(scenario) ? scenario.topics.length : scenario.questions.length
+}
+
 /** Strips file-only fields, leaving exactly what is stored and rendered. */
-export function toStoredContent(file: ScenarioFile): ScenarioContent {
+export function toStoredContent(file: ScenarioFile): ScenarioContent
+export function toStoredContent(file: ConversationFile): ConversationContent
+export function toStoredContent(file: AnyScenarioFile): AnyScenarioContent
+export function toStoredContent(file: AnyScenarioFile): AnyScenarioContent {
   const { $schema: _schema, status: _status, ...content } = file
   return content
 }
@@ -357,11 +385,23 @@ function describe(raw: unknown, index: number) {
 export function validateScenarioFiles(files: readonly unknown[]): ContentReport {
   const errors: string[] = []
   const warnings: string[] = []
-  const valid: ScenarioFile[] = []
+  const valid: AnyScenarioFile[] = []
 
   files.forEach((raw, index) => {
-    const result = scenarioFileSchema.safeParse(raw)
     const name = describe(raw, index)
+    if (declaresConversation(raw)) {
+      const result = conversationFileSchema.safeParse(raw)
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          errors.push(`${name}: ${issue.path.join('.') || '(root)'} ${issue.message}`)
+        }
+        return
+      }
+      valid.push(result.data)
+      for (const warning of conversationWarnings(result.data)) warnings.push(`${name}: ${warning}`)
+      return
+    }
+    const result = scenarioFileSchema.safeParse(raw)
     if (!result.success) {
       for (const issue of result.error.issues) {
         errors.push(`${name}: ${issue.path.join('.') || '(root)'} ${issue.message}`)

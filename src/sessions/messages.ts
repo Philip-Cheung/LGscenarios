@@ -19,6 +19,8 @@ export function messageForError(code: SessionErrorCode): string {
       return 'This scenario is not open for new practices right now.'
     case 'partner_stale':
       return 'Waiting for your partner to reconnect.'
+    case 'deadline_passed':
+      return 'Missed it? Your pairing is safe. Try again when you’re ready.'
     case 'conflict':
       return 'Your screen was out of date and has been updated. Try again if needed.'
     case 'forbidden':

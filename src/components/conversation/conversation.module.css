@@ -1,0 +1,1751 @@
+/*
+ * The conversation app frame and screens, ported from the approved prototype
+ * (doorstep-prototype.html, v24). Tokens only; no raw colours.
+ */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* App frame: header, role strip, then one scrolling screen. */
+
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  /* Normally each screen scrolls inside the frame; with very large text the frame itself scrolls. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: max(14px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 14px
+    max(24px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--color-line);
+}
+
+.wordmark {
+  display: block;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.exit {
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--color-surface-quiet);
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
+
+.roleStrip {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px max(20px, env(safe-area-inset-right)) 8px max(20px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-canvas);
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+
+.roleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.roleLabel .portrait {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+}
+
+.connection {
+  color: var(--color-timer);
+}
+
+.connectionWarning {
+  color: var(--color-danger);
+}
+
+.sessionBanner {
+  flex: none;
+  margin: 0;
+  padding: 10px max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--color-notice-line);
+  background: var(--color-notice);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-chip-ink);
+}
+
+.screenFade {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: var(--color-fade);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fade) ease;
+}
+
+.screenFade.black {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Portraits */
+
+.portrait {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  overflow: hidden;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 50%;
+  background: var(--color-sage);
+}
+
+.portrait svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.portraitChristian {
+  background: var(--color-peach);
+}
+
+.portraitLarge {
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+}
+
+/* Setup, completion, and message screens */
+
+.journey {
+  flex: 1 0 auto;
+  height: 0;
+  min-height: min(60dvh, 24rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 40px max(24px, calc((100% - 440px) / 2)) max(32px, env(safe-area-inset-bottom));
+  background: var(--color-surface);
+}
+
+.journeyKicker {
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+}
+
+.journeyTitle {
+  margin: 0 0 14px;
+  font-size: var(--text-title);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.journeyDescription {
+  margin: 0 0 28px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.journeyNotice {
+  margin: 0 0 22px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-notice-line);
+  border-radius: 10px;
+  background: var(--color-notice);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-chip-ink);
+}
+
+.journeyActions,
+.introActions,
+.completionActions,
+.dialogActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.journeyActions > button,
+.introActions > button,
+.completionActions > button,
+.dialogActions > button {
+  width: 100%;
+  min-height: 48px;
+}
+
+.journeyActions {
+  margin: 20px 0 14px;
+}
+
+.journeyPrimary {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin: 20px 0 14px;
+}
+
+.fine {
+  margin: 7px 0 12px;
+  font-size: var(--text-small);
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.fine:empty,
+.pairError:empty {
+  margin: 0;
+}
+
+.quiet {
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.pairError {
+  margin: 9px 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-danger);
+}
+
+.roleCards {
+  display: grid;
+  gap: 12px;
+}
+
+.roleChoice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 112px;
+  padding: 20px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-surface);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  text-align: left;
+}
+
+.roleChoice:hover:not(:disabled) {
+  border-color: var(--color-selected-line);
+  background: var(--color-selected);
+}
+
+.roleCopy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.roleCopy strong {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.roleCopy span {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.roleArrow {
+  font-size: 1.4375rem;
+  color: var(--color-muted);
+}
+
+.startReading,
+.completedHistory {
+  margin-top: 26px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.startReading summary,
+.completedHistory summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.startResource {
+  display: block;
+  padding: 9px 0;
+  color: var(--color-chip-ink);
+  text-decoration: none;
+}
+
+.startResource:hover {
+  text-decoration: underline;
+}
+
+/* Pairing */
+
+.pairingLayout {
+  text-align: center;
+}
+
+.pairCodeCard {
+  padding: 22px 24px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-surface);
+  background: var(--color-canvas);
+  text-align: left;
+}
+
+.pairCodeTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 25px;
+}
+
+.pairCodeHeading {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+}
+
+.pairCopy {
+  min-height: 40px;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+
+.pairCode {
+  margin: 0;
+  padding: 16px 0;
+  font-size: 3rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 3px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+  user-select: all;
+}
+
+.pairShareNote {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.pairWaiting {
+  margin: 16px 0 27px;
+  padding: 15px 10px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  background: var(--color-surface-quiet);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-chip-ink);
+}
+
+.pairRoleSummary {
+  margin: 22px 0 21px;
+  padding: 0 2px;
+}
+
+.pairRoleRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--color-muted);
+}
+
+.pairRoleRow dd {
+  margin: 0;
+  font-weight: 500;
+  text-align: right;
+  color: var(--color-ink);
+}
+
+.pairOpenNote {
+  margin: 15px 0 8px;
+  font-size: var(--text-small);
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.joinForm {
+  max-width: 360px;
+  margin-inline: auto;
+  text-align: left;
+}
+
+.codeLabel {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.codeInput {
+  width: 100%;
+  padding: 18px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font-size: 1.6875rem;
+  letter-spacing: 9px;
+  text-align: center;
+  color: var(--color-teal);
+  outline-offset: 3px;
+}
+
+.codeInput::placeholder {
+  color: var(--color-line-strong);
+}
+
+.codeInput[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+/* Readiness and the doorstep encounter */
+
+.encounter {
+  flex: 1 0 auto;
+  height: 0;
+  min-height: min(60dvh, 24rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+  background: var(--color-scene);
+  text-align: center;
+}
+
+.introEyebrow {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  color: var(--color-muted);
+}
+
+.encounterTitle {
+  margin: 15px 0 8px;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+
+.introDescription {
+  margin: 8px 0 18px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.doorstep {
+  max-width: 460px;
+  height: 245px;
+  margin: 18px auto 22px;
+  overflow: hidden;
+  border-radius: 19px;
+}
+
+.doorstep svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.door {
+  transform-box: view-box;
+  transform-origin: 276px 120px;
+  transition: transform 1s cubic-bezier(0.25, 0.6, 0.3, 1);
+}
+
+.opening .door {
+  transform: scaleX(0.08);
+}
+
+.knockHand,
+.knockWords {
+  opacity: 0;
+}
+
+.knockHand {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.knocking .knockHand {
+  opacity: 1;
+  animation: knock 0.3s ease-in-out 3;
+}
+
+.knocking .knockWords {
+  opacity: 1;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: knockWords 0.45s ease-out both;
+}
+
+@keyframes knock {
+  0%,
+  100% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(9px);
+  }
+}
+
+@keyframes knockWords {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.readyPlayers {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  max-width: 460px;
+  margin: 0 auto 17px;
+}
+
+.readyPlayer {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.readyPlayer small {
+  width: 100%;
+  padding-left: 44px;
+  font-size: 0.75rem;
+  color: var(--color-chip-ink);
+}
+
+.timingSetting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.timingSetting input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-teal);
+}
+
+.introActions {
+  max-width: 440px;
+  margin: 14px auto;
+}
+
+.timedTarget {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 140px;
+  height: 140px;
+  margin: 5px auto 0;
+}
+
+.countdownRing {
+  position: absolute;
+  inset: 0;
+  width: 140px;
+  height: 140px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.timerTrack {
+  fill: none;
+  stroke: var(--color-timer-track);
+  stroke-width: 5;
+}
+
+.timerProgress {
+  fill: none;
+  stroke: var(--color-timer);
+  stroke-width: 5;
+  stroke-dasharray: 100;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 50ms linear;
+}
+
+.relaxed .timerProgress {
+  stroke: var(--color-timer-relaxed);
+}
+
+.qteTap {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-teal);
+  box-shadow: 0 5px 0 var(--color-tap-shadow);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--color-surface);
+}
+
+.qteTap:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--color-tap-shadow);
+}
+
+.qteTap:disabled {
+  opacity: 1;
+}
+
+.observer .qteTap {
+  background: var(--color-tap-idle);
+  box-shadow: none;
+  color: var(--color-tap-idle-ink);
+}
+
+.seconds {
+  margin: 11px 0 8px;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-chip-ink);
+}
+
+/* The conversation: a scrolling thread above a pinned composer. */
+
+.conversation {
+  flex: 1 0 auto;
+  min-width: 0;
+  height: 0;
+  min-height: min(45dvh, 18rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
+  scroll-padding-block: 16px;
+  scrollbar-width: thin;
+}
+
+.sceneContext {
+  margin: 0 0 18px;
+  font-size: var(--text-small);
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.thread {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.earlier {
+  margin: 0 0 19px;
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+
+.earlier summary {
+  min-height: 44px;
+  padding: 10px 0;
+  text-align: center;
+  cursor: pointer;
+}
+
+.message {
+  width: 100%;
+  margin: 0 0 19px;
+}
+
+.speaker {
+  margin: 0 4px 6px 48px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.mine .speaker {
+  margin: 0 48px 6px 4px;
+  text-align: right;
+}
+
+.messageRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.mine .messageRow {
+  flex-direction: row-reverse;
+}
+
+.bubble {
+  max-width: min(76%, 620px);
+  padding: 13px 15px;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--color-bubble);
+  font-size: var(--text-body);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.mine .bubble {
+  border-radius: 16px 16px 4px 16px;
+  background: var(--color-bubble-mine);
+}
+
+.latest {
+  scroll-margin-bottom: 16px;
+}
+
+.spokenReply .bubble {
+  font-style: italic;
+}
+
+.ref {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  font-style: normal;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.verseLink {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.verseLink:hover {
+  text-decoration-style: solid;
+}
+
+.verseLink:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.tools {
+  flex: none;
+  max-height: 46dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px max(20px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+  border-top: 1px solid var(--color-line);
+  background: var(--color-surface);
+  scrollbar-width: thin;
+}
+
+@media (min-width: 900px) {
+  .tools {
+    padding-right: max(24px, env(safe-area-inset-right), calc((100% - 860px) / 2));
+    padding-left: max(24px, env(safe-area-inset-left), calc((100% - 860px) / 2));
+  }
+}
+
+.directionControls,
+.helpEntry {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 8px;
+}
+
+.directionToggle,
+.helpTrigger {
+  min-height: 44px;
+  padding: 6px 2px;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-chip-ink);
+  text-align: right;
+}
+
+.directionToggle:hover,
+.helpTrigger:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.suggestionChips {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 0 0 12px;
+}
+
+.suggestion {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--color-chip-ink);
+  text-align: left;
+}
+
+.suggestion:hover:not(:disabled) {
+  border-color: var(--color-selected-line);
+  background: var(--color-selected);
+}
+
+.composeBox {
+  padding: 14px 15px 11px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: var(--color-surface-quiet);
+}
+
+.composeCaption {
+  margin-bottom: 7px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.composerText {
+  max-height: min(25dvh, 180px);
+  overflow-y: auto;
+  font-size: var(--text-body);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.hasDraft .composerText {
+  color: var(--color-ink);
+}
+
+.composerText.placeholder {
+  padding: 3px 0 12px;
+  color: var(--color-muted);
+}
+
+.composeBar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.composeMore {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  background: var(--color-surface);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-muted);
+}
+
+.composeNote {
+  flex: 1;
+  font-size: var(--text-small);
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+.composeClear {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  font-size: 1.25rem;
+  color: var(--color-muted);
+}
+
+.composeSend {
+  flex: 0 0 auto;
+  min-width: 112px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 11px 15px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--color-teal);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-surface);
+}
+
+.composeSend:hover:not(:disabled) {
+  background: var(--color-teal-hover);
+}
+
+.composeSend:disabled {
+  opacity: 1;
+  background: var(--color-tap-idle);
+  color: var(--color-tap-idle-ink);
+}
+
+@media (max-width: 400px) {
+  .composeNote {
+    display: none;
+  }
+}
+
+/* Bottom sheets: questions, help, options */
+
+.sheet {
+  position: fixed;
+  inset: auto 0 0;
+  width: min(100%, 640px);
+  max-width: none;
+  max-height: 84dvh;
+  margin: 0 auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -12px 60px var(--color-sheet-shadow);
+  color: var(--color-ink);
+}
+
+.sheet::backdrop {
+  background: var(--color-backdrop);
+}
+
+.sheetInner {
+  display: flex;
+  flex-direction: column;
+  max-height: 84dvh;
+}
+
+.sheetGrab {
+  width: 36px;
+  height: 4px;
+  flex: 0 0 4px;
+  align-self: center;
+  margin-top: 10px;
+  border-radius: 6px;
+  background: var(--color-line-strong);
+}
+
+.sheetHead {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 22px 16px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.sheetHead h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.sheetClose {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-chip);
+  font-size: 1.5625rem;
+  line-height: 1;
+  color: var(--color-muted);
+}
+
+.sheetBody {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 8px 22px max(24px, env(safe-area-inset-bottom));
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet[open] {
+    animation: sheetAppear var(--motion-sheet) ease-out;
+  }
+}
+
+@keyframes sheetAppear {
+  from {
+    transform: translateY(24px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.numberedOptions {
+  padding: 0;
+}
+
+.optionsHeading {
+  margin: 17px 0 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+}
+
+.numberedChoice {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 15px 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  text-align: left;
+}
+
+.numberedChoice:hover,
+.numberedChoice[aria-pressed='true'] {
+  background: var(--color-selected);
+}
+
+.choiceNumber {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  margin-top: 1px;
+  border-radius: 8px;
+  background: var(--color-chip);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-chip-ink);
+}
+
+.choiceCopy {
+  display: block;
+  min-width: 0;
+}
+
+.choiceTitle {
+  display: block;
+  margin-bottom: 3px;
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.choiceQuestion {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.sheetIntro {
+  margin: 12px 0 18px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.helpTabs {
+  display: flex;
+  gap: 5px;
+  margin: 12px 0 18px;
+  padding: 4px;
+  border-radius: var(--radius-control);
+  background: var(--color-chip);
+}
+
+.helpTab {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.helpTab[aria-pressed='true'] {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: 0 1px 4px var(--color-sheet-shadow);
+}
+
+.sheetSectionTitle {
+  margin: 14px 0 8px;
+  font-size: 0.9375rem;
+}
+
+.sheetHelpContent p {
+  margin: 8px 0 16px;
+  line-height: 1.65;
+}
+
+.responseChoice {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--color-ink);
+  text-align: left;
+}
+
+.responseChoice:hover {
+  border-color: var(--color-selected-line);
+  background: var(--color-selected);
+}
+
+.supportPassages {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.passageReference {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 9px;
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  color: var(--color-chip-ink);
+  text-align: left;
+}
+
+.sheetSecondaryActions {
+  display: grid;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-line);
+}
+
+.sheetSecondaryActions:empty {
+  display: none;
+}
+
+.helpDetailAction {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  color: var(--color-chip-ink);
+  text-align: left;
+}
+
+.composeMenu {
+  padding: 8px 0;
+}
+
+.resourceSection {
+  margin: 0 0 5px;
+  padding: 0 0 9px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.resourceTitle {
+  margin: 0 0 5px;
+  font-size: 1.0625rem;
+}
+
+.resourceSubtitle {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.resourceLink {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 60px;
+  padding: 11px 7px;
+  border-radius: 10px;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.resourceLink:hover {
+  background: var(--color-selected);
+}
+
+.resourceIcon {
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 37px;
+  flex: 0 0 33px;
+  border: 1px solid var(--color-line);
+  border-radius: 7px;
+  background: var(--color-sage);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--color-chip-ink);
+}
+
+.resourceCopy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.resourceName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.resourceFormat {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+.resourceArrow {
+  padding: 0 3px;
+  font-size: 1.0625rem;
+  color: var(--color-muted);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 4px;
+  border: 0;
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+  text-align: left;
+}
+
+.menuItem:hover {
+  color: var(--color-ink);
+}
+
+.background {
+  margin-top: 8px;
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+
+.background summary {
+  min-height: 44px;
+  padding: 10px 4px;
+  cursor: pointer;
+}
+
+.background p {
+  padding: 0 4px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Dialogs: session confirmations and the KJV passage */
+
+.sessionDialog,
+.passageDialog {
+  max-height: 85dvh;
+  padding: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: var(--color-surface);
+  box-shadow: 0 20px 80px var(--color-sheet-shadow);
+  color: var(--color-ink);
+}
+
+.sessionDialog {
+  width: calc(100% - 36px);
+  max-width: 410px;
+  overflow-y: auto;
+}
+
+.sessionDialog::backdrop,
+.passageDialog::backdrop {
+  background: var(--color-backdrop);
+}
+
+.sessionDialogInner {
+  padding: 26px;
+}
+
+.sessionDialogHeading {
+  margin: 0 0 12px;
+  font-size: 1.375rem;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.sessionDialogCopy {
+  margin: 0 0 23px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.passageDialog {
+  width: min(600px, calc(100vw - 28px));
+  overflow: hidden;
+}
+
+.passageInner {
+  display: flex;
+  flex-direction: column;
+  max-height: 85dvh;
+}
+
+.passageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 8px;
+}
+
+.passageHead h2 {
+  margin: 0;
+  font-size: 1.3125rem;
+  letter-spacing: -0.02em;
+}
+
+.passageHead .quiet {
+  min-height: 44px;
+  padding: 10px 4px;
+}
+
+.passageVersion {
+  margin: 0 0 12px;
+  padding: 0 22px;
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+
+.passageBody {
+  min-height: 0;
+  overflow: auto;
+  padding: 0 22px 24px;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.verseLine {
+  margin: 12px 0;
+}
+
+.verseNumber {
+  padding-right: 3px;
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+}
+
+.passageContext {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-quiet);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.passageContext h3 {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+}
+
+/* Completion: the goodbye, then reflection */
+
+.outro {
+  margin: 24px -8px 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  background: var(--color-sage);
+}
+
+.outro svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.outro svg * {
+  animation-delay: var(--outro-offset, 0ms) !important;
+}
+
+.outroCaption {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.outroDoor {
+  transform-box: view-box;
+  transform-origin: 427px 220px;
+  animation: outroClose var(--motion-outro) linear both;
+}
+
+.outroWave {
+  transform-box: view-box;
+  transform-origin: 502px 244px;
+  animation: outroWave var(--motion-outro) ease both;
+}
+
+.outroVisitor {
+  animation: outroLeave var(--motion-outro) ease-in-out both;
+}
+
+.outroBody {
+  animation: outroBob var(--motion-outro) linear both;
+}
+
+.outroLegLeft {
+  transform-box: view-box;
+  transform-origin: 289px 282px;
+  animation: outroStride var(--motion-outro) linear both;
+}
+
+.outroLegRight {
+  transform-box: view-box;
+  transform-origin: 306px 282px;
+  animation: outroStrideBack var(--motion-outro) linear both;
+}
+
+.outroFade {
+  pointer-events: none;
+  animation: outroFade var(--motion-outro) linear both;
+}
+
+.outroPaused svg * {
+  animation-play-state: paused !important;
+}
+
+@keyframes outroClose {
+  0%,
+  15% {
+    transform: scaleX(0.08);
+  }
+  38%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes outroWave {
+  0%,
+  10% {
+    transform: rotate(0deg);
+  }
+  5%,
+  15% {
+    transform: rotate(15deg);
+  }
+  25%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes outroLeave {
+  0%,
+  36% {
+    transform: translateX(0);
+  }
+  88%,
+  100% {
+    transform: translateX(-360px);
+  }
+}
+
+@keyframes outroBob {
+  0%,
+  36%,
+  48%,
+  60%,
+  72%,
+  84%,
+  100% {
+    transform: translateY(0);
+  }
+  42%,
+  54%,
+  66%,
+  78% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes outroStride {
+  0%,
+  36%,
+  48%,
+  60%,
+  72%,
+  84%,
+  100% {
+    transform: rotate(0deg);
+  }
+  42%,
+  54%,
+  66%,
+  78% {
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes outroStrideBack {
+  0%,
+  36%,
+  48%,
+  60%,
+  72%,
+  84%,
+  100% {
+    transform: rotate(0deg);
+  }
+  42%,
+  54%,
+  66%,
+  78% {
+    transform: rotate(-16deg);
+  }
+}
+
+@keyframes outroFade {
+  0%,
+  88% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.reflectionList {
+  margin: 25px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--color-line);
+  list-style: none;
+}
+
+.reflectionRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.reflectionNumber {
+  padding-top: 2px;
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+
+.reflectionRow p {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+.completionActions {
+  margin-top: 24px;
+}
+
+/* Narrow phones */
+
+@media (max-width: 420px) {
+  .journey {
+    padding-inline: 20px;
+  }
+
+  .roleChoice {
+    padding: 19px 14px;
+  }
+
+  .pairCode {
+    font-size: 2.625rem;
+    letter-spacing: 2px;
+  }
+}
+
+@media (max-width: 360px) {
+  .header {
+    padding-inline: 16px;
+  }
+
+  .conversation,
+  .tools {
+    padding-inline: 15px;
+  }
+
+  .composeBox {
+    padding: 13px 13px 10px;
+  }
+
+  .readyPlayers {
+    flex-direction: column;
+  }
+}
+
+/* Decorative motion off: the system setting or the saved pause. */
+
+@media (prefers-reduced-motion: reduce) {
+  .door,
+  .screenFade,
+  .timerProgress {
+    transition: none;
+  }
+
+  .knocking .knockHand,
+  .knocking .knockWords {
+    animation: none;
+  }
+
+  .outro svg * {
+    animation: none !important;
+  }
+
+  .outroVisitor {
+    transform: translateX(-360px);
+  }
+
+  .outroFade {
+    opacity: 0;
+  }
+}
+
+:global(.motion-paused) .door,
+:global(.motion-paused) .screenFade,
+:global(.motion-paused) .timerProgress {
+  transition: none;
+}
+
+:global(.motion-paused) .knocking .knockHand,
+:global(.motion-paused) .knocking .knockWords,
+:global(.motion-paused) .sheet[open] {
+  animation: none;
+}
+
+:global(.motion-paused) .outro svg * {
+  animation: none !important;
+}
+
+:global(.motion-paused) .outroVisitor {
+  transform: translateX(-360px);
+}
+
+:global(.motion-paused) .outroFade {
+  opacity: 0;
+}

@@ -34,6 +34,8 @@ export interface SessionState {
   is_creator: boolean
   partner_joined: boolean
   swap_pending: boolean
+  swap_by_me: boolean
+  swap_requested_at: string | null
   restart_pending?: boolean
   restart_by_me?: boolean
   my_ready: boolean
@@ -42,6 +44,12 @@ export interface SessionState {
   answered_question_ids: string[]
   opening_question_asked: boolean
   exchange: 'initial' | 'follow_up'
+  turn: 'missionary' | 'christian'
+  history: { speaker: 'missionary' | 'christian'; id: string }[]
+  encounter_phase: 'knock' | 'open' | null
+  encounter_deadline: string | null
+  encounter_relaxed: boolean
+  server_now: string
   partner_fresh: boolean | null
   pair_code: string | null
   code_expires_at: string | null

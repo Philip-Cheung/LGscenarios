@@ -188,7 +188,7 @@ describe('direct table access', () => {
 })
 
 describe('role permissions', () => {
-  it('only lets the current missionary lead, choose questions, finish, and request a swap', async () => {
+  it('only lets the current missionary lead, choose questions, and finish', async () => {
     const current = expectOk(await rpc(christian, 'get_session', { p_session_id: session.id }))
     for (const [event, target] of [
       ['start_practice', null],
@@ -200,10 +200,6 @@ describe('role permissions', () => {
     ] as const) {
       expectError(await guided(christian, current, event, target), 'forbidden')
     }
-    expectError(
-      await rpc(christian, 'request_swap', { p_session_id: session.id, p_expected_revision: current.revision }),
-      'forbidden',
-    )
   })
 
   it('moves control to the other phone after a role swap', async () => {
@@ -212,13 +208,17 @@ describe('role permissions', () => {
     expect(state.status).toBe('completed')
     expect(state.answered_question_ids).toEqual([QUESTION_ID])
 
-    // Only the Christian can answer a swap request, and only the missionary can make one.
+    // There is nothing to answer until someone asks, and the asker cannot answer their own request.
+    expectError(
+      await rpc(m, 'respond_swap', { p_session_id: state.id, p_accept: true, p_expected_revision: state.revision }),
+      'invalid_state',
+    )
+    state = expectOk(await rpc(m, 'request_swap', { p_session_id: state.id, p_expected_revision: state.revision }))
+    expect(state.swap_pending).toBe(true)
     expectError(
       await rpc(m, 'respond_swap', { p_session_id: state.id, p_accept: true, p_expected_revision: state.revision }),
       'forbidden',
     )
-    state = expectOk(await rpc(m, 'request_swap', { p_session_id: state.id, p_expected_revision: state.revision }))
-    expect(state.swap_pending).toBe(true)
     const swapped = expectOk(
       await rpc(c, 'respond_swap', { p_session_id: state.id, p_accept: true, p_expected_revision: state.revision }),
     )

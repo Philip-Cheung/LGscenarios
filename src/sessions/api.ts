@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { parseRpcResult } from './schema'
-import type { GuidedEvent, Role, RpcResult } from './types'
+import type { EncounterAction, GuidedEvent, Role, RpcResult } from './types'
 
 /**
  * Thin adapter over the session RPCs. Identity always comes from the caller's
@@ -59,6 +59,35 @@ export class SessionApi {
     })
   }
 
+  /** Conversation scenarios: this player is ready; `relaxed` turns off the encounter timer for both. */
+  setReady(sessionId: string, relaxed: boolean, expectedRevision: number) {
+    return this.call('set_ready', { p_session_id: sessionId, p_relaxed: relaxed, p_expected_revision: expectedRevision })
+  }
+
+  /** Conversation scenarios: start, knock, open, or retry the doorstep encounter. */
+  encounterAction(sessionId: string, action: EncounterAction, relaxed: boolean, expectedRevision: number) {
+    return this.call('perform_encounter_action', {
+      p_session_id: sessionId,
+      p_action: action,
+      p_relaxed: relaxed,
+      p_expected_revision: expectedRevision,
+    })
+  }
+
+  /**
+   * Conversation scenarios: commits one spoken line by id. A retry with the
+   * same command id returns the state the first attempt produced.
+   */
+  commitUtterance(sessionId: string, round: number, itemId: string, commandId: string, expectedRevision: number) {
+    return this.call('commit_utterance', {
+      p_session_id: sessionId,
+      p_round: round,
+      p_item_id: itemId,
+      p_command_id: commandId,
+      p_expected_revision: expectedRevision,
+    })
+  }
+
   requestSwap(sessionId: string, expectedRevision: number) {
     return this.call('request_swap', { p_session_id: sessionId, p_expected_revision: expectedRevision })
   }
@@ -69,6 +98,10 @@ export class SessionApi {
       p_accept: accept,
       p_expected_revision: expectedRevision,
     })
+  }
+
+  cancelSwap(sessionId: string, expectedRevision: number) {
+    return this.call('cancel_swap', { p_session_id: sessionId, p_expected_revision: expectedRevision })
   }
 
   heartbeat(sessionId: string) {

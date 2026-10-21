@@ -5,6 +5,8 @@ export type SessionStatus = 'waiting' | 'ready' | 'active' | 'completed' | 'expi
 /**
  * Shared practice stage. `paired` comes before the six steps; question
  * selection and response loop until the missionary moves to closing.
+ * Conversation scenarios (schema 3.0) use `paired`/`scene_setup` for
+ * readiness, then `encounter`, `conversation`, and `conclusion`.
  */
 export type GuidedStage =
   | 'paired'
@@ -14,7 +16,25 @@ export type GuidedStage =
   | 'question_selection'
   | 'response'
   | 'closing'
+  | 'encounter'
+  | 'conversation'
   | 'conclusion'
+
+/** The doorstep encounter: the missionary knocks, then the Christian opens. */
+export type EncounterPhase = 'knock' | 'open'
+
+/** Commands accepted by the `perform_encounter_action` RPC. */
+export type EncounterAction = 'start' | 'knock' | 'open' | 'retry'
+
+/**
+ * One committed line of a conversation. Missionary entries name an authored
+ * beat; Christian entries name a response: `free`, `answer-N`, `clarify`, or
+ * `not-sure`.
+ */
+export interface HistoryEntry {
+  speaker: Role
+  id: string
+}
 
 /** Commands accepted by the `guided_event` RPC. */
 export type GuidedEvent =
@@ -46,6 +66,10 @@ export interface SessionSnapshot {
   isCreator: boolean
   partnerJoined: boolean
   swapPending: boolean
+  /** True when this participant asked for the pending swap. */
+  swapByMe: boolean
+  /** ISO time the swap was requested, or null when none is pending. */
+  swapRequestedAt: string | null
   restartPending: boolean
   /** True when this participant asked for the pending restart. */
   restartByMe: boolean
@@ -65,6 +89,16 @@ export interface SessionSnapshot {
   /** The missionary has asked the scenario's opening question. */
   openingQuestionAsked: boolean
   exchange: Exchange
+  /** Conversation scenarios: who speaks next. */
+  turn: Role
+  /** Conversation scenarios: committed lines this round, oldest first. */
+  history: readonly HistoryEntry[]
+  encounterPhase: EncounterPhase | null
+  /** Server time the current encounter action closes; null when relaxed or idle. */
+  encounterDeadline: string | null
+  encounterRelaxed: boolean
+  /** Server clock when this state was read; undefined for Realtime rows. */
+  serverNow: string | undefined
   /** null when there is no partner yet; undefined when not yet known (Realtime rows). */
   partnerFresh: boolean | null | undefined
   expiresAt: string
@@ -87,6 +121,7 @@ export type SessionErrorCode =
   | 'session_expired'
   | 'rate_limited'
   | 'partner_stale'
+  | 'deadline_passed'
   | 'out_of_range'
   | 'unavailable'
   | 'auth_failed'

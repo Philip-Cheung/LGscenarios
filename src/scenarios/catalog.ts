@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { SCENARIO_SCHEMA_VERSIONS, scenarioContentSchema, type ScenarioContent } from '../lib/content'
+import { ALL_SCENARIO_SCHEMA_VERSIONS, parseScenarioContent, type AnyScenarioContent } from '../lib/content'
 
 export type ScenarioLookup =
-  | { status: 'ok'; scenario: ScenarioContent }
+  | { status: 'ok'; scenario: AnyScenarioContent }
   /** No published version, or none open for new pairs. */
   | { status: 'unavailable' }
   /** A version from before guided scenarios; it has no content to render. */
@@ -21,14 +21,14 @@ const SELECT = 'scenario_id, version, content'
 const IMAGE_BUCKET = 'scenario-images'
 
 // Published versions never change, so a version is fetched once per page load.
-const versions = new Map<string, ScenarioContent>()
+const versions = new Map<string, AnyScenarioContent>()
 const versionKey = (scenarioId: string, version: number) => `${scenarioId}@${version}`
 
 function fromRow(row: RegistryRow): ScenarioLookup {
   if (row.content === null) return { status: 'retired' }
   const declared = (row.content as { schemaVersion?: unknown } | null)?.schemaVersion
-  if (!(SCENARIO_SCHEMA_VERSIONS as readonly unknown[]).includes(declared)) return { status: 'outdated' }
-  const parsed = scenarioContentSchema.safeParse(row.content)
+  if (!(ALL_SCENARIO_SCHEMA_VERSIONS as readonly unknown[]).includes(declared)) return { status: 'outdated' }
+  const parsed = parseScenarioContent(row.content)
   if (!parsed.success || parsed.data.id !== row.scenario_id || parsed.data.version !== row.version) {
     return { status: 'unavailable' }
   }
