@@ -103,11 +103,12 @@ describe('pairing', () => {
     expect(forRequest[0].n).toBe(1)
   })
 
-  it('joins the room’s scenario and version, whichever link the partner opened', async () => {
+  it('refuses a code opened from a different version’s link, and keeps the code usable', async () => {
     const [missionary, christian] = users.slice(8, 10)
     await h.resetRateLimits(missionary, christian)
     const created = expectOk(await h.createPair(missionary))
-    const joined = expectOk(await h.joinPair(christian, created.pair_code ?? '', randomUUID(), 999))
+    expectError(await h.joinPair(christian, created.pair_code ?? '', randomUUID(), 999), 'scenario_mismatch')
+    const joined = expectOk(await h.joinPair(christian, created.pair_code ?? ''))
     expect(joined).toMatchObject({ scenario_id: SCENARIO_ID, scenario_version: SCENARIO_VERSION, my_role: 'christian' })
   })
 

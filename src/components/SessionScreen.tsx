@@ -1,11 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useEffect, useRef } from 'react'
-import type { ScenarioContent } from '../lib/content'
+import { isConversation, type AnyScenarioContent } from '../lib/content'
 import type { SessionApi } from '../sessions/api'
 import { clearPointer } from '../sessions/pointer'
 import type { SessionSnapshot } from '../sessions/types'
 import { useSessionSync } from '../sessions/useSessionSync'
+import { ConversationNotice, ConversationSession } from './conversation/ConversationSession'
 import { EndedCard } from './EndedCard'
+import { ENDED_COPY } from './endedCopy'
 import { MessageCard } from './MessageCard'
 import { SessionView } from './SessionView'
 
@@ -14,7 +16,7 @@ interface SessionScreenProps {
   api: SessionApi
   userId: string
   initial: SessionSnapshot
-  scenario: ScenarioContent
+  scenario: AnyScenarioContent
   slug: string
   /** Supabase URL that serves setting images from Storage. */
   imageBaseUrl: string
@@ -37,13 +39,14 @@ export function SessionScreen({
   onStartOver,
   onEnded,
 }: SessionScreenProps) {
-  const { snapshot, connection, ended, endedByPartner, pending, notice, lastError, actions } = useSessionSync({
-    client,
-    api,
-    sessionId: initial.id,
-    userId,
-    initial,
-  })
+  const { snapshot, connection, ended, endedByPartner, pending, notice, lastError, actions, clockOffsetMs } =
+    useSessionSync({
+      client,
+      api,
+      sessionId: initial.id,
+      userId,
+      initial,
+    })
 
   const lastLiveStatus = useRef(initial.status)
   useEffect(() => {
@@ -59,8 +62,49 @@ export function SessionScreen({
   }, [ended, endedByPartner, onEnded, snapshot.status])
 
   if (ended === 'ended' || snapshot.status === 'ended') return null
+  const outdated = snapshot.scenarioId !== scenario.id || snapshot.scenarioVersion !== scenario.version
+
+  if (isConversation(scenario)) {
+    if (ended) {
+      const { heading, body } = ENDED_COPY[ended]
+      return (
+        <ConversationNotice
+          subtitle={scenario.title}
+          heading={heading}
+          body={body}
+          actionLabel="Start a new practice"
+          onAction={onStartOver}
+        />
+      )
+    }
+    if (outdated) {
+      return (
+        <ConversationNotice
+          subtitle={scenario.title}
+          heading="Please refresh this page"
+          body="This practice uses a different version of the scenario."
+          actionLabel="Refresh"
+          onAction={() => window.location.reload()}
+        />
+      )
+    }
+    return (
+      <ConversationSession
+        content={scenario}
+        snapshot={snapshot}
+        connection={connection}
+        pending={pending}
+        notice={notice}
+        lastError={lastError}
+        actions={actions}
+        clockOffsetMs={clockOffsetMs}
+        resumed={resumed}
+      />
+    )
+  }
+
   if (ended) return <EndedCard reason={ended} onStartOver={onStartOver} />
-  if (snapshot.scenarioId !== scenario.id || snapshot.scenarioVersion !== scenario.version) {
+  if (outdated) {
     return (
       <MessageCard heading="Please refresh this page" actionLabel="Refresh" onAction={() => window.location.reload()}>
         <p>This practice uses a different version of the scenario.</p>

@@ -1,13 +1,14 @@
 import type { SessionSnapshot } from './types'
 
-export const RESTART_TIMEOUT_MS = 60_000
+/** How long a restart or swap request waits for an answer. */
+export const REQUEST_TIMEOUT_MS = 60_000
 
-/** True when a restart request is still inside the server's 60 second window. */
-export function isRestartCurrent(requestedAt: string | null, now = Date.now()): boolean {
+/** True when a restart or swap request is still inside the server's 60 second window. */
+export function isRequestCurrent(requestedAt: string | null, now = Date.now()): boolean {
   if (!requestedAt) return false
   const at = Date.parse(requestedAt)
   if (Number.isNaN(at)) return false
-  return now - at < RESTART_TIMEOUT_MS
+  return now - at < REQUEST_TIMEOUT_MS
 }
 
 /**
@@ -39,8 +40,15 @@ export function mergeSnapshot(current: SessionSnapshot | null, incoming: Session
 function withDefaults(snapshot: SessionSnapshot): SessionSnapshot {
   return {
     ...snapshot,
+    swapByMe: snapshot.swapByMe ?? false,
+    swapRequestedAt: snapshot.swapRequestedAt ?? null,
     restartPending: snapshot.restartPending ?? false,
     restartRequestedAt: snapshot.restartRequestedAt ?? null,
+    turn: snapshot.turn ?? 'missionary',
+    history: snapshot.history ?? [],
+    encounterPhase: snapshot.encounterPhase ?? null,
+    encounterDeadline: snapshot.encounterDeadline ?? null,
+    encounterRelaxed: snapshot.encounterRelaxed ?? false,
     partnerFresh: snapshot.partnerFresh,
     pairCode: snapshot.pairCode ?? null,
     codeExpiresAt: snapshot.codeExpiresAt ?? null,

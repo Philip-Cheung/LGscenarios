@@ -21,6 +21,12 @@ export function setMotionPaused(paused: boolean): void {
   }
 }
 
+/** True when decorative motion should be skipped: the system setting or the saved pause. */
+export function prefersReducedMotion(): boolean {
+  const system = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return system || readMotionPaused()
+}
+
 /** Applies the saved choice before the first render. */
 export function applySavedMotionPreference(): void {
   document.documentElement.classList.toggle(PAUSED_CLASS, readMotionPaused())

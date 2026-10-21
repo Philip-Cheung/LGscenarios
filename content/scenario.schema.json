@@ -1,367 +1,293 @@
 {
   "title": "Doorstep practice scenario",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "$schema": {
-      "type": "string"
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "draft",
-        "published"
-      ]
-    },
-    "schemaVersion": {
-      "type": "string",
-      "enum": [
-        "2.0",
-        "2.1"
-      ]
-    },
-    "id": {
-      "type": "string",
-      "maxLength": 64,
-      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-    },
-    "version": {
-      "type": "integer",
-      "exclusiveMinimum": 0,
-      "maximum": 9007199254740991
-    },
-    "title": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 80
-    },
-    "subtitle": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 180
-    },
-    "estimatedMinutes": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 120
-    },
-    "difficulty": {
-      "type": "string",
-      "enum": [
-        "beginner",
-        "intermediate",
-        "advanced"
-      ]
-    },
-    "illustration": {
-      "type": "string",
-      "enum": [
-        "doorway"
-      ]
-    },
-    "roles": {
+  "anyOf": [
+    {
       "type": "object",
       "properties": {
-        "missionary": {
+        "$schema": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "published"
+          ]
+        },
+        "schemaVersion": {
+          "type": "string",
+          "enum": [
+            "2.0",
+            "2.1"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "version": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "subtitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "estimatedMinutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": [
+            "beginner",
+            "intermediate",
+            "advanced"
+          ]
+        },
+        "illustration": {
+          "type": "string",
+          "enum": [
+            "doorway"
+          ]
+        },
+        "roles": {
           "type": "object",
           "properties": {
-            "label": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 40
-            },
-            "sceneTitle": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 80
-            },
-            "sceneText": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 400
-            },
-            "goal": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 200
-            },
-            "image": {
+            "missionary": {
               "type": "object",
               "properties": {
-                "path": {
-                  "type": "string",
-                  "maxLength": 160,
-                  "pattern": "^[a-z0-9]+([-_][a-z0-9]+)*(\\/[a-z0-9]+([-_][a-z0-9]+)*)*\\.(jpg|jpeg|png|webp)$"
-                },
-                "alt": {
+                "label": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 160
-                }
-              },
-              "required": [
-                "path",
-                "alt"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "label",
-            "sceneTitle",
-            "sceneText",
-            "goal"
-          ],
-          "additionalProperties": false
-        },
-        "christian": {
-          "type": "object",
-          "properties": {
-            "label": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 40
-            },
-            "sceneTitle": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 80
-            },
-            "sceneText": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 400
-            },
-            "goal": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 200
-            },
-            "image": {
-              "type": "object",
-              "properties": {
-                "path": {
-                  "type": "string",
-                  "maxLength": 160,
-                  "pattern": "^[a-z0-9]+([-_][a-z0-9]+)*(\\/[a-z0-9]+([-_][a-z0-9]+)*)*\\.(jpg|jpeg|png|webp)$"
+                  "maxLength": 40
                 },
-                "alt": {
+                "sceneTitle": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 160
-                }
-              },
-              "required": [
-                "path",
-                "alt"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "label",
-            "sceneTitle",
-            "sceneText",
-            "goal"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "required": [
-        "missionary",
-        "christian"
-      ],
-      "additionalProperties": false
-    },
-    "openingDialogue": {
-      "type": "object",
-      "properties": {
-        "script": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 500
-        },
-        "scriptNote": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200
-        },
-        "listenerPrompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 200
-        },
-        "question": {
-          "type": "object",
-          "properties": {
-            "prompt": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 300
-            },
-            "missionaryNote": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 300
-            },
-            "exampleAnswer": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 800
-            },
-            "moreHelp": {
-              "minItems": 1,
-              "maxItems": 8,
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "heading": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 60
+                  "maxLength": 80
+                },
+                "sceneText": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400
+                },
+                "goal": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "image": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "pattern": "^[a-z0-9]+([-_][a-z0-9]+)*(\\/[a-z0-9]+([-_][a-z0-9]+)*)*\\.(jpg|jpeg|png|webp)$"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    }
                   },
-                  "text": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 1200
+                  "required": [
+                    "path",
+                    "alt"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "label",
+                "sceneTitle",
+                "sceneText",
+                "goal"
+              ],
+              "additionalProperties": false
+            },
+            "christian": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "sceneTitle": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "sceneText": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400
+                },
+                "goal": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "image": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "pattern": "^[a-z0-9]+([-_][a-z0-9]+)*(\\/[a-z0-9]+([-_][a-z0-9]+)*)*\\.(jpg|jpeg|png|webp)$"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "alt"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "label",
+                "sceneTitle",
+                "sceneText",
+                "goal"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "missionary",
+            "christian"
+          ],
+          "additionalProperties": false
+        },
+        "openingDialogue": {
+          "type": "object",
+          "properties": {
+            "script": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "scriptNote": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "listenerPrompt": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "question": {
+              "type": "object",
+              "properties": {
+                "prompt": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "missionaryNote": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "exampleAnswer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 800
+                },
+                "moreHelp": {
+                  "minItems": 1,
+                  "maxItems": 8,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "heading": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1200
+                      }
+                    },
+                    "required": [
+                      "text"
+                    ],
+                    "additionalProperties": false
                   }
                 },
-                "required": [
-                  "text"
-                ],
-                "additionalProperties": false
-              }
-            },
-            "acknowledgment": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 300
-            }
-          },
-          "required": [
-            "prompt",
-            "exampleAnswer",
-            "acknowledgment"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "required": [
-        "script"
-      ],
-      "additionalProperties": false
-    },
-    "questions": {
-      "minItems": 1,
-      "maxItems": 12,
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "maxLength": 40,
-            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-          },
-          "topic": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 40
-          },
-          "icon": {
-            "type": "string",
-            "enum": [
-              "chat",
-              "leaf",
-              "book"
-            ]
-          },
-          "prompt": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 700
-          },
-          "exampleAnswer": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 800
-          },
-          "moreHelp": {
-            "minItems": 1,
-            "maxItems": 8,
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "heading": {
+                "acknowledgment": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 60
-                },
-                "text": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 1200
+                  "maxLength": 300
                 }
               },
               "required": [
-                "text"
+                "prompt",
+                "exampleAnswer",
+                "acknowledgment"
               ],
               "additionalProperties": false
             }
           },
-          "scriptures": {
-            "minItems": 1,
-            "maxItems": 6,
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 60
-            }
-          },
-          "followUp": {
+          "required": [
+            "script"
+          ],
+          "additionalProperties": false
+        },
+        "questions": {
+          "minItems": 1,
+          "maxItems": 12,
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 40,
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "topic": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "icon": {
+                "type": "string",
+                "enum": [
+                  "chat",
+                  "leaf",
+                  "book"
+                ]
+              },
               "prompt": {
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 700
               },
-              "missionaryNote": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 300
-              },
-              "missionaryHelp": {
-                "minItems": 1,
-                "maxItems": 8,
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "heading": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 60
-                    },
-                    "text": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 1200
-                    }
-                  },
-                  "required": [
-                    "text"
-                  ],
-                  "additionalProperties": false
-                }
-              },
               "exampleAnswer": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 900
+                "maxLength": 800
               },
               "moreHelp": {
                 "minItems": 1,
@@ -386,158 +312,221 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "scriptures": {
+                "minItems": 1,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "followUp": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 700
+                  },
+                  "missionaryNote": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "missionaryHelp": {
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "heading": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1200
+                        }
+                      },
+                      "required": [
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "exampleAnswer": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 900
+                  },
+                  "moreHelp": {
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "heading": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1200
+                        }
+                      },
+                      "required": [
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "prompt",
+                  "exampleAnswer"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
+              "id",
+              "topic",
               "prompt",
               "exampleAnswer"
             ],
             "additionalProperties": false
           }
         },
-        "required": [
-          "id",
-          "topic",
-          "prompt",
-          "exampleAnswer"
-        ],
-        "additionalProperties": false
-      }
-    },
-    "conclusion": {
-      "type": "object",
-      "properties": {
-        "closingPrompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 300
-        },
-        "listenerReply": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 300
-        },
-        "reflectionPrompt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 300
-        },
-        "reflectionFollowUp": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 300
-        }
-      },
-      "required": [
-        "closingPrompt"
-      ],
-      "additionalProperties": false
-    },
-    "bible": {
-      "type": "object",
-      "properties": {
-        "translation": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 60
-        },
-        "source": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 300
-        },
-        "chapters": {
-          "minItems": 1,
-          "maxItems": 40,
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "maxLength": 64,
-                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-              },
-              "book": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 40
-              },
-              "chapter": {
-                "type": "integer",
-                "exclusiveMinimum": 0,
-                "maximum": 9007199254740991
-              },
-              "verses": {
-                "minItems": 1,
-                "maxItems": 176,
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "number": {
-                      "type": "integer",
-                      "exclusiveMinimum": 0,
-                      "maximum": 9007199254740991
-                    },
-                    "text": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 1000
-                    }
-                  },
-                  "required": [
-                    "number",
-                    "text"
-                  ],
-                  "additionalProperties": false
-                }
-              }
+        "conclusion": {
+          "type": "object",
+          "properties": {
+            "closingPrompt": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
             },
-            "required": [
-              "id",
-              "book",
-              "chapter",
-              "verses"
-            ],
-            "additionalProperties": false
-          }
+            "listenerReply": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "reflectionPrompt": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "reflectionFollowUp": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": [
+            "closingPrompt"
+          ],
+          "additionalProperties": false
         },
-        "references": {
-          "minItems": 1,
-          "maxItems": 80,
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "maxLength": 64,
-                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 60
-              },
-              "chapter": {
-                "type": "string",
-                "maxLength": 64,
-                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
-              },
-              "start": {
-                "type": "integer",
-                "exclusiveMinimum": 0,
-                "maximum": 9007199254740991
-              },
-              "end": {
-                "type": "integer",
-                "exclusiveMinimum": 0,
-                "maximum": 9007199254740991
-              },
-              "context": {
+        "bible": {
+          "type": "object",
+          "properties": {
+            "translation": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "chapters": {
+              "minItems": 1,
+              "maxItems": 40,
+              "type": "array",
+              "items": {
                 "type": "object",
                 "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "book": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "chapter": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "verses": {
+                    "minItems": 1,
+                    "maxItems": 176,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1000
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "book",
+                  "chapter",
+                  "verses"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "references": {
+              "minItems": 1,
+              "maxItems": 80,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "chapter": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
                   "start": {
                     "type": "integer",
                     "exclusiveMinimum": 0,
@@ -547,48 +536,682 @@
                     "type": "integer",
                     "exclusiveMinimum": 0,
                     "maximum": 9007199254740991
+                  },
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "start": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "end": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "start",
+                      "end"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
+                  "id",
+                  "label",
+                  "chapter",
                   "start",
                   "end"
                 ],
                 "additionalProperties": false
               }
-            },
-            "required": [
-              "id",
-              "label",
-              "chapter",
-              "start",
-              "end"
-            ],
-            "additionalProperties": false
-          }
+            }
+          },
+          "required": [
+            "translation",
+            "chapters",
+            "references"
+          ],
+          "additionalProperties": false
+        },
+        "sourceNotes": {
+          "type": "string",
+          "maxLength": 4000
         }
       },
       "required": [
-        "translation",
-        "chapters",
-        "references"
+        "status",
+        "schemaVersion",
+        "id",
+        "version",
+        "title",
+        "roles",
+        "openingDialogue",
+        "questions",
+        "conclusion"
       ],
       "additionalProperties": false
     },
-    "sourceNotes": {
-      "type": "string",
-      "maxLength": 4000
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "published"
+          ]
+        },
+        "schemaVersion": {
+          "type": "string",
+          "const": "3.0"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "version": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "intro": {
+          "type": "object",
+          "properties": {
+            "kicker": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "heading": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": [
+            "kicker",
+            "heading",
+            "description"
+          ],
+          "additionalProperties": false
+        },
+        "roles": {
+          "type": "object",
+          "properties": {
+            "missionary": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "speaker": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                }
+              },
+              "required": [
+                "label",
+                "speaker",
+                "description"
+              ],
+              "additionalProperties": false
+            },
+            "christian": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "speaker": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                }
+              },
+              "required": [
+                "label",
+                "speaker",
+                "description"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "missionary",
+            "christian"
+          ],
+          "additionalProperties": false
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "PDF",
+                      "Article"
+                    ]
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "title",
+                  "format",
+                  "url"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "heading",
+            "source",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "opening": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "const": "introduction"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "caption": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "help": {
+              "type": "object",
+              "properties": {
+                "prompt": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "answers": {
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 400
+                  }
+                }
+              },
+              "required": [
+                "prompt",
+                "answers"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "caption",
+            "help"
+          ],
+          "additionalProperties": false
+        },
+        "topics": {
+          "minItems": 1,
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 40,
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "summary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "background": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "question": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 700
+                  },
+                  "caption": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "help": {
+                    "type": "object",
+                    "properties": {
+                      "hint": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 400
+                      },
+                      "answers": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 700
+                        }
+                      },
+                      "clarify": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "context": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "passages": {
+                        "minItems": 1,
+                        "maxItems": 8,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 64,
+                          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                        }
+                      }
+                    },
+                    "required": [
+                      "hint",
+                      "answers"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "id",
+                  "text",
+                  "caption",
+                  "help"
+                ],
+                "additionalProperties": false
+              },
+              "followUps": {
+                "maxItems": 4,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 40,
+                      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 700
+                    },
+                    "caption": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "help": {
+                      "type": "object",
+                      "properties": {
+                        "hint": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 400
+                        },
+                        "answers": {
+                          "minItems": 1,
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 700
+                          }
+                        },
+                        "clarify": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "context": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 600
+                        },
+                        "passages": {
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 64,
+                            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                          }
+                        }
+                      },
+                      "required": [
+                        "hint",
+                        "answers"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    },
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "text",
+                    "caption",
+                    "help",
+                    "title",
+                    "summary"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "summary",
+              "background",
+              "question",
+              "followUps"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "clarification": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "const": "clarify"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "caption": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "help": {
+              "type": "object",
+              "properties": {
+                "hint": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400
+                },
+                "answers": {
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 400
+                  }
+                }
+              },
+              "required": [
+                "hint",
+                "answers"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "caption",
+            "help"
+          ],
+          "additionalProperties": false
+        },
+        "notSureAnswer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "closing": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "const": "closing"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 400
+            },
+            "caption": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "caption"
+          ],
+          "additionalProperties": false
+        },
+        "reflection": {
+          "type": "object",
+          "properties": {
+            "prompts": {
+              "minItems": 1,
+              "maxItems": 5,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            }
+          },
+          "required": [
+            "prompts"
+          ],
+          "additionalProperties": false
+        },
+        "passages": {
+          "type": "object",
+          "properties": {
+            "translation": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 40,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "context": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 600
+                  },
+                  "verses": {
+                    "minItems": 1,
+                    "maxItems": 60,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1000
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "label",
+                  "context",
+                  "verses"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "translation",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "sourceNotes": {
+          "type": "string",
+          "maxLength": 4000
+        }
+      },
+      "required": [
+        "status",
+        "schemaVersion",
+        "id",
+        "version",
+        "title",
+        "intro",
+        "roles",
+        "resources",
+        "opening",
+        "topics",
+        "clarification",
+        "notSureAnswer",
+        "closing",
+        "reflection",
+        "passages"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "status",
-    "schemaVersion",
-    "id",
-    "version",
-    "title",
-    "roles",
-    "openingDialogue",
-    "questions",
-    "conclusion"
-  ],
-  "additionalProperties": false
+  ]
 }

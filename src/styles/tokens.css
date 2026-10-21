@@ -1,32 +1,59 @@
 /*
- * Design tokens for Doorstep Practice ("Warm coach"). Values match the
- * approved reference (ai-developer-handoff/reference/tokens.css). This is the
- * only file that may contain raw colours; everything else uses these
- * variables. See docs/design-system.md.
+ * Design tokens for Doorstep Practice. Values follow the approved
+ * conversation prototype (doorstep-prototype.html, v24): quiet white
+ * surfaces, near-black ink, one muted green accent. This is the only file
+ * that may contain raw colours; everything else uses these variables. See
+ * docs/design-system.md.
  */
 :root {
   color-scheme: light;
 
-  --color-canvas: #faf7f0;
-  --color-surface: #fffdf8;
-  --color-ink: #26332f;
-  --color-muted: #5b655f;
-  --color-teal: #205c50;
-  --color-teal-hover: #17483e;
-  --color-sage: #e7eee6;
-  --color-peach: #f5e5d8;
-  --color-line: #d9ddd3;
-  --color-danger: #a13b32;
-  --color-focus: #9b493c;
-  /* Dialog backdrop: ink at 40% opacity. */
-  --color-backdrop: #26332f66;
+  --color-canvas: #fafbf8;
+  --color-surface: #ffffff;
+  --color-ink: #252a25;
+  --color-muted: #687166;
+  /* The single accent. Older screens refer to it as teal. */
+  --color-teal: #3f513b;
+  --color-teal-hover: #354634;
+  --color-sage: #eef2e8;
+  --color-peach: #f0e7d7;
+  --color-line: #e3e7de;
+  /* Borders that must stay visible against white, such as text fields. */
+  --color-line-strong: #cfd8c9;
+  --color-danger: #9b5845;
+  --color-focus: #49765b;
+  --color-backdrop: #14221a66;
 
-  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-heading: Georgia, 'Times New Roman', serif;
+  /* Conversation surfaces. */
+  --color-surface-quiet: #f7f8f6;
+  --color-bubble: #f1f3ef;
+  --color-bubble-mine: #eef2e8;
+  --color-bubble-speaking: #e7f1df;
+  --color-bubble-speaking-line: #8eac79;
+  --color-chip: #f0f4eb;
+  --color-chip-ink: #4e6549;
+  --color-selected: #f0f5ed;
+  --color-selected-line: #7f9e83;
+  --color-notice: #f0f7e9;
+  --color-notice-line: #dbe7d1;
+  --color-sheet-shadow: #10231922;
+  --color-fade: #0a100b;
+
+  /* The doorstep encounter. */
+  --color-scene: #fafbf6;
+  --color-timer-track: #e0e7d8;
+  --color-timer: #56784e;
+  --color-timer-relaxed: #bacab0;
+  --color-tap-shadow: #284638;
+  --color-tap-idle: #dde5d8;
+  --color-tap-idle-ink: #5f6f55;
+
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --font-heading: var(--font-body);
 
   --text-small: 0.8125rem;
-  --text-body: 1.0625rem;
-  --text-title: clamp(1.65rem, 2.5vw, 1.95rem);
+  --text-body: 1rem;
+  --text-title: clamp(1.625rem, 2.5vw, 1.75rem);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -36,8 +63,9 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  --radius-control: 14px;
-  --radius-surface: 24px;
+  --radius-control: 12px;
+  --radius-surface: 16px;
+  --radius-sheet: 24px;
 
   --motion-fast: 160ms;
   --motion-enter: 240ms;
@@ -47,4 +75,8 @@
   --motion-door: 1100ms;
   --motion-door-delay: 80ms;
   --motion-door-ease: cubic-bezier(0.2, 0.7, 0.25, 1);
+  --motion-sheet: 180ms;
+  --motion-knock: 1300ms;
+  --motion-fade: 480ms;
+  --motion-outro: 5200ms;
 }

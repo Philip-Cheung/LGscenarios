@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type Ref } from 'react'
 import { DEFAULT_REFLECTION_PROMPT, type ScenarioContent } from '../lib/content'
 import { formatPairCode, spellPairCode } from '../lib/pairCode'
 import { messageForEndFailure } from '../sessions/messages'
-import { isPartnerAway, isRestartCurrent, RESTART_TIMEOUT_MS } from '../sessions/snapshot'
+import { isPartnerAway, isRequestCurrent, REQUEST_TIMEOUT_MS } from '../sessions/snapshot'
 import type { SessionErrorCode, SessionSnapshot } from '../sessions/types'
 import type { ConnectionState, PendingAction, SessionActions } from '../sessions/useSessionSync'
 import { AppScreen, ProgressMeta, SessionMenu, type ScreenFrame } from './AppScreen'
@@ -496,12 +496,12 @@ function useRestartLive(snapshot: SessionSnapshot): boolean {
     if (!snapshot.restartPending || !snapshot.restartRequestedAt) return
     const at = Date.parse(snapshot.restartRequestedAt)
     if (Number.isNaN(at)) return
-    const remaining = at + RESTART_TIMEOUT_MS - Date.now()
+    const remaining = at + REQUEST_TIMEOUT_MS - Date.now()
     if (remaining <= 0) return
     const timer = window.setTimeout(() => setTick((value) => value + 1), remaining)
     return () => window.clearTimeout(timer)
   }, [snapshot.restartPending, snapshot.restartRequestedAt])
-  return snapshot.restartPending && isRestartCurrent(snapshot.restartRequestedAt)
+  return snapshot.restartPending && isRequestCurrent(snapshot.restartRequestedAt)
 }
 
 /** True once the given ISO timestamp is in the past; re-renders at that moment. */

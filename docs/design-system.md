@@ -1,6 +1,6 @@
 # Design system
 
-Doorstep Practice uses the approved **Warm Coach** design: a warm canvas, one centred practice panel, a serif heading face, a single teal accent, and calm motion. The source of truth is the design handoff (`ai-developer-handoff/reference/`: `tokens.css`, `style.css`, `app.js`, `index.html`, plus the SVGs in `assets/`). The app reproduces the product panel from that reference. It does not include the reference's preview workbench, its preview controls, or its two-column layout.
+Doorstep Practice uses the palette of the approved **conversation prototype** (`doorstep-prototype.html`, v24) app-wide: quiet white surfaces, near-black ink, system type and one muted green accent. Conversation scenarios (schema 3.0) reproduce the prototype's screens; see [Conversation screens](#conversation-screens). Guided (2.x) scenarios keep the **Warm Coach** panel layout described below, now in the prototype palette. The Warm Coach source was the design handoff (`ai-developer-handoff/reference/`). Neither the prototype's preview controls nor its simulated disconnect are shipped.
 
 There is one light theme, no theme switch and no automatic dark variant. No external UI library or Tailwind is installed; the primitives are plain HTML elements styled with CSS modules.
 
@@ -8,7 +8,8 @@ There is one light theme, no theme switch and no automatic dark variant. No exte
 
 | File | Role |
 | --- | --- |
-| `src/styles/tokens.css` | **Canonical** tokens, copied from the reference `tokens.css`. The only file allowed to contain raw colours. |
+| `src/styles/tokens.css` | **Canonical** tokens, taken from the prototype. The only file allowed to contain raw colours. |
+| `src/components/conversation/` | The conversation screens and their stylesheet `conversation.module.css` (tokens only), plus `Sheet` and `SessionDialog`. |
 | `src/styles/app.css` | Globals: box sizing, body type on the canvas, disabled buttons, the focus ring, and heading type. |
 | `src/components/ui/` | App-owned primitives (`Button`, `TextInput`, `StatusMessage`, `ConfirmDialog`) exported from `index.ts`. |
 | `src/components/screens.module.css` | The panel and every screen, reproduced from the reference `style.css`. |
@@ -25,15 +26,16 @@ There is one light theme, no theme switch and no automatic dark variant. No exte
 
 ## Tokens
 
-All tokens are defined on `:root` in `tokens.css`, with the reference's names and values. Screens use `var(--…)` and never repeat colour values.
+All tokens are defined on `:root` in `tokens.css`. The accent keeps the older token name `--color-teal` so the guided screens didn't need to change. Screens use `var(--…)` and never repeat colour values.
 
 | Group | Tokens | Values |
 | --- | --- | --- |
-| Colour | `--color-canvas`, `--color-surface`, `--color-ink`, `--color-muted`, `--color-teal`, `--color-teal-hover`, `--color-sage`, `--color-peach`, `--color-line`, `--color-danger`, `--color-focus`, `--color-backdrop` | Canvas `#faf7f0`, panel `#fffdf8`, ink `#26332f`, muted `#5b655f`, teal `#205c50` (hover `#17483e`), sage `#e7eee6`, peach `#f5e5d8`, line `#d9ddd3`, danger `#a13b32`, focus `#9b493c`, dialog backdrop ink at 40% |
-| Type | `--font-body`, `--font-heading`, `--text-small`, `--text-body`, `--text-title` | System sans for body text; Georgia for headings, quotes and the pairing code. 13px small, 17px body, titles `clamp(1.65rem, 2.5vw, 1.95rem)`. No webfont download |
+| Colour | `--color-canvas`, `--color-surface`, `--color-ink`, `--color-muted`, `--color-teal`, `--color-teal-hover`, `--color-sage`, `--color-peach`, `--color-line`, `--color-line-strong`, `--color-danger`, `--color-focus`, `--color-backdrop` | Canvas `#fafbf8`, surface `#ffffff`, ink `#252a25`, muted `#687166`, accent `#3f513b` (hover `#354634`), sage `#eef2e8`, peach `#f0e7d7`, line `#e3e7de` (strong `#cfd8c9` for fields), danger `#9b5845`, focus `#49765b`, backdrop ink at 40% |
+| Conversation colour | `--color-surface-quiet`, `--color-bubble`, `--color-bubble-mine`, `--color-bubble-speaking(-line)`, `--color-chip(-ink)`, `--color-selected(-line)`, `--color-notice(-line)`, `--color-sheet-shadow`, `--color-fade`, `--color-scene`, `--color-timer-track`, `--color-timer`, `--color-timer-relaxed`, `--color-tap-shadow`, `--color-tap-idle(-ink)` | The prototype's composer, bubbles, chips, selected rows, notices, sheet shadow, the black fade into the conversation, the doorstep scene, the countdown ring and the knock/open button |
+| Type | `--font-body`, `--font-heading`, `--text-small`, `--text-body`, `--text-title` | The system sans for everything (headings included). 13px small, 16px body, titles `clamp(1.625rem, 2.5vw, 1.75rem)`. No webfont download |
 | Spacing | `--space-1` … `--space-7` | 4, 8, 12, 16, 24, 32, 48px |
-| Shape | `--radius-control`, `--radius-surface` | Controls 14px, the panel 24px |
-| Motion | `--motion-fast`, `--motion-enter`, `--motion-activity`, `--motion-confirm`, `--motion-ready`, `--motion-door`, `--motion-door-delay`, `--motion-door-ease` | 160ms hover/press, 240ms entrance, 1.8s activity dots and ready pulse, 380ms pairing check, 1100ms door opening after 80ms on `cubic-bezier(0.2, 0.7, 0.25, 1)` |
+| Shape | `--radius-control`, `--radius-surface`, `--radius-sheet` | Controls 12px, surfaces 16px, sheets 24px |
+| Motion | `--motion-fast`, `--motion-enter`, `--motion-activity`, `--motion-confirm`, `--motion-ready`, `--motion-door`, `--motion-door-delay`, `--motion-door-ease`, `--motion-sheet`, `--motion-knock`, `--motion-fade`, `--motion-outro` | 160ms hover/press, 240ms entrance, 1.8s activity dots and ready pulse, 380ms pairing check, 1100ms door opening after 80ms on `cubic-bezier(0.2, 0.7, 0.25, 1)`, 180ms sheet entrance, 1300ms knock, 480ms fade, 5200ms outro |
 
 To change the theme, edit `tokens.css`; screens should not need to change. The E2E test "changing a design token updates the components" checks that a token change reaches the primary `Button`, and "the production build styles the primary action from the design tokens" checks the built CSS.
 
@@ -125,6 +127,27 @@ The example answer is real text, blurred until revealed. The blurred copy is pla
 Scenario text marks Bible references as `[James 1:5](ref:james-1-5)` and historical sources as `[label](https://www.churchofjesuschrist.org/…)`. A reference renders as an inline text button that opens the passage reader; a source renders as a link with "↗" and visually hidden "(external source, opens in a new tab)".
 
 The passage reader is a native modal `<dialog>`: a bottom sheet on phones and a centred dialog from 761px. It shows the exact reference as its heading, the translation label, the bundled verses with verse numbers, **Read surrounding verses** / **Show selected verses** when the reference has a context range (selected verses keep a sage background and teal edge, plus visually hidden "Selected verse"), and **Close**. The page behind is inert; Escape and the backdrop close it; focus returns to the reference without scrolling the page. Long passages scroll inside the reader while the actions stay pinned, with the safe-area inset below them. It lives inside the screen's keyed content, so a new shared step, restart request, pause or end closes it. An unknown reference shows "Passage unavailable" and never another passage. The sheet's entrance stops under reduced motion and **Pause motion**.
+
+## Conversation screens
+
+Conversation scenarios use a full-height frame instead of the panel: a header ("Doorstep practice", the scenario title, and **Leave**, or **Back** before pairing) and a role strip (portrait, "{Role} (You)", and the partner's connection). Copy is the prototype's, verbatim.
+
+| Screen | Missionary | Christian |
+| --- | --- | --- |
+| Who will you play? | Role cards with large portraits, and "This week's reading". Tapping **Mormon missionary** creates the pair at once | Tapping **Christian** opens the join form |
+| Pairing | "Invite your partner": the six-digit code with **Copy**, "Waiting for your partner to join…", both roles, **Change roles**; **Get a new code** after expiry | "Join your partner": the code field and **Join pair** |
+| Meet at the door | Both players' ready state, **Relaxed timing — no countdown**, **I'm ready**, then **Start encounter** | **I'm ready**; waits for the missionary |
+| Encounter | The doorstep scene, a countdown ring and **Knock** (five seconds unless relaxed); after a miss, **Try again** or **Try without timer** | **Open door** after the knock; the door swings open, then the screen fades into the conversation |
+| Conversation | The shared thread and a private composer with the suggested next line; **Take another direction** (a sheet of numbered rows: "Continue this topic", "Other directions"), **End the conversation** once every topic is used, and **+** for resources, **Ask them to explain**, topic background, **Restart round**, **Switch roles** and **Wrap up conversation** | The thread and a composer: an empty draft commits "Answered aloud" (nothing is transcribed); **Need help?** opens a starting point, suggested responses, the topic's passages, **Explain the verse** and **Help me clarify**; **Clear draft** |
+| Outro and reflection | A 5.2-second goodbye with **Skip animation**, then "Take a moment to reflect": the last line, numbered prompts, **Switch roles**, **Play again**, **Leave session** and "Review your conversation" | Same |
+
+**Speak aloud** is the only way to commit a line. It is compact and right-aligned in the composer, disabled while a commit is in flight or when it's not your turn, and its accessible name says what it sends ("Send question", "Send response", "Waiting for your partner"). Drafts stay on the phone until committed.
+
+Spoken KJV quotations render as inline text with a dotted underline. They are `span role="button"` elements (focusable, Enter and Space open the passage) rather than `<button>`s, because a button is laid out as an inline block and a long quotation would not wrap with its sentence. A passage opened from **Need help?** returns to help when closed.
+
+**Sheets** (`Sheet.tsx`) are native modal dialogs: one at a time, a labelled close button, Escape and backdrop dismissal, and focus returned to the opener. A session interruption (offline, a request, the end of a round) closes any open sheet. **Session dialogs** (`SessionDialog.tsx`) handle leave confirmation and restart or swap requests: the requester sees **Cancel request**, the partner **Decline** or **Accept and restart** / **Accept and switch**, and a request expires after 60 seconds.
+
+The thread doesn't scroll a reader away from older messages: it follows new lines only when you're already near the bottom. Going offline shows a non-modal banner ("Your place and conversation are saved…") and pauses actions; a partner's dropped connection shows its own banner. Layout respects safe-area insets, works from 320px and at 200% text (the frame scrolls rather than squeezing the thread), and from 900px centres the thread and composer at 860px.
 
 ## Motion
 

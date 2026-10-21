@@ -15,7 +15,7 @@ export type RichSegment =
 /** Hosts external source links may point to. */
 export const LINK_HOSTS = ['www.churchofjesuschrist.org'] as const
 
-const TOKEN = /\[([^\]\n]{1,80})\]\(([^)\s]{1,400})\)/g
+const TOKEN = /\[([^\]\n]{1,200})\]\(([^)\s]{1,400})\)/g
 const REF_TARGET = /^ref:([a-z0-9]+(?:-[a-z0-9]+)*)$/
 
 function linkTarget(target: string): string | null {

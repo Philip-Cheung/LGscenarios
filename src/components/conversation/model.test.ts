@@ -1,0 +1,105 @@
+import { describe, expect, it } from 'vitest'
+import file from '../../../content/scenarios/week-one-christians-too.v1.json'
+import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
+import { parseScenarioFile, toStoredContent } from '../../lib/content'
+import type { HistoryEntry } from '../../sessions/types'
+import {
+  answerId,
+  canSpeak,
+  conversationProgress,
+  directionChoices,
+  FREE_RESPONSE_ID,
+  FREE_RESPONSE_TEXT,
+  NOT_SURE_ID,
+  responseOptions,
+  suggestNext,
+  threadMessages,
+} from './model'
+
+const parsed = parseScenarioFile(file)
+if (!parsed.success) throw new Error('week-one-christians-too.v1.json does not parse')
+const content = toStoredContent(parsed.data) as ConversationContent
+const [christianity, history, god] = content.topics
+
+const m = (id: string): HistoryEntry => ({ speaker: 'missionary', id })
+const c = (id: string): HistoryEntry => ({ speaker: 'christian', id })
+
+describe('conversation model', () => {
+  it('starts with the introduction and offers only the welcome replies', () => {
+    const progress = conversationProgress(content, [])
+    expect(suggestNext(content, progress)).toBe(OPENING_ID)
+    expect(canSpeak(content, progress, OPENING_ID)).toBe(true)
+    expect(canSpeak(content, progress, christianity.question.id)).toBe(false)
+    const opening = conversationProgress(content, [m(OPENING_ID)]).lastBeat
+    expect(opening && responseOptions(content, opening).map((option) => option.id)).toEqual(
+      content.opening.help.answers.map((_, index) => answerId(index)),
+    )
+  })
+
+  it('shows a free reply as the neutral marker, never a transcript', () => {
+    const [, reply] = threadMessages(content, [m(OPENING_ID), c(FREE_RESPONSE_ID)])
+    expect(reply).toMatchObject({ speaker: 'christian', text: FREE_RESPONSE_TEXT, free: true })
+    expect(reply.caption).toBe('Spoken response · not transcribed')
+  })
+
+  it('shows a chosen reply in full, with the not-sure and clarify replies resolved against the last line', () => {
+    const thread = threadMessages(content, [
+      m(OPENING_ID),
+      c(answerId(0)),
+      m(god.question.id),
+      c(NOT_SURE_ID),
+      m(god.followUps[0].id),
+      c(CLARIFICATION_ID),
+    ])
+    expect(thread[1].text).toBe(content.opening.help.answers[0])
+    expect(thread[3].text).toBe(content.notSureAnswer)
+    expect(thread[5].text).toBe(god.followUps[0].help.clarify)
+    expect(thread[3].caption).toBe('Suggested response · confirmed aloud')
+  })
+
+  it('suggests the active topic’s next follow-up, then the next unasked topic', () => {
+    const asked = [m(OPENING_ID), c(FREE_RESPONSE_ID), m(christianity.question.id), c(FREE_RESPONSE_ID)]
+    expect(suggestNext(content, conversationProgress(content, asked))).toBe(christianity.followUps[0].id)
+    const followed = [...asked, ...christianity.followUps.flatMap((followUp) => [m(followUp.id), c(FREE_RESPONSE_ID)])]
+    expect(suggestNext(content, conversationProgress(content, followed))).toBe(history.question.id)
+  })
+
+  it('offers follow-ups for the active topic only and drops exhausted prompts', () => {
+    const progress = conversationProgress(content, [
+      m(OPENING_ID),
+      c(FREE_RESPONSE_ID),
+      m(god.question.id),
+      c(FREE_RESPONSE_ID),
+      m(god.followUps[0].id),
+      c(FREE_RESPONSE_ID),
+    ])
+    const choices = directionChoices(content, progress)
+    expect(choices.continueTopic.map((choice) => choice.beatId)).toEqual(god.followUps.slice(1).map((followUp) => followUp.id))
+    expect(choices.otherDirections.map((choice) => choice.beatId)).not.toContain(god.question.id)
+    expect(canSpeak(content, progress, god.followUps[0].id)).toBe(false)
+    expect(canSpeak(content, progress, christianity.followUps[0].id)).toBe(false)
+    expect(canSpeak(content, progress, history.question.id)).toBe(true)
+  })
+
+  it('allows one clarification at a time, and only inside a topic', () => {
+    const opened = conversationProgress(content, [m(OPENING_ID), c(FREE_RESPONSE_ID)])
+    expect(canSpeak(content, opened, CLARIFICATION_ID)).toBe(false)
+    const inTopic = [m(OPENING_ID), c(FREE_RESPONSE_ID), m(god.question.id), c(FREE_RESPONSE_ID)]
+    expect(canSpeak(content, conversationProgress(content, inTopic), CLARIFICATION_ID)).toBe(true)
+    const clarified = [...inTopic, m(CLARIFICATION_ID), c(FREE_RESPONSE_ID)]
+    const progress = conversationProgress(content, clarified)
+    expect(canSpeak(content, progress, CLARIFICATION_ID)).toBe(false)
+    expect(progress.activeTopicId).toBe(god.id)
+  })
+
+  it('leaves only the closing once every topic and follow-up has been spoken', () => {
+    const all: HistoryEntry[] = [m(OPENING_ID), c(FREE_RESPONSE_ID)]
+    for (const topic of content.topics) {
+      for (const beat of [topic.question, ...topic.followUps]) all.push(m(beat.id), c(FREE_RESPONSE_ID))
+    }
+    const progress = conversationProgress(content, all)
+    expect(suggestNext(content, progress)).toBeNull()
+    expect(directionChoices(content, progress)).toEqual({ continueTopic: [], otherDirections: [] })
+    expect(canSpeak(content, progress, CLOSING_ID)).toBe(true)
+  })
+})

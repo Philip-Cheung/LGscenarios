@@ -5,7 +5,7 @@ import { getExistingUserId } from './identity'
 import { messageForError } from './messages'
 import { REALTIME_SESSION_COLUMNS, snapshotFromRealtimeRow } from './schema'
 import { mergeSnapshot } from './snapshot'
-import type { GuidedEvent, RpcResult, SessionErrorCode, SessionSnapshot } from './types'
+import type { EncounterAction, GuidedEvent, RpcResult, SessionErrorCode, SessionSnapshot } from './types'
 
 export const HEARTBEAT_INTERVAL_MS = 15_000
 
@@ -13,9 +13,13 @@ export type ConnectionState = 'connecting' | 'live' | 'reconnecting'
 export type EndReason = 'expired' | 'gone' | 'ended'
 export type PendingAction =
   | GuidedEvent
+  | 'setReady'
+  | 'encounter'
+  | 'commit'
   | 'requestSwap'
   | 'acceptSwap'
   | 'declineSwap'
+  | 'cancelSwap'
   | 'regenerate'
   | 'end'
   | 'requestRestart'
@@ -26,9 +30,16 @@ export type PendingAction =
 export interface SessionActions {
   /** Sends one conversation event; `targetId` names the question or follow-up when one is chosen. */
   send(event: GuidedEvent, targetId?: string): Promise<boolean>
+  /** Conversation scenarios: marks this player ready. */
+  setReady(relaxed: boolean): Promise<boolean>
+  /** Conversation scenarios: one doorstep encounter action. */
+  encounter(action: EncounterAction, relaxed: boolean): Promise<boolean>
+  /** Conversation scenarios: speaks one line aloud by id. */
+  commit(itemId: string): Promise<boolean>
   requestSwap(): Promise<boolean>
   acceptSwap(): Promise<boolean>
   declineSwap(): Promise<boolean>
+  cancelSwap(): Promise<boolean>
   regenerateCode(): Promise<boolean>
   end(): Promise<boolean>
   requestRestart(): Promise<boolean>
@@ -70,6 +81,11 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
   const pendingRef = useRef(false)
   const [notice, setNotice] = useState<string | null>(null)
   const refreshingRef = useRef<Promise<void> | null>(null)
+  // Server time minus device time, so countdowns follow the server's deadline.
+  const [clockOffsetMs, setClockOffsetMs] = useState(() => offsetFrom(initial.serverNow) ?? 0)
+  // One command id per line per revision: a retried send after a lost
+  // response reuses it, so the server commits the line at most once.
+  const commandIds = useRef(new Map<string, string>())
 
   useEffect(() => {
     snapshotRef.current = snapshot
@@ -84,6 +100,8 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
 
   const apply = useCallback((incoming: SessionSnapshot) => {
     if (!mounted.current) return
+    const offset = offsetFrom(incoming.serverNow)
+    if (offset !== null) setClockOffsetMs((current) => (Math.abs(current - offset) > 250 ? offset : current))
     setSnapshot((current) => mergeSnapshot(current, incoming))
   }, [])
 
@@ -236,7 +254,7 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
         }
         setLastError(result.error)
         if (endFor(result.error)) return false
-        if (result.error === 'partner_stale') return false
+        if (result.error === 'partner_stale' || result.error === 'deadline_passed') return false
         setNotice(messageForError(result.error))
         if (result.error === 'unavailable' || result.error === 'not_authenticated') {
           // The command may have committed before the response was lost; reread.
@@ -256,9 +274,23 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
     () => ({
       send: (event: GuidedEvent, targetId?: string) =>
         run(event, (s) => api.guidedEvent(s.id, event, targetId ?? null, s.revision)),
+      setReady: (relaxed: boolean) => run('setReady', (s) => api.setReady(s.id, relaxed, s.revision)),
+      encounter: (action: EncounterAction, relaxed: boolean) =>
+        run('encounter', (s) => api.encounterAction(s.id, action, relaxed, s.revision)),
+      commit: (itemId: string) =>
+        run('commit', (s) => {
+          const key = `${s.round}:${s.revision}:${itemId}`
+          let commandId = commandIds.current.get(key)
+          if (!commandId) {
+            commandId = crypto.randomUUID()
+            commandIds.current.set(key, commandId)
+          }
+          return api.commitUtterance(s.id, s.round, itemId, commandId, s.revision)
+        }),
       requestSwap: () => run('requestSwap', (s) => api.requestSwap(s.id, s.revision)),
       acceptSwap: () => run('acceptSwap', (s) => api.respondSwap(s.id, true, s.revision)),
       declineSwap: () => run('declineSwap', (s) => api.respondSwap(s.id, false, s.revision)),
+      cancelSwap: () => run('cancelSwap', (s) => api.cancelSwap(s.id, s.revision)),
       regenerateCode: () => run('regenerate', (s) => api.regeneratePairCode(s.id)),
       end: () =>
         run('end', async (s) => {
@@ -282,5 +314,11 @@ export function useSessionSync({ client, api, sessionId, userId, initial }: Opti
 
   const connection: ConnectionState = live ? 'live' : everLive ? 'reconnecting' : 'connecting'
 
-  return { snapshot, connection, ended: terminal, endedByPartner, pending, notice, lastError, actions }
+  return { snapshot, connection, ended: terminal, endedByPartner, pending, notice, lastError, actions, clockOffsetMs }
+}
+
+function offsetFrom(serverNow: string | undefined): number | null {
+  if (!serverNow) return null
+  const at = Date.parse(serverNow)
+  return Number.isNaN(at) ? null : at - Date.now()
 }

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { scenarioFileSchema, toStoredContent, validateScenarioFiles } from '../src/lib/content'
+import { parseScenarioFile, toStoredContent, validateScenarioFiles } from '../src/lib/content'
 import { buildJsonSchema } from './jsonSchema'
 import {
   fileNameProblem,
@@ -23,7 +23,7 @@ for (const file of files) {
   const problem = fileNameProblem(file.path, file.raw)
   if (problem) report.errors.push(problem)
 
-  const parsed = scenarioFileSchema.safeParse(file.raw)
+  const parsed = parseScenarioFile(file.raw)
   if (!parsed.success) continue
   const scenario = parsed.data
   const name = scenarioMigrationName(scenario)

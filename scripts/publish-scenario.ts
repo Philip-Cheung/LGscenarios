@@ -9,7 +9,7 @@
  */
 import { existsSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
-import { scenarioFileSchema, validateScenarioFiles } from '../src/lib/content'
+import { parseScenarioFile, validateScenarioFiles } from '../src/lib/content'
 import {
   buildScenarioMigrationSql,
   fileNameProblem,
@@ -43,7 +43,12 @@ if (!entry) {
   process.exit(1)
 }
 
-const scenario = scenarioFileSchema.parse(entry.raw)
+const parsed = parseScenarioFile(entry.raw)
+if (!parsed.success) {
+  console.error(`${target} is not a valid scenario file.`)
+  process.exit(1)
+}
+const scenario = parsed.data
 const repoRoot = resolve(MIGRATIONS_DIR, '..', '..')
 const fileName = `${nextMigrationTimestamp()}_${scenarioMigrationName(scenario)}.sql`
 const filePath = join(MIGRATIONS_DIR, fileName)
