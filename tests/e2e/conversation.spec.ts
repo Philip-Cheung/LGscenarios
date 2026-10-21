@@ -396,7 +396,7 @@ for (const viewport of VIEWPORTS) {
       expect(send.gapToComposerEdge).toBeLessThan(24)
     }
     await expect(missionary.page.locator('button[class*="composeSend"]')).toHaveText('Ask question')
-    await expect(christian.page.locator('button[class*="composeSend"]')).toHaveText('Respond')
+    await expect(christian.page.locator('button[class*="composeSend"]')).toHaveText('Answer question')
     // The send button stays reachable beside the choice card.
     await expect(speakButton(missionary.page, 'Send question')).toBeInViewport()
     await missionary.page.getByRole('button', { name: /^More directions/ }).click()
