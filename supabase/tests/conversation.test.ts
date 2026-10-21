@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   expectError,
@@ -13,9 +14,21 @@ import {
   type TestUser,
 } from './harness'
 
-/** content/scenarios/week-one-christians-too.v1.json: schema 3.0, five topics with two follow-ups each. */
-const CONVERSATION = 'week-one-christians-too'
+/**
+ * A temporary copy of content/scenarios/week-one-christians-too.v1.json: schema
+ * 3.0, five topics with two follow-ups each, with the clarification and "not
+ * sure". v1 no longer takes new sessions, so the copy is registered under its
+ * own id and an old publication date (never the featured scenario), and it is
+ * deleted afterwards.
+ */
+const CONVERSATION = `test-conversation-${randomUUID().slice(0, 8)}`
 const CONVERSATION_VERSION = 1
+
+function testContent() {
+  const file = JSON.parse(readFileSync('content/scenarios/week-one-christians-too.v1.json', 'utf8'))
+  const { $schema: _schema, status: _status, ...content } = file
+  return { ...content, id: CONVERSATION, version: CONVERSATION_VERSION }
+}
 const TOPICS: Record<string, string[]> = {
   christianity: ['christianity-call-us-christians', 'christianity-why-trinity'],
   history: ['history-ask-god-for-wisdom', 'history-authority-lost'],
@@ -29,11 +42,21 @@ let users: TestUser[]
 
 beforeAll(async () => {
   h = new Harness()
+  await h.sql(
+    `insert into public.scenario_registry
+       (scenario_id, version, slug, prompt_count, status, content, active_for_new_sessions, published_at)
+     values ($1, $2, $1, 5, 'published', $3, true, '2000-01-01')`,
+    [CONVERSATION, CONVERSATION_VERSION, testContent()],
+  )
   users = await h.usersN(8)
 })
 
 afterAll(async () => {
-  await h?.cleanup()
+  if (h) {
+    await h.sql('delete from public.sessions where scenario_id = $1', [CONVERSATION])
+    await h.sql('delete from public.scenario_registry where scenario_id = $1', [CONVERSATION])
+    await h.cleanup()
+  }
 })
 
 type Pick2 = Pick<SessionState, 'id' | 'revision'>

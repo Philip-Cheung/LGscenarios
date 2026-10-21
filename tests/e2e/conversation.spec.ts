@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { closePair, heading, openPhone, readPairCode, type Pair } from './helpers'
 
-/** Copy from content/scenarios/week-one-christians-too.v1.json. */
+/** Copy from content/scenarios/week-one-christians-too.v2.json, the published version. */
 const PATH = '/s/week-one-christians-too'
 const COPY = {
   title: 'Week 1 · We’re Christians too',
@@ -14,8 +14,8 @@ const COPY = {
   godQuote: 'the only true God',
   godPassage: 'John 17:1–5',
   godPassageText: 'These words spake Jesus',
-  clarify: 'Could you explain what you mean by that?',
-  notSure: 'I’m not sure yet. Could we read that passage together?',
+  godAnswer:
+    'I agree that Jesus and the Father are distinct. The Trinity doesn’t mean Jesus is the Father. I believe the Father, Son, and Holy Spirit are distinct persons who share the one divine being.',
   closing: 'Thanks for taking the time to talk with me.',
   reflection: 'Which question was hardest to answer?',
 } as const
@@ -202,20 +202,20 @@ test('Conversation: two phones pair, meet at the door, talk, finish, then restar
   await expect(help.getByRole('button', { name: `${COPY.godPassage} · KJV` })).toBeFocused()
   await help.getByRole('button', { name: 'Suggested responses' }).click()
   await shot(christian.page, '375-12-help-responses')
-  await help.getByRole('button', { name: COPY.notSure }).click()
+  await help.getByRole('button', { name: COPY.godAnswer }).click()
   await speakButton(christian.page, 'Send response').click()
-  await expect(missionary.page.getByText(COPY.notSure, { exact: true })).toBeVisible()
+  await expect(missionary.page.getByText(COPY.godAnswer, { exact: true })).toBeVisible()
   await expect(missionary.page.getByText('Suggested response · confirmed aloud')).toBeVisible()
   await shot(christian.page, '375-13-thread-christian')
 
   // A reload returns both phones to the same conversation, without replaying the door.
   await Promise.all([missionary.page.reload(), christian.page.reload()])
   for (const phone of [missionary, christian]) {
-    await expect(phone.page.getByText(COPY.notSure, { exact: true })).toBeVisible()
+    await expect(phone.page.getByText(COPY.godAnswer, { exact: true })).toBeVisible()
     await expect(phone.page.getByText('The door opens…')).toHaveCount(0)
   }
 
-  // Options: ask them to explain, then wrap up.
+  // Options: prepared questions only, so no "Ask them to explain"; wrap up.
   await missionary.page.getByRole('button', { name: 'More conversation options' }).click()
   const options = missionary.page.getByRole('dialog', { name: 'Resources & options' })
   await expect(options.getByRole('link', { name: /Mormonism Chart, PDF, opens in a new tab/ })).toHaveAttribute(
@@ -223,10 +223,7 @@ test('Conversation: two phones pair, meet at the door, talk, finish, then restar
     '_blank',
   )
   await shot(missionary.page, '375-14-options')
-  await options.getByRole('button', { name: 'Ask them to explain' }).click()
-  await speak(pair, 'Send question', COPY.clarify)
-  await answerAloud(pair)
-  await missionary.page.getByRole('button', { name: 'More conversation options' }).click()
+  await expect(options.getByRole('button', { name: 'Ask them to explain' })).toHaveCount(0)
   await options.getByRole('button', { name: 'Wrap up conversation' }).click()
   await speakButton(missionary.page, 'Send closing').click()
   for (const phone of [missionary, christian]) await expect(heading(phone.page, 'Until next time')).toBeVisible()
