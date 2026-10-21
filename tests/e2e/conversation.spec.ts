@@ -38,6 +38,15 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(0)
 }
 
+/** Like a messaging app: the frame stays still and only the thread scrolls. */
+async function expectFrameStill(page: Page) {
+  const overflow = await page.locator('header').evaluate((header) => {
+    const frame = header.parentElement as HTMLElement
+    return frame.scrollHeight - frame.clientHeight
+  })
+  expect(overflow).toBeLessThanOrEqual(1)
+}
+
 /** Missionary taps their role card and gets a code; the Christian taps theirs and joins with it. */
 async function pairUp(browser: Browser, width = 375, height = 740, shots?: string): Promise<Pair> {
   const missionary = await openPhone(browser, width, height, PATH)
@@ -371,6 +380,7 @@ for (const viewport of VIEWPORTS) {
     await shot(missionary.page, `${name}-10-thread-missionary`)
     for (const page of [missionary.page, christian.page]) {
       await expectNoHorizontalOverflow(page)
+      await expectFrameStill(page)
       // Controls only; inline KJV quotations are part of the running text.
       const heights = await page
         .locator('section button:not([aria-label$="read full KJV passage"])')

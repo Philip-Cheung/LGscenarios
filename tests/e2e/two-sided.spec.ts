@@ -168,6 +168,22 @@ test('Replies: the missionary answers what the Christian said before choosing wh
   await expect(next).toBeVisible()
   await shot(missionary.page, '375-06-own-words')
 
+  // Like a messaging app: every message stays in the thread, the newest in view, and only the thread scrolls.
+  for (const phone of [missionary, christian]) {
+    const { page } = phone
+    await expect(page.getByText(/^Earlier messages/)).toHaveCount(0)
+    await expect(page.locator('main').getByText(COPY.opening)).toHaveCount(1)
+    await expect(page.getByText('Responded aloud', { exact: true })).toBeInViewport()
+    await expect(page.locator('header')).toBeInViewport()
+    const frame = await page.locator('header').evaluate((header) => {
+      const app = header.parentElement as HTMLElement
+      return { overflow: app.scrollHeight - app.clientHeight }
+    })
+    expect(frame.overflow).toBeLessThanOrEqual(1)
+    const thread = await page.locator('main').evaluate((main) => main.scrollHeight > main.clientHeight)
+    expect(thread).toBe(true)
+  }
+
   // Refreshing keeps the committed reply and the turn.
   await christian.page.reload()
   await expect(christian.page.getByText('Responded aloud', { exact: true })).toBeVisible()
