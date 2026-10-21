@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="title desc">
+<title id="title">Hard mode</title><desc id="desc">A comic panel bursts into view, lightning strikes behind Hard Mode lettering, and black ink covers the screen.</desc>
+<defs>
+ <pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.5" fill="#173c36" opacity=".19"/></pattern>
+ <pattern id="inkDots" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.8" fill="#081b18" opacity=".3"/></pattern>
+ <clipPath id="panel"><path d="M-25 173 414 132 425 649-30 700Z"/></clipPath>
+ <style>
+  .panel{transform-origin:195px 422px;animation:panel 2.8s both}
+  .rays{transform-origin:195px 422px;animation:rays 2.8s both}
+  .strike{stroke-dasharray:1100;stroke-dashoffset:1100;animation:strike 2.8s both}
+  .bolt{animation:bolt 2.8s both}
+  .lettering{transform-origin:195px 406px;animation:hit 2.8s both}
+  .caption{animation:caption 2.8s both}
+  .spark{animation:spark 2.8s both}
+  .ink{transform-origin:195px 422px;animation:ink 2.8s both}
+  .black{animation:black 2.8s both}
+  @keyframes panel{0%{transform:translate(0,100px) rotate(7deg) scale(.8);opacity:0}9%{opacity:1}16%{transform:translate(0,-5px) rotate(-1deg) scale(1.02)}22%,100%{transform:none;opacity:1}}
+  @keyframes rays{0%,12%{opacity:0;transform:scale(1.4) rotate(-5deg)}28%{opacity:1;transform:scale(1) rotate(0)}68%,100%{opacity:1;transform:scale(1.06) rotate(2deg)}}
+  @keyframes strike{0%,16%{stroke-dashoffset:1100;opacity:0}17%{opacity:1}31%,70%{stroke-dashoffset:0;opacity:1}80%,100%{stroke-dashoffset:0;opacity:0}}
+  @keyframes bolt{0%,23%{opacity:0}27%,64%{opacity:1}74%,100%{opacity:0}}
+  @keyframes hit{0%,18%{opacity:0;transform:translate(0,45px) scale(1.45) rotate(-10deg)}26%{opacity:1;transform:translate(-3px,-4px) scale(.96) rotate(-7deg)}29%{transform:translate(3px,2px) scale(1.025) rotate(-7deg)}33%,100%{opacity:1;transform:rotate(-7deg)}}
+  @keyframes caption{0%,35%{opacity:0;transform:translateY(14px)}45%,100%{opacity:1;transform:none}}
+  @keyframes spark{0%,44%{opacity:0;transform:translate(0,0) scale(.3)}49%{opacity:1;transform:translate(0,0) scale(1)}62%{opacity:1;transform:translate(190px,-22px) scale(.6)}66%,100%{opacity:0;transform:translate(205px,-24px) scale(0)}}
+  @keyframes ink{0%,68%{transform:scale(0)}87%,100%{transform:scale(5)}}
+  @keyframes black{0%,77%{opacity:0}88%,100%{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.panel,.rays,.strike,.bolt,.lettering,.caption,.spark,.ink,.black{animation:none}.lettering{transform:rotate(-7deg)}.strike{stroke-dashoffset:0}.spark,.ink,.black{display:none}}
+ </style>
+</defs>
+<path fill="#123f36" d="M0 0h390v844H0z"/>
+<path fill="url(#dots)" d="M0 0h390v844H0z"/>
+<g class="panel">
+ <path d="M-25 191 414 150 425 667-30 718Z" fill="#061b17"/>
+ <path d="M-25 173 414 132 425 649-30 700Z" fill="#f8edcd" stroke="#101b19" stroke-width="7"/>
+ <g clip-path="url(#panel)">
+  <path fill="url(#dots)" d="M0 130h390v570H0z"/>
+  <g class="rays" fill="#eebc68" stroke="#162e27" stroke-width="1.5">
+   <path d="m190 420-270-291 167 36Zm0 0L310 80l65 25Zm0 0 300-206 30 103Zm0 0 310 158-22 77Zm0 0 50 350-100-10Zm0 0-230 288-49-62Zm0 0-270 0 0-68Z"/>
+  </g>
+  <path class="bolt" d="m240 153-88 204 70-9-75 192 141-241-78 10 95-162Z" fill="#ffe275" stroke="#111e1a" stroke-width="5" stroke-linejoin="round"/>
+  <path class="strike" d="M-20 271 64 304 43 345 133 365 101 421 214 397 256 444 314 401 407 424" fill="none" stroke="#fffaf0" stroke-width="8" stroke-linejoin="miter"/>
+ </g>
+ <g class="lettering" font-family="Impact, 'Arial Black', sans-serif" font-weight="900" font-style="italic" text-anchor="middle" stroke-linejoin="round" paint-order="stroke fill">
+  <g fill="#101b19" stroke="#101b19" stroke-width="12" transform="translate(5 9)"><text x="187" y="391" font-size="96" textLength="300" lengthAdjust="spacingAndGlyphs">HARD</text><text x="187" y="491" font-size="96" textLength="310" lengthAdjust="spacingAndGlyphs">MODE</text></g>
+  <g fill="#fffdf4" stroke="#101b19" stroke-width="6"><text x="187" y="391" font-size="96" textLength="300" lengthAdjust="spacingAndGlyphs">HARD</text><text x="187" y="491" font-size="96" textLength="310" lengthAdjust="spacingAndGlyphs">MODE</text></g>
+ </g>
+ <g class="caption" transform="rotate(-3 195 574)"><path d="M32 540h326v79H32z" fill="#fffdf4" stroke="#101b19" stroke-width="3"/><text x="195" y="571" text-anchor="middle" fill="#173c36" font-family="Arial, sans-serif" font-size="17" font-weight="700">TOUGHER QUESTIONS.</text><text x="195" y="597" text-anchor="middle" fill="#173c36" font-family="Arial, sans-serif" font-size="17" font-weight="700">STAY CURIOUS.</text></g>
+ <g class="spark"><path d="m76 311 5 15 16 5-16 5-5 16-5-16-16-5 16-5Z" fill="#fffdf4" stroke="#173c36" stroke-width="2"/></g>
+</g>
+<g class="ink" fill="#080d0c"><path d="m195 342 28 32 58-41-14 58 74 13-55 36 28 52-71-20-21 61-29-49-62 37 13-61-65-15 55-33-18-63 62 21Z"/><circle cx="195" cy="422" r="64"/></g>
+<path class="black" fill="#080d0c" d="M0 0h390v844H0z"/>
+</svg>

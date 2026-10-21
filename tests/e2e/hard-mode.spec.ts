@@ -6,7 +6,7 @@ import { closePair, heading, openPhone, readPairCode, type Pair } from './helper
 
 /**
  * Hard mode on two phones: Lesson 1 to its reflection, a Hard mode request
- * accepted by the partner, then a two-sided exchange in the Hard mode
+ * accepted by the partner, the Hard mode intro in place of the door, then a two-sided exchange in the Hard mode
  * scenario and its own reflection. Runs against temporary copies of
  * content/scenarios/lesson-one-first-vision.v3.json and week-one-hard-mode.v1.json,
  * registered under their own ids with an old publication date so neither is
@@ -151,20 +151,29 @@ test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sid
   await expect(christian.page.getByText('Your partner declined. Continue where you left off.')).toBeVisible()
   await expect(heading(missionary.page, 'Take a moment to reflect')).toBeVisible()
 
-  // Asked again and accepted: both phones open Hard mode at its own address, same roles.
+  // Asked again and accepted: both phones play the Hard mode intro instead of the door.
   await button(missionary.page, 'Hard mode').click()
   await missionary.page.getByRole('dialog', { name: 'Try Hard mode?' }).getByRole('button', { name: 'Ask to start' }).click()
   await christian.page.getByRole('dialog', { name: 'Your partner wants to try Hard mode' }).getByRole('button', { name: 'Accept and start' }).click()
+  const intro = (page: Page) => page.getByRole('dialog', { name: 'Hard mode. Tougher questions. Stay curious.' })
+  for (const phone of [missionary, christian]) await expect(intro(phone.page)).toBeVisible()
+  await missionary.page.waitForTimeout(1200)
+  await missionary.page.screenshot({ path: `${SHOTS}/375-03-intro.png` })
+  // Skip ends it early on one phone; the other plays through and fades by itself.
+  await intro(christian.page).getByRole('button', { name: 'Skip animation' }).click()
   for (const phone of [missionary, christian]) {
+    await expect(intro(phone.page)).toHaveCount(0, { timeout: 8_000 })
     await expect(phone.page).toHaveURL(new RegExp(`/s/${HARD}$`))
     await expect(phone.page).toHaveTitle('Hard mode · Doorstep practice')
-    await expect(heading(phone.page, 'Meet at the door')).toBeVisible()
+    await expect(phone.page.getByText('The door is open. Your conversation begins here.')).toBeVisible()
+    await expect(heading(phone.page, 'Meet at the door')).toHaveCount(0)
+    await expect(phone.page.getByRole('heading', { name: 'Conversation', level: 1 })).toBeFocused()
   }
-  // A refresh resumes the same pair in Hard mode.
+  // A refresh resumes the same pair in the Hard mode conversation, without replaying the intro.
   await christian.page.reload()
-  await expect(heading(christian.page, 'Meet at the door')).toBeVisible()
+  await expect(christian.page.getByText('Your visitor will introduce themselves first…')).toBeVisible()
+  await expect(intro(christian.page)).toHaveCount(0)
   await expect(christian.page).toHaveURL(new RegExp(`/s/${HARD}$`))
-  await openTheDoor(pair)
 
   // Two-sided: the Christian’s chosen answer gets a matched, suggested missionary reply.
   await send(pair, 'Send introduction', COPY.hardOpening)
@@ -182,7 +191,7 @@ test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sid
   const card = missionary.page.getByRole('group', { name: 'Respond to your partner' })
   await expect(card.getByRole('button', { name: new RegExp(`^1\\. ${COPY.replyLabel} \\(Suggested\\)`) })).toHaveAttribute('aria-pressed', 'true')
   await expect(christian.page.getByText('Your partner is responding to you…')).toBeVisible()
-  await shot(missionary.page, '375-03-hard-mode-reply')
+  await shot(missionary.page, '375-04-hard-mode-reply')
   await send(pair, 'Send reply', COPY.reply)
   await expect(christian.page.getByText('Your partner is choosing how to continue…')).toBeVisible()
 
@@ -193,6 +202,6 @@ test('Hard mode: from Lesson 1’s reflection, both phones move into the two-sid
     await expect(button(phone.page, 'Hard mode')).toHaveCount(0)
     await expect(button(phone.page, 'Play again')).toBeVisible()
   }
-  await shot(christian.page, '375-04-hard-mode-reflection')
+  await shot(christian.page, '375-05-hard-mode-reflection')
   await closePair(pair)
 })

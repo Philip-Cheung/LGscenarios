@@ -7,6 +7,7 @@ import { clearPointer, writePointer } from '../sessions/pointer'
 import type { SessionSnapshot } from '../sessions/types'
 import { useSessionSync } from '../sessions/useSessionSync'
 import { ConversationNotice, ConversationSession } from './conversation/ConversationSession'
+import { playHardModeIntro } from './conversation/hardModeIntro'
 import { EndedCard } from './EndedCard'
 import { ENDED_COPY } from './endedCopy'
 import { MessageCard } from './MessageCard'
@@ -70,6 +71,7 @@ export function SessionScreen({
       : null
   useEffect(() => {
     if (!movedTo) return
+    playHardModeIntro()
     writePointer(movedTo, snapshot.id)
     clearPointer(slug)
     void navigate(`/s/${movedTo}`, { replace: true })

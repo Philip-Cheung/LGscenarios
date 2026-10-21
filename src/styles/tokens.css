@@ -48,6 +48,13 @@
   --color-tap-idle: #dde5d8;
   --color-tap-idle-ink: #5f6f55;
 
+  /* The Hard mode intro, matching its comic artwork. */
+  --color-hard-mode-ink: #080d0c;
+  --color-hard-mode-button: #101b19;
+  --color-hard-mode-button-line: #ffffff66;
+  --color-hard-mode-paper: #fffdf4;
+  --color-hard-mode-focus: #ffe275;
+
   --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --font-heading: var(--font-body);
 
@@ -79,4 +86,5 @@
   --motion-knock: 1300ms;
   --motion-fade: 480ms;
   --motion-outro: 5200ms;
+  --motion-hard-mode-fade: 400ms;
 }

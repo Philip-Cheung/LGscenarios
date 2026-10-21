@@ -6,7 +6,8 @@ import { expectError, expectOk, Harness, rpc, type SessionState, type TestUser }
 /**
  * Hard mode: from Lesson 1's reflection screen, one participant asks and the
  * other accepts; the pair moves to the newest published version of the
- * scenario the lesson names, with the same roles. Runs against temporary
+ * scenario the lesson names, with the same roles, straight into the
+ * conversation (each phone plays the Hard mode intro instead of the door). Runs against temporary
  * copies of content/scenarios/lesson-one-first-vision.v3.json and
  * week-one-hard-mode.v1.json under their own ids and an old publication date,
  * so neither is ever the featured scenario. They are deleted afterwards.
@@ -122,11 +123,13 @@ describe('Hard mode', () => {
 
     const again = expectOk(await requestHardMode(missionary, declined))
     const moved = expectOk(await respond(christian, again, true))
+    // The intro replaces the doorstep encounter: Hard mode opens straight into the conversation.
     expect(moved).toMatchObject({
       scenario_id: HARD,
       scenario_version: 1,
       status: 'active',
-      stage: 'scene_setup',
+      stage: 'conversation',
+      encounter_phase: null,
       round: state.round + 1,
       my_role: 'christian',
       turn: 'missionary',
@@ -137,8 +140,7 @@ describe('Hard mode', () => {
     expect(expectOk(await rpc(missionary, 'get_session', { p_session_id: state.id }))).toMatchObject({ scenario_id: HARD, my_role: 'missionary' })
 
     // Hard mode plays two-sided: the missionary replies to the Christian's answer.
-    let hard = await toTheDoor(missionary, christian, moved)
-    hard = expectOk(await commit(missionary, hard, 'introduction'))
+    let hard = expectOk(await commit(missionary, moved, 'introduction'))
     hard = expectOk(await commit(christian, hard, 'answer-1'))
     hard = expectOk(await commit(missionary, hard, 'christianity'))
     hard = expectOk(await commit(christian, hard, 'christianity-eternal-son'))
@@ -169,7 +171,7 @@ describe('Hard mode', () => {
     const replay = expectOk(await rpc(christian, 'request_restart', { p_session_id: state.id, p_expected_revision: cancelled.revision }))
     expect(replay.restart_hard_mode).toBe(false)
     const restarted = expectOk(await respond(missionary, replay, true))
-    expect(restarted).toMatchObject({ scenario_id: LESSON, round: state.round + 1, stage: 'scene_setup' })
+    expect(restarted).toMatchObject({ scenario_id: LESSON, round: state.round + 1, stage: 'scene_setup', my_ready: false })
   })
 
   it('refuses when the named Hard mode is not published', async () => {
