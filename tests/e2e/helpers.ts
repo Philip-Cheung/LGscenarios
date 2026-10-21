@@ -23,7 +23,7 @@ export const DOORSTEP = {
 
 /** Headings shared by every scenario. */
 export const SCREENS = {
-  welcome: 'Practice talking with Mormon missionaries.',
+  welcome: 'Practice talking with LDS Missionaries.',
   chooseRole: 'Select a role',
   invite: 'Invite your partner',
   join: 'Find your practice partner.',
@@ -41,7 +41,7 @@ export const SCREENS = {
 
 /** Accessible names of the role radios; each ends with the role's short name. */
 export const ROLE_NAMES = {
-  Missionary: /Mormon$/,
+  Missionary: /LDS Missionary$/,
   Christian: /Christian$/,
 } as const
 

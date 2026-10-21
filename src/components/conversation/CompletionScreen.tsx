@@ -90,7 +90,7 @@ export function CompletionScreen({ content, snapshot, playOutro, paused, canAct,
         {content.hardMode ? (
           <>
             <p id={hardModeNoteId} className={styles.hardModeNote}>
-              Ready for more? In Hard mode, the missionary responds to what the Christian says.
+              Ready for more? In Hard mode, the LDS Missionary responds to what the Christian says.
             </p>
             <Button disabled={!canAct} aria-describedby={hardModeNoteId} onClick={() => onSessionRequest('hardMode')}>
               Hard mode

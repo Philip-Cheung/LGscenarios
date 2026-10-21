@@ -144,9 +144,9 @@ const topicSchema = z
 
 const roleSchema = z
   .object({
-    /** On the role card and pairing summary, e.g. "Mormon missionary". */
+    /** On the role card and pairing summary, e.g. "LDS Missionary". */
     label: plainText(40),
-    /** Above each spoken message, e.g. "Missionary". */
+    /** Above each spoken message, e.g. "LDS Missionary". */
     speaker: plainText(30),
     description: plainText(160),
   })

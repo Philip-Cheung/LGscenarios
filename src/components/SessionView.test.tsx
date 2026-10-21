@@ -184,7 +184,7 @@ describe('SessionView paired summary', () => {
 describe('SessionView progress and session controls', () => {
   it('shows the role and truthful progress', () => {
     renderView({ stage: 'opening_dialogue' })
-    expect(screen.getByText('Mormon', { selector: 'b' })).toBeInTheDocument()
+    expect(screen.getByText('LDS Missionary', { selector: 'b' })).toBeInTheDocument()
     expect(screen.getByText('3 of 6 · Opening')).toBeInTheDocument()
     expect(screen.getByRole('progressbar', { name: 'Practice progress' })).toHaveAttribute('aria-valuenow', '3')
   })

@@ -10,8 +10,8 @@ describe('Welcome', () => {
     const onJoin = vi.fn()
     render(<Welcome notice="Your partner ended the practice." onCreate={onCreate} onJoin={onJoin} />)
     expect(screen.getByText('Conversation practice for Christians')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'Practice talking with Mormon missionaries.' })).toBeInTheDocument()
-    expect(screen.getByText(/the other plays a Mormon missionary/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Practice talking with LDS Missionaries.' })).toBeInTheDocument()
+    expect(screen.getByText(/the other plays an LDS Missionary/)).toBeInTheDocument()
     expect(screen.getByRole('img', { name: /open green door/ })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Your partner ended the practice.')
 
@@ -27,7 +27,7 @@ describe('RoleSelect', () => {
     const onCreate = vi.fn()
     render(<RoleSelect scenario={sampleDoorstep} busy={false} error={null} onCreate={onCreate} onBack={() => {}} />)
     expect(screen.getByRole('heading', { level: 1, name: 'Select a role' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: /Mormon$/ })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /LDS Missionary$/ })).toBeChecked()
     expect(screen.getByText('THIS WEEK’S SCENARIO')).toBeInTheDocument()
     expect(screen.getByText(sampleDoorstep.title)).toBeInTheDocument()
 

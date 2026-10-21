@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { closePair, heading, openPhone, readPairCode, type Pair } from './helpers'
 
-/** Copy from content/scenarios/week-one-christians-too.v3.json, the published version. */
+/** Copy from content/scenarios/week-one-christians-too.v4.json, the published version. */
 const PATH = '/s/week-one-christians-too'
 const COPY = {
   title: 'Week 1 · We’re Christians too',
@@ -53,7 +53,7 @@ async function pairUp(browser: Browser, width = 375, height = 740, shots?: strin
   const christian = await openPhone(browser, width, height, PATH)
   await expect(heading(missionary.page, COPY.roles)).toBeVisible()
   if (shots) await shot(missionary.page, `${shots}-01-roles`)
-  await missionary.page.getByRole('button', { name: /^Mormon missionary/ }).click()
+  await missionary.page.getByRole('button', { name: /^LDS Missionary/ }).click()
   await expect(heading(missionary.page, 'Invite your partner')).toBeVisible()
   const code = await readPairCode(missionary.page)
   if (shots) await shot(missionary.page, `${shots}-02-invite`)
@@ -74,7 +74,7 @@ async function readyUp({ missionary, christian }: Pair, relaxed = false) {
   await expect(missionary.page.getByText('You’re ready. Waiting for your partner.')).toBeVisible()
   await expect(christian.page.getByText('✓ Ready')).toBeVisible()
   await christian.page.getByRole('button', { name: 'I’m ready' }).click()
-  await expect(christian.page.getByText('Both ready. The missionary can start.')).toBeVisible()
+  await expect(christian.page.getByText('Both ready. The LDS Missionary can start.')).toBeVisible()
   await expect(christian.page.getByRole('button', { name: 'Start encounter' })).toHaveCount(0)
   await missionary.page.getByRole('button', { name: 'Start encounter' }).click()
 }
@@ -258,7 +258,7 @@ test('Conversation: two phones pair, meet at the door, talk, finish, then restar
   await options.getByRole('button', { name: 'Switch roles' }).click()
   await missionary.page.getByRole('dialog', { name: 'Switch roles?' }).getByRole('button', { name: 'Ask to switch' }).click()
   const swap = christian.page.getByRole('dialog', { name: 'Your partner wants to switch roles' })
-  await expect(swap).toContainText('start at Ready as the missionary')
+  await expect(swap).toContainText('start at Ready as the LDS Missionary')
   await swap.getByRole('button', { name: 'Decline' }).click()
   await expect(missionary.page.getByText('Your partner declined. Continue where you left off.')).toBeVisible()
   await expect(speakButton(missionary.page, 'Send question')).toBeEnabled()
@@ -274,7 +274,7 @@ test('Conversation: two phones pair, meet at the door, talk, finish, then restar
     await expect(phone.page.getByText('Roles switched. Get ready for a new round.')).toBeVisible()
   }
   // The strip names the partner: the first phone now faces a missionary, the second a Christian.
-  await expect(missionary.page.locator('[class*="roleStrip"]')).toContainText('Your partner: Missionary')
+  await expect(missionary.page.locator('[class*="roleStrip"]')).toContainText('Your partner: LDS Missionary')
   await expect(christian.page.locator('[class*="roleStrip"]')).toContainText('Your partner: Christian')
   await closePair(pair)
 })
@@ -286,7 +286,7 @@ test('Conversation: a missed knock keeps the pair, and either retry path continu
   await expect(heading(missionary.page, 'Say “knock knock” and tap')).toBeVisible()
   await expect(missionary.page.getByRole('timer', { name: 'Seconds remaining' })).toBeVisible()
   await expect(heading(missionary.page, 'Missed it? Try again.')).toBeVisible({ timeout: 9_000 })
-  await expect(christian.page.getByText('Waiting for Missionary to retry.')).toBeVisible()
+  await expect(christian.page.getByText('Waiting for LDS Missionary to retry.')).toBeVisible()
   await shot(missionary.page, '375-07-missed')
   await missionary.page.getByRole('button', { name: 'Try without timer' }).click()
   await expect(missionary.page.getByRole('timer', { name: 'No time limit' })).toBeVisible()
@@ -318,7 +318,7 @@ test('Conversation: leaving needs confirmation and ends the session for both pla
 
 test('Conversation: Change roles closes an unused code and returns to the role cards', async ({ browser }) => {
   const phone = await openPhone(browser, 375, 740, PATH)
-  await phone.page.getByRole('button', { name: /^Mormon missionary/ }).click()
+  await phone.page.getByRole('button', { name: /^LDS Missionary/ }).click()
   await expect(heading(phone.page, 'Invite your partner')).toBeVisible()
   await phone.page.getByRole('button', { name: 'Back' }).click()
   await expect(phone.page.getByRole('dialog', { name: 'End this session?' })).toContainText(

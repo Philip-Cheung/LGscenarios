@@ -6,7 +6,7 @@ import { closePair, heading, openPhone, readPairCode, type Pair } from './helper
 
 /**
  * Prepared questions only, on two phones, against a temporary copy of
- * content/scenarios/week-one-christians-too.v3.json. The copy is
+ * content/scenarios/week-one-christians-too.v4.json. The copy is
  * registered under its own id with an old publication date, so it is never the
  * featured scenario, and it is deleted afterwards.
  */
@@ -41,7 +41,7 @@ const db = () => new pg.Client({ connectionString: process.env.TEST_DATABASE_URL
 test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async () => {
-  const file = JSON.parse(readFileSync('content/scenarios/week-one-christians-too.v3.json', 'utf8'))
+  const file = JSON.parse(readFileSync('content/scenarios/week-one-christians-too.v4.json', 'utf8'))
   const { $schema: _schema, status: _status, ...content } = file
   const client = db()
   await client.connect()
@@ -77,7 +77,7 @@ async function expectNothingRemoved(page: Page) {
 async function toConversation(browser: Browser, width: number, height: number): Promise<Pair> {
   const missionary = await openPhone(browser, width, height, PATH)
   const christian = await openPhone(browser, width, height, PATH)
-  await missionary.page.getByRole('button', { name: /^Mormon missionary/ }).click()
+  await missionary.page.getByRole('button', { name: /^LDS Missionary/ }).click()
   const code = await readPairCode(missionary.page)
   await christian.page.getByRole('button', { name: /^Christian/ }).click()
   await christian.page.getByLabel('Pairing code').fill(code.replace(' ', ''))

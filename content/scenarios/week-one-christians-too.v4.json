@@ -1,0 +1,703 @@
+{
+  "$schema": "../scenario.schema.json",
+  "status": "published",
+  "schemaVersion": "3.0",
+  "id": "week-one-christians-too",
+  "version": 4,
+  "title": "Week 1 · We’re Christians too",
+  "intro": {
+    "kicker": "WEEK 1 · DOORSTEP PRACTICE",
+    "heading": "Who will you play?",
+    "description": "Practise a conversation aloud with a partner. Your phone gives you prompts when you need them."
+  },
+  "roles": {
+    "missionary": {
+      "label": "LDS Missionary",
+      "speaker": "LDS Missionary",
+      "description": "Start the conversation and explore your beliefs."
+    },
+    "christian": {
+      "label": "Christian",
+      "speaker": "Christian",
+      "description": "Welcome your visitor and respond in your own words."
+    }
+  },
+  "resources": {
+    "heading": "This week’s reading",
+    "source": "Weekly reading · Watchman Fellowship",
+    "items": [
+      {
+        "title": "Mormonism Chart",
+        "format": "PDF",
+        "url": "https://www.watchman.org/staff/bblevins/MormonismChartSide1.pdf"
+      },
+      {
+        "title": "LDS Beliefs & History",
+        "format": "PDF",
+        "url": "https://www.watchman.org/profiles/pdf/ldsprofile.pdf"
+      },
+      {
+        "title": "Understanding Polytheism",
+        "format": "PDF",
+        "url": "https://www.watchman.org/Profile_Polytheism.pdf"
+      },
+      {
+        "title": "Mormon History & Doctrines",
+        "format": "Article",
+        "url": "https://www.watchman.org/articles/mormonism/historical-events-notable-doctrines-mormonism-overview/"
+      }
+    ]
+  },
+  "opening": {
+    "id": "introduction",
+    "text": "Hi! We’re missionaries from The Church of Jesus Christ of Latter-day Saints. Do you have a few minutes to talk about Jesus?",
+    "caption": "Introduction",
+    "help": {
+      "prompt": "Welcome your visitor in your own words, or use this reply.",
+      "answers": [
+        "Sure, I have a few minutes. I’m a Christian myself."
+      ]
+    }
+  },
+  "topics": [
+    {
+      "id": "christianity",
+      "title": "Being Christian",
+      "summary": "What does following Jesus mean to each of you?",
+      "background": "Shared vocabulary opens the conversation. These Christian helps express an evangelical, Trinitarian perspective.",
+      "question": {
+        "id": "christianity",
+        "text": "We believe in Jesus Christ too. In John 14:6, Jesus says, “[I am the way, the truth, and the life: no man cometh unto the Father, but by me.](ref:john-14-1-6)” What does being a Christian mean to you?",
+        "caption": "John 14:6 · KJV",
+        "help": {
+          "hint": "Acknowledge the shared language, then explain who you believe Jesus is and what trusting him means.",
+          "answers": [
+            "For me, being a Christian means trusting Jesus Christ as my Saviour and following him. I believe he is the eternal Son of God who became human, died for our sins, and rose again."
+          ],
+          "context": "Shared names do not necessarily mean shared beliefs. Explore identity and the gospel without presuming to judge an individual’s heart.",
+          "passages": [
+            "john-14-1-6",
+            "john-1-1-3"
+          ]
+        }
+      },
+      "followUps": [
+        {
+          "id": "christianity-call-us-christians",
+          "text": "We believe in Jesus too. Would you consider us Christians?",
+          "caption": "Follow-up · Being Christian",
+          "help": {
+            "hint": "Acknowledge their self-identification and explain your own doctrinal use of the word.",
+            "answers": [
+              "I understand that you identify as Christians and believe in Jesus. When I describe my own Christian faith, I mean trusting Jesus as the eternal Son of God. Our beliefs about him differ in important ways, even though we use some of the same words."
+            ],
+            "context": "Discuss the meaning of the term without treating the conversation as a verdict on a person.",
+            "passages": [
+              "john-1-1-3"
+            ]
+          },
+          "title": "Would you call us Christians?",
+          "summary": "Explore what the word Christian means."
+        },
+        {
+          "id": "christianity-why-trinity",
+          "text": "Why is belief in the Trinity essential to how you understand Christianity?",
+          "caption": "Follow-up · Being Christian",
+          "help": {
+            "hint": "Explain the beliefs behind the term: one God, three distinct persons.",
+            "answers": [
+              "The Trinity matters because it describes who I believe God is. I believe in one God: the Father, Son, and Holy Spirit are distinct persons, and each is fully God. That shapes how I understand Jesus and worship him."
+            ],
+            "context": "The Trinitarian claim is not that Jesus is the Father.",
+            "passages": [
+              "john-1-1-3",
+              "john-17-1-5"
+            ]
+          },
+          "title": "Why does the Trinity matter?",
+          "summary": "Discuss why beliefs about God matter."
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "title": "The right church",
+      "summary": "How do you recognize the church Jesus established?",
+      "background": "LDS teaching describes restoration of lost priesthood authority through Joseph Smith, not simply reforming a denomination or the disappearance of all believers.",
+      "question": {
+        "id": "history",
+        "text": "That question of which church to trust is something Joseph Smith struggled with too. Ephesians 4:5 says, “[One Lord, one faith, one baptism.](ref:ephesians-4-1-6)” With so many churches teaching different things, how do you know yours teaches the faith Jesus established?",
+        "caption": "Ephesians 4:5 · KJV",
+        "help": {
+          "hint": "You do not need to defend everything your denomination has done. Explain how you evaluate a church.",
+          "answers": [
+            "I look at whether my church’s teaching agrees with Scripture and the gospel Jesus’ apostles taught. I don’t think my church gets everything right. But disagreement between churches doesn’t, by itself, convince me that Jesus’ Church disappeared or needed to be restored through Joseph Smith."
+          ],
+          "context": "Ephesians 4 calls existing believers to unity. A restoration claim needs an argument beyond the existence of disagreement.",
+          "passages": [
+            "ephesians-4-1-6",
+            "matthew-16-18"
+          ]
+        }
+      },
+      "followUps": [
+        {
+          "id": "history-ask-god-for-wisdom",
+          "text": "James 1:5 says, “[If any of you lack wisdom, let him ask of God.](ref:james-1-2-6)” We believe Joseph Smith did that and God called him to restore his Church. How would you evaluate his claim?",
+          "caption": "Follow-up · The right church",
+          "help": {
+            "hint": "Affirm prayer, then explain how you would test a reported revelation.",
+            "answers": [
+              "I agree that we should pray for wisdom. I would also examine Joseph Smith’s teaching and the evidence for his claims. A sincere spiritual experience alone wouldn’t settle it for me; I would compare the message with Scripture."
+            ],
+            "context": "James connects wisdom with trials and maturity. That context does not make all prayer about other questions inappropriate.",
+            "passages": [
+              "james-1-2-6",
+              "galatians-1-6-9"
+            ]
+          },
+          "title": "Ask God for wisdom",
+          "summary": "Consider prayer and claims of revelation."
+        },
+        {
+          "id": "history-authority-lost",
+          "text": "We believe Christians continued to exist, but priesthood authority was lost. How would you establish that the Church retained its authority?",
+          "caption": "Follow-up · The right church",
+          "help": {
+            "hint": "Distinguish failures in the Church from a universal loss of authority.",
+            "answers": [
+              "My confidence begins with Jesus’ promise to build his Church and remain with his people. Christians and churches have made serious mistakes, but I don’t see those failures as proof that all authority was lost. I would need convincing evidence for that claim."
+            ],
+            "context": "Christians disagree about how authority continues. Do not present a single verse as a complete historical demonstration.",
+            "passages": [
+              "matthew-16-18"
+            ]
+          },
+          "title": "Was authority lost?",
+          "summary": "Examine the claim that church authority disappeared."
+        }
+      ]
+    },
+    {
+      "id": "god",
+      "title": "Godhead or Trinity?",
+      "summary": "How are the Father, Son, and Holy Spirit one?",
+      "background": "LDS teaching describes three distinct divine beings united in purpose. Trinitarian teaching describes one divine being in three persons. Avoid treating those formulations as identical.",
+      "question": {
+        "id": "god",
+        "text": "One difference between our beliefs is how we understand the Father and Jesus. In John 17:3, Jesus calls the Father “[the only true God](ref:john-17-1-5),” and then says, “[and Jesus Christ, whom thou hast sent.](ref:john-17-1-5)” How do you understand that distinction?",
+        "caption": "John 17:3 · KJV",
+        "help": {
+          "hint": "The Trinity distinguishes the Father from the Son. Jesus praying to the Father is compatible with that distinction.",
+          "answers": [
+            "I agree that Jesus and the Father are distinct. The Trinity doesn’t mean Jesus is the Father. I believe the Father, Son, and Holy Spirit are distinct persons who share the one divine being."
+          ],
+          "context": "The evangelical case considers monotheism, the divinity of Father, Son and Spirit, and their personal distinction together.",
+          "passages": [
+            "john-17-1-5",
+            "john-1-1-3",
+            "deuteronomy-6-4",
+            "isaiah-43-10",
+            "john-20-27-29",
+            "acts-5-3-4"
+          ]
+        }
+      },
+      "followUps": [
+        {
+          "id": "god-one-in-purpose",
+          "text": "In John 17:21, Jesus prays that his followers “[may be one; as thou, Father, art in me, and I in thee.](ref:john-17-20-23)” We understand the Godhead as united in purpose. Why do you understand their oneness differently?",
+          "caption": "Follow-up · Godhead or Trinity?",
+          "help": {
+            "hint": "Explain how you read this passage alongside other passages about God.",
+            "answers": [
+              "I agree that Jesus is speaking about unity in that prayer. I also read it alongside passages that affirm one God and call Jesus divine. So I understand the Father and Son as more than separate beings who happen to share the same purpose."
+            ],
+            "context": "Do not deny that John 17 concerns unity. Explain why Trinitarians also consider other passages.",
+            "passages": [
+              "john-17-20-23",
+              "john-1-1-3"
+            ]
+          },
+          "title": "One in purpose?",
+          "summary": "Explore what Jesus means by being one."
+        },
+        {
+          "id": "god-why-jesus-prays",
+          "text": "If Jesus is God, who is he praying to?",
+          "caption": "Follow-up · Godhead or Trinity?",
+          "help": {
+            "hint": "The Son addresses the Father; Trinitarians do not identify them as the same person.",
+            "answers": [
+              "Jesus is praying to the Father. Christians believe the Son and the Father are distinct persons, so the Trinity doesn’t mean Jesus is talking to himself. Jesus also became truly human and lived in obedience to the Father."
+            ],
+            "context": "Avoid water, ice, and steam analogies, which can blur personal distinctions.",
+            "passages": [
+              "john-17-1-5"
+            ]
+          },
+          "title": "Why does Jesus pray?",
+          "summary": "Clarify the relationship of the Father and Son."
+        }
+      ]
+    },
+    {
+      "id": "bible",
+      "title": "Is the Bible enough?",
+      "summary": "How should we evaluate additional scripture?",
+      "background": "LDS teaching accepts the Bible as God’s word as far as it is translated correctly and presents additional scriptures as supporting and clarifying it.",
+      "question": {
+        "id": "bible",
+        "text": "We both value the Bible. Paul says, “[In the mouth of two or three witnesses shall every word be established.](ref:2-corinthians-13-1-3)” We believe the Book of Mormon is another witness of Jesus Christ alongside the Bible. Why couldn’t God provide additional scripture?",
+        "caption": "2 Corinthians 13:1 · KJV",
+        "help": {
+          "hint": "Explain how you would evaluate a claim that a book is Scripture.",
+          "answers": [
+            "I wouldn’t accept a book as Scripture simply because it calls itself another witness. I would examine its message and the evidence for it, and compare its teaching with the gospel the apostles taught. That’s why I don’t automatically accept the Book of Mormon as Scripture."
+          ],
+          "context": "LDS Missionary teaching applies the witness principle to the two books. The Christian response questions that application, rather than denying the principle.",
+          "passages": [
+            "2-corinthians-13-1-3",
+            "galatians-1-6-9"
+          ]
+        }
+      },
+      "followUps": [
+        {
+          "id": "bible-has-it-changed",
+          "text": "How do you know the Bible has been preserved reliably through copying and translation?",
+          "caption": "Follow-up · Is the Bible enough?",
+          "help": {
+            "hint": "Distinguish manuscript differences, translation choices, and interpretation.",
+            "answers": [
+              "I don’t believe every copy or translation is identical. Comparing manuscripts helps us identify differences and assess the wording. There are passages with textual uncertainties, but that doesn’t mean the whole Bible is unreliable or its message is lost."
+            ],
+            "context": "Real textual variants and uncertainties exist. Do not claim every manuscript is identical or that all disputed readings are settled.",
+            "passages": [
+              "galatians-1-6-9"
+            ]
+          },
+          "title": "Has the Bible changed?",
+          "summary": "Discuss copying, translation, and preservation."
+        },
+        {
+          "id": "bible-many-interpretations",
+          "text": "If Christians read the same Bible and reach different conclusions, how do you know your interpretation is right?",
+          "caption": "Follow-up · Is the Bible enough?",
+          "help": {
+            "hint": "Disagreement calls for examining reasons; it does not automatically authenticate a new authority.",
+            "answers": [
+              "I can misunderstand a passage, so I try to read it in context, compare it with related passages, and consider other Christians’ reasons. Disagreement means we need to examine our interpretations carefully. It doesn’t automatically establish that another book or church has the right answer."
+            ],
+            "context": "Christians do disagree about some passages. Explain how you weigh a reading, rather than trying to settle every disagreement at once.",
+            "passages": [
+              "2-corinthians-13-1-3"
+            ]
+          },
+          "title": "Why so many interpretations?",
+          "summary": "Work through a specific disagreement together."
+        }
+      ]
+    },
+    {
+      "id": "afterlife",
+      "title": "Life after death",
+      "summary": "What is necessary to live with God forever?",
+      "background": "The three kingdoms are celestial, terrestrial and telestial. LDS teaching distinguishes salvation from exaltation and includes opportunities beyond this life for those who did not receive the gospel.",
+      "question": {
+        "id": "afterlife",
+        "text": "We believe that after resurrection and judgment, almost everyone will receive a place in one of three kingdoms of glory: the celestial, terrestrial, or telestial kingdom. The celestial is the highest, where people can live in Heavenly Father’s presence.\n\nWe believe God revealed more about these kingdoms through Joseph Smith. We connect this teaching with Jesus’ words, “[In my Father’s house are many mansions.](ref:john-14-1-6)” How do you understand that promise?",
+        "caption": "John 14:2 · KJV",
+        "help": {
+          "hint": "Different dwelling places do not automatically establish three kingdoms or their entry requirements.",
+          "answers": [
+            "I understand Jesus to be promising his followers a place with him. In that passage, he doesn’t describe three kingdoms or different requirements for entering them. So I don’t take ‘many mansions’ by itself as teaching the LDS view of the afterlife."
+          ],
+          "context": "Jesus comforts his disciples with the promise of being with him. LDS teaching describes celestial, terrestrial, and telestial kingdoms; avoid the claim that everyone outside the LDS Church goes to hell.",
+          "passages": [
+            "john-14-1-6"
+          ]
+        }
+      },
+      "followUps": [
+        {
+          "id": "afterlife-sun-moon-stars",
+          "text": "Paul says, “[There is one glory of the sun, and another glory of the moon, and another glory of the stars.](ref:1-corinthians-15-35-42)” We connect that with different kingdoms of glory. How do you understand that passage?",
+          "caption": "Follow-up · Life after death",
+          "help": {
+            "hint": "Read Paul’s opening question: what kind of body do the raised dead receive?",
+            "answers": [
+              "Paul begins that discussion by talking about the resurrection and the bodies people will receive. I understand his comparisons with the sun, moon, and stars in that context. I don’t see the passage itself setting out three kingdoms with different entry requirements."
+            ],
+            "context": "This is an evangelical contextual objection. LDS interpreters connect the passage with later revelation. The KJV does not name a telestial kingdom.",
+            "passages": [
+              "1-corinthians-15-35-42"
+            ]
+          },
+          "title": "Sun, moon, and stars",
+          "summary": "Read Paul’s resurrection imagery in context."
+        },
+        {
+          "id": "afterlife-restored-ordinances",
+          "text": "We believe the restored Church provides the authority and ordinances needed for exaltation. What do you believe is necessary to live with God forever?",
+          "caption": "Follow-up · Life after death",
+          "help": {
+            "hint": "Explain your belief about eternal life; LDS teaching distinguishes salvation from exaltation.",
+            "answers": [
+              "I believe eternal life is God’s gift through Jesus Christ, received by grace through faith. Good works belong in the Christian life as a response to that gift. I’m not convinced that ordinances restored through Joseph Smith are necessary to live with God."
+            ],
+            "context": "The evangelical response emphasizes salvation by grace and good works as its result. Explain the difference rather than assuming the two traditions use identical definitions.",
+            "passages": [
+              "ephesians-2-8-10"
+            ]
+          },
+          "title": "Why restored ordinances?",
+          "summary": "Compare salvation, exaltation, and their requirements."
+        }
+      ]
+    }
+  ],
+  "closing": {
+    "id": "closing",
+    "text": "Thanks for taking the time to talk with me. I should get going, but I’ve enjoyed our conversation. Have a good day!",
+    "caption": "Closing"
+  },
+  "reflection": {
+    "prompts": [
+      "Which question was hardest to answer?",
+      "Did you explain your reasoning or just state your belief?",
+      "What would you like to study before continuing?"
+    ]
+  },
+  "passages": {
+    "translation": "King James Version",
+    "items": [
+      {
+        "id": "john-14-1-6",
+        "label": "John 14:1–6",
+        "context": "Jesus comforts his disciples before his departure. Read the promise of dwelling with him alongside his claim to be the way to the Father.",
+        "verses": [
+          {
+            "number": 1,
+            "text": "Let not your heart be troubled: ye believe in God, believe also in me."
+          },
+          {
+            "number": 2,
+            "text": "In my Father’s house are many mansions: if it were not so, I would have told you. I go to prepare a place for you."
+          },
+          {
+            "number": 3,
+            "text": "And if I go and prepare a place for you, I will come again, and receive you unto myself; that where I am, there ye may be also."
+          },
+          {
+            "number": 4,
+            "text": "And whither I go ye know, and the way ye know."
+          },
+          {
+            "number": 5,
+            "text": "Thomas saith unto him, Lord, we know not whither thou goest; and how can we know the way?"
+          },
+          {
+            "number": 6,
+            "text": "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me."
+          }
+        ]
+      },
+      {
+        "id": "ephesians-4-1-6",
+        "label": "Ephesians 4:1–6",
+        "context": "Paul urges existing believers to walk in humility and preserve unity. Many Christians read it as a call to unity, not as evidence of a later loss and restoration of authority.",
+        "verses": [
+          {
+            "number": 1,
+            "text": "I therefore, the prisoner of the Lord, beseech you that ye walk worthy of the vocation wherewith ye are called,"
+          },
+          {
+            "number": 2,
+            "text": "With all lowliness and meekness, with longsuffering, forbearing one another in love;"
+          },
+          {
+            "number": 3,
+            "text": "Endeavouring to keep the unity of the Spirit in the bond of peace."
+          },
+          {
+            "number": 4,
+            "text": "There is one body, and one Spirit, even as ye are called in one hope of your calling;"
+          },
+          {
+            "number": 5,
+            "text": "One Lord, one faith, one baptism,"
+          },
+          {
+            "number": 6,
+            "text": "One God and Father of all, who is above all, and through all, and in you all."
+          }
+        ]
+      },
+      {
+        "id": "james-1-2-6",
+        "label": "James 1:2–6",
+        "context": "James connects trials, patience, maturity, and asking God for wisdom. Prayer matters; the passage alone does not authenticate a particular vision or prophet.",
+        "verses": [
+          {
+            "number": 2,
+            "text": "My brethren, count it all joy when ye fall into divers temptations;"
+          },
+          {
+            "number": 3,
+            "text": "Knowing this, that the trying of your faith worketh patience."
+          },
+          {
+            "number": 4,
+            "text": "But let patience have her perfect work, that ye may be perfect and entire, wanting nothing."
+          },
+          {
+            "number": 5,
+            "text": "If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him."
+          },
+          {
+            "number": 6,
+            "text": "But let him ask in faith, nothing wavering. For he that wavereth is like a wave of the sea driven with the wind and tossed."
+          }
+        ]
+      },
+      {
+        "id": "john-17-1-5",
+        "label": "John 17:1–5",
+        "context": "Jesus addresses the Father as distinct from himself and speaks of glory shared before creation. Trinitarians read this together with John 1, not as a denial of the distinction between Father and Son.",
+        "verses": [
+          {
+            "number": 1,
+            "text": "These words spake Jesus, and lifted up his eyes to heaven, and said, Father, the hour is come; glorify thy Son, that thy Son also may glorify thee:"
+          },
+          {
+            "number": 2,
+            "text": "As thou hast given him power over all flesh, that he should give eternal life to as many as thou hast given him."
+          },
+          {
+            "number": 3,
+            "text": "And this is life eternal, that they might know thee the only true God, and Jesus Christ, whom thou hast sent."
+          },
+          {
+            "number": 4,
+            "text": "I have glorified thee on the earth: I have finished the work which thou gavest me to do."
+          },
+          {
+            "number": 5,
+            "text": "And now, O Father, glorify thou me with thine own self with the glory which I had with thee before the world was."
+          }
+        ]
+      },
+      {
+        "id": "john-17-20-23",
+        "label": "John 17:20–23",
+        "context": "Jesus prays for the unity of future believers. The debate concerns what this analogy establishes about divine oneness; neither side should make this paragraph carry its entire doctrine.",
+        "verses": [
+          {
+            "number": 20,
+            "text": "Neither pray I for these alone, but for them also which shall believe on me through their word;"
+          },
+          {
+            "number": 21,
+            "text": "That they all may be one; as thou, Father, art in me, and I in thee, that they also may be one in us: that the world may believe that thou hast sent me."
+          },
+          {
+            "number": 22,
+            "text": "And the glory which thou gavest me I have given them; that they may be one, even as we are one:"
+          },
+          {
+            "number": 23,
+            "text": "I in them, and thou in me, that they may be made perfect in one; and that the world may know that thou hast sent me, and hast loved them, as thou hast loved me."
+          }
+        ]
+      },
+      {
+        "id": "2-corinthians-13-1-3",
+        "label": "2 Corinthians 13:1–3",
+        "context": "Paul discusses his coming visit and discipline concerning sin. LDS teaching applies the witness principle to two books; that application is an interpretive step, not an explicit identification of the Book of Mormon in this text.",
+        "verses": [
+          {
+            "number": 1,
+            "text": "This is the third time I am coming to you. In the mouth of two or three witnesses shall every word be established."
+          },
+          {
+            "number": 2,
+            "text": "I told you before, and foretell you, as if I were present, the second time; and being absent now I write to them which heretofore have sinned, and to all other, that, if I come again, I will not spare:"
+          },
+          {
+            "number": 3,
+            "text": "Since ye seek a proof of Christ speaking in me, which to you-ward is not weak, but is mighty in you."
+          }
+        ]
+      },
+      {
+        "id": "1-corinthians-15-35-42",
+        "label": "1 Corinthians 15:35–42",
+        "context": "Paul asks what kind of body the raised dead receive, then compares earthly and heavenly bodies and differing glories. Evangelical readers argue this does not by itself establish the three LDS destinations; LDS readers connect it with later revelation.",
+        "verses": [
+          {
+            "number": 35,
+            "text": "But some man will say, How are the dead raised up? and with what body do they come?"
+          },
+          {
+            "number": 36,
+            "text": "Thou fool, that which thou sowest is not quickened, except it die:"
+          },
+          {
+            "number": 37,
+            "text": "And that which thou sowest, thou sowest not that body that shall be, but bare grain, it may chance of wheat, or of some other grain:"
+          },
+          {
+            "number": 38,
+            "text": "But God giveth it a body as it hath pleased him, and to every seed his own body."
+          },
+          {
+            "number": 39,
+            "text": "All flesh is not the same flesh: but there is one kind of flesh of men, another flesh of beasts, another of fishes, and another of birds."
+          },
+          {
+            "number": 40,
+            "text": "There are also celestial bodies, and bodies terrestrial: but the glory of the celestial is one, and the glory of the terrestrial is another."
+          },
+          {
+            "number": 41,
+            "text": "There is one glory of the sun, and another glory of the moon, and another glory of the stars: for one star differeth from another star in glory."
+          },
+          {
+            "number": 42,
+            "text": "So also is the resurrection of the dead. It is sown in corruption; it is raised in incorruption:"
+          }
+        ]
+      },
+      {
+        "id": "john-1-1-3",
+        "label": "John 1:1–3",
+        "context": "The Word is distinguished from God and called God. Christian apologetics reads this alongside passages affirming one God and the personal distinction of Father and Son.",
+        "verses": [
+          {
+            "number": 1,
+            "text": "In the beginning was the Word, and the Word was with God, and the Word was God."
+          },
+          {
+            "number": 2,
+            "text": "The same was in the beginning with God."
+          },
+          {
+            "number": 3,
+            "text": "All things were made by him; and without him was not any thing made that was made."
+          }
+        ]
+      },
+      {
+        "id": "matthew-16-18",
+        "label": "Matthew 16:18",
+        "context": "Christians commonly appeal to this promise when questioning a total loss of the Church. Traditions differ on the rock and what the promise entails; it is not a full historical argument by itself.",
+        "verses": [
+          {
+            "number": 18,
+            "text": "And I say also unto thee, That thou art Peter, and upon this rock I will build my church; and the gates of hell shall not prevail against it."
+          }
+        ]
+      },
+      {
+        "id": "galatians-1-6-9",
+        "label": "Galatians 1:6–9",
+        "context": "Paul tells the Galatians to evaluate even impressive messengers by the gospel already preached. This supplies a test; a claimed contradiction must still be demonstrated.",
+        "verses": [
+          {
+            "number": 6,
+            "text": "I marvel that ye are so soon removed from him that called you into the grace of Christ unto another gospel:"
+          },
+          {
+            "number": 7,
+            "text": "Which is not another; but there be some that trouble you, and would pervert the gospel of Christ."
+          },
+          {
+            "number": 8,
+            "text": "But though we, or an angel from heaven, preach any other gospel unto you than that which we have preached unto you, let him be accursed."
+          },
+          {
+            "number": 9,
+            "text": "As we said before, so say I now again, If any man preach any other gospel unto you than that ye have received, let him be accursed."
+          }
+        ]
+      },
+      {
+        "id": "ephesians-2-8-10",
+        "label": "Ephesians 2:8–10",
+        "context": "An evangelical response emphasizes salvation as God’s gift and good works as its result. LDS teaching distinguishes salvation from exaltation, so the two traditions may not use these words in the same way.",
+        "verses": [
+          {
+            "number": 8,
+            "text": "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God:"
+          },
+          {
+            "number": 9,
+            "text": "Not of works, lest any man should boast."
+          },
+          {
+            "number": 10,
+            "text": "For we are his workmanship, created in Christ Jesus unto good works, which God hath before ordained that we should walk in them."
+          }
+        ]
+      },
+      {
+        "id": "deuteronomy-6-4",
+        "label": "Deuteronomy 6:4",
+        "context": "Israel’s confession of one God. The Trinitarian case reads this together with passages about the Father, Son, and Spirit; this verse alone does not articulate the whole doctrine.",
+        "verses": [
+          {
+            "number": 4,
+            "text": "Hear, O Israel: The LORD our God is one LORD:"
+          }
+        ]
+      },
+      {
+        "id": "isaiah-43-10",
+        "label": "Isaiah 43:10",
+        "context": "God contrasts himself with rival gods. Evangelicals argue that unity of purpose among separate divine beings does not fully account for this claim.",
+        "verses": [
+          {
+            "number": 10,
+            "text": "Ye are my witnesses, saith the LORD, and my servant whom I have chosen: that ye may know and believe me, and understand that I am he: before me there was no God formed, neither shall there be after me."
+          }
+        ]
+      },
+      {
+        "id": "john-20-27-29",
+        "label": "John 20:27–29",
+        "context": "Thomas addresses the risen Jesus as Lord and God. Trinitarians connect this with John’s opening description of the Word, while distinguishing the Son from the Father.",
+        "verses": [
+          {
+            "number": 27,
+            "text": "Then saith he to Thomas, Reach hither thy finger, and behold my hands; and reach hither thy hand, and thrust it into my side: and be not faithless, but believing."
+          },
+          {
+            "number": 28,
+            "text": "And Thomas answered and said unto him, My Lord and my God."
+          },
+          {
+            "number": 29,
+            "text": "Jesus saith unto him, Thomas, because thou hast seen me, thou hast believed: blessed are they that have not seen, and yet have believed."
+          }
+        ]
+      },
+      {
+        "id": "acts-5-3-4",
+        "label": "Acts 5:3–4",
+        "context": "Peter describes lying to the Holy Ghost as lying to God. This is one part of the evangelical case for the Spirit’s divinity, alongside monotheism and personal distinctions.",
+        "verses": [
+          {
+            "number": 3,
+            "text": "But Peter said, Ananias, why hath Satan filled thine heart to lie to the Holy Ghost, and to keep back part of the price of the land?"
+          },
+          {
+            "number": 4,
+            "text": "Whiles it remained, was it not thine own? and after it was sold, was it not in thine own power? why hast thou conceived this thing in thine heart? thou hast not lied unto men, but unto God."
+          }
+        ]
+      }
+    ]
+  },
+  "sourceNotes": "Version 4: the missionary role is named “LDS Missionary” in labels and instructions; spoken lines are unchanged. Version 3: the main “Life after death” question now states the three kingdoms of glory and their link to Joseph Smith before quoting John 14:2; everything else is unchanged from version 2. Version 2: prepared questions only. The missionary asks the five main questions and ten follow-ups from version 1 unchanged; the Christian answers and the missionary moves on. Each Christian suggestion is one complete answer, taken from the revised answer set of 21 October 2026, and never asks the missionary a question back. Removed from version 1: the universal “not sure / read that passage together” answer, the missionary clarification (“Ask them to explain”) and its filler answer, each beat’s clarifying question (“Help me clarify”), and alternative answers that asked questions back. Hints were revised to help the Christian form an answer. Christian answers are conversational expressions of an evangelical, Trinitarian perspective, not Bible quotations. Quotations are KJV; each quoted phrase links to its supplied passage range. Weekly reading links point to Watchman Fellowship."
+}
