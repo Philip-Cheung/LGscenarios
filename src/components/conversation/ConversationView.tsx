@@ -1,4 +1,14 @@
-import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useContext,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { richTextOneLine } from '../../lib/richText'
 import type { Role, SessionSnapshot } from '../../sessions/types'
@@ -40,6 +50,8 @@ interface ConversationViewProps {
   /** A request, lost connection, or absent partner closes any open sheet. */
   interrupted: boolean
   sending: boolean
+  /** The role strip and any banner; messages scroll beneath it. */
+  status?: ReactNode
   onCommit(itemId: string): void
   onSessionRequest(kind: SessionRequestKind): void
 }
@@ -63,6 +75,7 @@ export function ConversationView({
   canAct,
   interrupted,
   sending,
+  status,
   onCommit,
   onSessionRequest,
 }: ConversationViewProps) {
@@ -272,6 +285,7 @@ export function ConversationView({
           nearBottom.current = pane.scrollHeight - pane.scrollTop - pane.clientHeight < NEAR_BOTTOM_PX
         }}
       >
+        {status ? <div className={styles.statusLayer}>{status}</div> : null}
         <h1 ref={headingRef} tabIndex={-1} className={styles.srOnly}>
           Conversation
         </h1>

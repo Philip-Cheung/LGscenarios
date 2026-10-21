@@ -305,7 +305,7 @@ export function ScenarioFlow({ slug, config }: ScenarioFlowProps) {
                 setPhase({ kind: 'welcome' })
               },
             }}
-            strip={<RoleStrip role="christian" speaker={content.roles.christian.speaker} connection="waiting" />}
+            strip={<RoleStrip partner="missionary" name={content.roles.missionary.speaker} connection="waiting" />}
           >
             <JoinPartner
               key="join"

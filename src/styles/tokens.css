@@ -65,6 +65,17 @@
   --color-masthead-leave-hover: #f0e7df;
   --color-masthead-focus: #bc8060;
 
+  /* The chat surface and frosted role strip, matching their handoff (chat-surface). */
+  --color-chat-incoming: #fffdf8;
+  --color-chat-incoming-line: #d4d8cd;
+  --color-chat-outgoing: #e5ecdf;
+  --color-chat-outgoing-line: #ced8c7;
+  --color-strip: #f9faf5;
+  --color-strip-line: #dce0d5;
+  /* #f9faf5 at 58%, and #cdd4c6 at 70%: messages show softly through the blur. */
+  --color-strip-frost: #f9faf594;
+  --color-strip-frost-line: #cdd4c6b3;
+
   /* The "couldn't find this scenario" page, matching its handoff (scenario-unavailable). */
   --color-unavailable-canvas: #faf7f0;
   --color-unavailable-surface: #fffdf8;

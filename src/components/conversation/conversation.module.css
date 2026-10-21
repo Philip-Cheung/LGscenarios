@@ -39,9 +39,7 @@
 .roleStrip {
   display: flex;
   flex: none;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   /* Lines up with the Masthead: 28px sides, 24px at 600px, 20px at 350px, the 860px column when wide. */
   --strip-pad: 28px;
@@ -65,23 +63,28 @@
   }
 }
 
-.roleLabel {
+.partnerText {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--text-body);
-  font-weight: 500;
-  color: var(--color-ink);
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
-.roleLabel .portrait {
-  width: 30px;
-  height: 30px;
-  flex-basis: 30px;
+.partnerName {
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
 }
 
 .connection {
+  line-height: 1.35;
   color: var(--color-timer);
+}
+
+.connectionIdle {
+  color: var(--color-muted);
 }
 
 .connectionWarning {
@@ -689,6 +692,7 @@
 }
 
 .conversation {
+  --conversation-pad: 20px;
   /* Contains the screen-reader announcement, which would otherwise stretch the frame. */
   position: relative;
   display: flex;
@@ -699,9 +703,51 @@
   min-height: min(45dvh, 18rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 20px max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
-  scroll-padding-block: 16px;
+  /* No top padding: the sticky status strip sits flush with the header. */
+  padding: 0 max(var(--conversation-pad), env(safe-area-inset-right)) 12px
+    max(var(--conversation-pad), env(safe-area-inset-left));
+  /* Keeps focused or scrolled-to messages clear of the strip, which grows with the text size. */
+  scroll-padding-block: 4.5rem 16px;
   scrollbar-width: thin;
+  /* Keeps the strip's layer local, so dialogs and sheets stay above it. */
+  isolation: isolate;
+}
+
+/*
+ * The role strip and any banner, inside the scroll area so messages pass beneath.
+ * It spans the full width of the pane, outside the pane's side padding.
+ */
+.statusLayer {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex: none;
+  margin: 0 calc(-1 * max(var(--conversation-pad), env(safe-area-inset-right))) 20px
+    calc(-1 * max(var(--conversation-pad), env(safe-area-inset-left)));
+}
+
+.statusLayer .roleStrip {
+  border-bottom-color: var(--color-strip-line);
+  background: var(--color-strip);
+}
+
+/* Frosted only where the blur is supported; only the backing blurs, never the strip's own text. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .statusLayer .roleStrip {
+    border-bottom-color: var(--color-strip-frost-line);
+    background: var(--color-strip-frost);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .statusLayer .roleStrip {
+    border-bottom-color: var(--color-strip-line);
+    background: var(--color-strip);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 .sceneContext {
@@ -749,16 +795,18 @@
 .bubble {
   max-width: min(76%, 620px);
   padding: 13px 15px;
+  border: 1px solid var(--color-chat-incoming-line);
   border-radius: 16px 16px 16px 4px;
-  background: var(--color-bubble);
+  background: var(--color-chat-incoming);
   font-size: var(--text-body);
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
 
 .mine .bubble {
+  border-color: var(--color-chat-outgoing-line);
   border-radius: 16px 16px 4px 16px;
-  background: var(--color-bubble-mine);
+  background: var(--color-chat-outgoing);
 }
 
 .latest {
@@ -1948,7 +1996,10 @@ a.helpDetailAction {
 }
 
 @media (max-width: 360px) {
-  .conversation,
+  .conversation {
+    --conversation-pad: 15px;
+  }
+
   .tools {
     padding-inline: 15px;
   }

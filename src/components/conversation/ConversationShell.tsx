@@ -28,24 +28,34 @@ export function ConversationShell({ subtitle, action, strip, layout = 'screen', 
 
 export type StripConnection = 'connected' | 'waiting' | 'reconnecting' | 'partnerAway'
 
-const CONNECTION_TEXT: Record<StripConnection, string> = {
-  connected: '● Partner connected',
-  waiting: '○ Waiting for partner',
-  reconnecting: '● Reconnecting…',
-  partnerAway: '○ Partner reconnecting…',
+const CONNECTION_TEXT: Record<StripConnection, { dot: string; text: string }> = {
+  connected: { dot: '●', text: 'Connected' },
+  waiting: { dot: '○', text: 'Not connected yet' },
+  reconnecting: { dot: '●', text: 'You’re reconnecting…' },
+  partnerAway: { dot: '○', text: 'Reconnecting…' },
 }
 
-/** "Missionary (You)" with a portrait, and the connection state. */
-export function RoleStrip({ role, speaker, connection }: { role: Role; speaker: string; connection: StripConnection }) {
-  const warning = connection === 'reconnecting' || connection === 'partnerAway'
+/** Like a messenger header: the partner's portrait and role, with their connection state beneath. */
+export function RoleStrip({ partner, name, connection }: { partner: Role; name: string; connection: StripConnection }) {
+  const tone =
+    connection === 'reconnecting' || connection === 'partnerAway'
+      ? styles.connectionWarning
+      : connection === 'waiting'
+        ? styles.connectionIdle
+        : null
+  const { dot, text } = CONNECTION_TEXT[connection]
   return (
     <div className={styles.roleStrip}>
-      <span className={styles.roleLabel}>
-        <Portrait role={role} />
-        <span>{speaker} (You)</span>
-      </span>
-      <span className={warning ? `${styles.connection} ${styles.connectionWarning}` : styles.connection} role="status">
-        {CONNECTION_TEXT[connection]}
+      <Portrait role={partner} />
+      <span className={styles.partnerText}>
+        <span className={styles.partnerName}>
+          <span className={styles.srOnly}>Your partner: </span>
+          {name}
+        </span>
+        <span className={[styles.connection, tone].filter(Boolean).join(' ')} role="status">
+          <span aria-hidden="true">{dot} </span>
+          {text}
+        </span>
       </span>
     </div>
   )

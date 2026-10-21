@@ -203,7 +203,7 @@ export function ConversationSession({
     return () => window.clearTimeout(timer)
   }, [opening])
 
-  const speaker = content.roles[snapshot.myRole].speaker
+  const partnerRole = snapshot.myRole === 'missionary' ? 'christian' : 'missionary'
   const waiting = snapshot.status === 'waiting'
   const stripConnection: StripConnection =
     connection !== 'live' && offline
@@ -257,6 +257,22 @@ export function ConversationSession({
   const inConversation = snapshot.stage === 'conversation' && snapshot.status === 'active' && opening === null
   const showsDialog = confirm !== null || request !== null
 
+  const banner = offline
+    ? 'Your place and conversation are saved. Actions and the encounter timer are paused until you reconnect.'
+    : partnerAway
+      ? 'Your partner’s connection dropped. Your place is saved; you can continue when they’re back.'
+      : (notice ?? sessionNotice)
+  const strip = (
+    <>
+      <RoleStrip partner={partnerRole} name={content.roles[partnerRole].speaker} connection={stripConnection} />
+      {banner ? (
+        <p className={styles.sessionBanner} role="status">
+          {banner}
+        </p>
+      ) : null}
+    </>
+  )
+
   let body: ReactNode
   if (waiting) {
     body = (
@@ -296,6 +312,7 @@ export function ConversationSession({
         canAct={canAct}
         interrupted={request !== null || offline || partnerAway}
         sending={pending === 'commit'}
+        status={strip}
         onCommit={(itemId) => void actions.commit(itemId)}
         onSessionRequest={(kind) => setConfirm(kind)}
       />
@@ -318,28 +335,13 @@ export function ConversationSession({
     )
   }
 
-  const banner = offline
-    ? 'Your place and conversation are saved. Actions and the encounter timer are paused until you reconnect.'
-    : partnerAway
-      ? 'Your partner’s connection dropped. Your place is saved; you can continue when they’re back.'
-      : (notice ?? sessionNotice)
-
   return (
     <OpenPassageContext.Provider value={setPassageId}>
       <ConversationShell
         subtitle={content.title}
         layout={inConversation ? 'conversation' : 'screen'}
         action={{ label: waiting ? 'Back' : 'Leave', onClick: openLeave, disabled: pending === 'end' }}
-        strip={
-          <>
-            <RoleStrip role={snapshot.myRole} speaker={speaker} connection={stripConnection} />
-            {banner ? (
-              <p className={styles.sessionBanner} role="status">
-                {banner}
-              </p>
-            ) : null}
-          </>
-        }
+        strip={inConversation ? null : strip}
       >
         {body}
         <div className={opening === 'fade' ? `${styles.screenFade} ${styles.black}` : styles.screenFade} aria-hidden="true" />
