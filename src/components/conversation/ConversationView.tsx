@@ -1,4 +1,4 @@
-import { useContext, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { CLARIFICATION_ID, CLOSING_ID, OPENING_ID, type ConversationContent } from '../../lib/conversation'
 import { richTextOneLine } from '../../lib/richText'
 import type { Role, SessionSnapshot } from '../../sessions/types'
@@ -21,6 +21,7 @@ import {
   type Responding,
   type ThreadMessage,
 } from './model'
+import { hardModeIntroReady } from './hardModeIntro'
 import { OpenPassageContext } from './passageContext'
 import { Sheet } from './Sheet'
 
@@ -76,8 +77,13 @@ export function ConversationView({
   const restoreFocus = useRef(true)
   const sendRef = useRef<HTMLButtonElement>(null)
   const scrollRef = useRef<HTMLElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
   const nearBottom = useRef(true)
   if (interrupted && sheet) setSheet(null)
+
+  useEffect(() => {
+    hardModeIntroReady(() => headingRef.current?.focus({ preventScroll: true }))
+  }, [])
 
   const awaitingAnswer = snapshot.turn === 'christian'
   const myTurn = snapshot.turn === role
@@ -266,7 +272,9 @@ export function ConversationView({
           nearBottom.current = pane.scrollHeight - pane.scrollTop - pane.clientHeight < NEAR_BOTTOM_PX
         }}
       >
-        <h1 className={styles.srOnly}>Conversation</h1>
+        <h1 ref={headingRef} tabIndex={-1} className={styles.srOnly}>
+          Conversation
+        </h1>
         <p className={styles.sceneContext}>The door is open. Your conversation begins here.</p>
         <div className={styles.thread} aria-label="Conversation prompts" role="region">
           {messages.map((message, index) => (
