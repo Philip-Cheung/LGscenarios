@@ -52,7 +52,7 @@ interface Draft {
  * The doorstep conversation: a shared thread rebuilt from the server's
  * history, and a private composer. The missionary prepares a line and speaks
  * it aloud; the Christian answers in their own words or picks a suggested
- * reply. Only the send button ("Ask question", "Respond"…) commits anything.
+ * reply. Only the send button ("Ask question", "Answer question"…) commits anything.
  */
 export function ConversationView({
   content,
@@ -201,15 +201,15 @@ export function ConversationView({
   } else if (awaitingAnswer) {
     hasDraft = !!christianText
     caption = hasDraft ? 'Your next line' : 'Your response'
-    note = hasDraft ? 'Say it aloud, then tap Respond' : 'Try to answer on your own first'
+    note = hasDraft ? 'Say it aloud, then tap Answer question' : 'Try to answer on your own first'
     text = christianText ?? 'Respond aloud in your own words…'
     sendLabel = 'Send response'
-    sendText = 'Respond'
+    sendText = 'Answer question'
     canSend = true
   } else {
     caption = 'Conversation'
     note = 'Speak together aloud'
-    sendText = 'Respond'
+    sendText = 'Answer question'
     text = !progress.started
       ? 'Your visitor will introduce themselves first…'
       : progress.responding
