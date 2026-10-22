@@ -8,7 +8,7 @@ import { closePair, heading, openPhone, readPairCode, type Pair } from './helper
  * Hard mode on two phones: Lesson 1 to its reflection, a Hard mode request
  * accepted by the partner, the Hard mode intro in place of the door, then a two-sided exchange in the Hard mode
  * scenario and its own reflection. Runs against temporary copies of
- * content/scenarios/lesson-one-first-vision.v4.json and week-one-hard-mode.v2.json,
+ * content/scenarios/lesson-one-first-vision.v5.json and week-one-hard-mode.v2.json,
  * registered under their own ids with an old publication date so neither is
  * ever the featured scenario. Both are deleted afterwards.
  */
@@ -46,7 +46,7 @@ test.beforeAll(async () => {
   await client.connect()
   for (const [id, content] of [
     [HARD, load('content/scenarios/week-one-hard-mode.v2.json', HARD)],
-    [LESSON, load('content/scenarios/lesson-one-first-vision.v4.json', LESSON, HARD)],
+    [LESSON, load('content/scenarios/lesson-one-first-vision.v5.json', LESSON, HARD)],
   ] as const) {
     await client.query(
       `insert into public.scenario_registry
